@@ -99,3 +99,22 @@ $RECYCLE.BIN/
 # AI coding directories
 .agents/
 .codex/
+
+# vcpkg executable
+vcpkg/vcpkg
+vcpkg/vcpkg.exe
+
+# vcpkg build artifacts and temporary files
+vcpkg/buildtrees/
+vcpkg/packages/
+vcpkg/downloads/
+
+# vcpkg installed packages
+vcpkg/installed/
+
+# vcpkg local cache
+vcpkg/.cache/
+
+# vcpkg logs / generated metadata
+vcpkg/*.log
+vcpkg/*.log.*

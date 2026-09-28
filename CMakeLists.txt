@@ -46,3 +46,21 @@ elseif(MSVC)
             /W4
     )
 endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_link_options(${TARGET_NAME} PRIVATE
+        -static-libstdc++
+        -static-libgcc
+    )
+endif()
+
+if(WIN32)
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}>
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        COMMAND_EXPAND_LISTS
+    )
+endif()
