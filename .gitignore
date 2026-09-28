@@ -1,0 +1,101 @@
+# Build directories
+/build/
+/cmake-build-*/
+/out/
+/install/
+/_build/
+/artifacts/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+Testing/
+Makefile
+*.ninja
+.ninja_deps
+.ninja_log
+
+# CMake user presets, usually personal
+/CMakeUserPresets.json
+
+# Compilation database, usually generated in build dir
+/compile_commands.json
+
+# Compiled artifacts
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+*.mod
+*.smod
+*.ko
+
+# Debug symbols and intermediate files
+*.pdb
+*.ilk
+*.idb
+*.exp
+*.map
+
+# Coverage and profiling
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+
+# Dependency managers
+/vcpkg_installed/
+/conan/
+/.conan/
+/conanbuildinfo.*
+/conaninfo.txt
+/graph_info.json
+/.cache/
+
+# IDE / editors
+.vscode/
+.idea/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+*.code-workspace
+
+# Vim / Emacs
+*.swp
+*.swo
+*~
+.history/
+
+# clangd cache
+.clangd/
+.cache/clangd/
+
+# OS files
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# AI coding directories
+.agents/
+.codex/
