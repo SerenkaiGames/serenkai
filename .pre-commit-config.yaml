@@ -8,6 +8,6 @@ repos:
         exclude: '^(vcpkg|third_party)/.*$'
 
       - id: clang-tidy
-        args: ["--config-file=.clang-tidy", "-p=build"]
+        args: ["--config-file=.clang-tidy", "-p=build/debug"]
         types_or: ["c++", "c"]
         exclude: '^(vcpkg|third_party)/.*$'

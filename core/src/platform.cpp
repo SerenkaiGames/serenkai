@@ -1,6 +1,9 @@
+#include "serenkai/platform.hpp"
+
 #include <SDL3/SDL.h>
 
-int main() {
+namespace serenkai::core {
+int run() {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Failed to initialize SDL: %s", SDL_GetError());
         return 1;
@@ -44,3 +47,4 @@ int main() {
 
     return 0;
 }
+} // namespace serenkai::core
