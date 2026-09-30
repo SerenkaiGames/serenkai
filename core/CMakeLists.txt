@@ -1,6 +1,8 @@
 set(TARGET_NAME serenkai_core)
 
 find_package(SDL3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 add_library(
     ${TARGET_NAME} STATIC 
@@ -15,5 +17,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
 
 target_link_libraries(${TARGET_NAME} PRIVATE
     SDL3::SDL3
+    glm::glm
+    spdlog::spdlog
     serenkai::warnings
 )

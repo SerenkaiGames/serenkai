@@ -1,9 +1,13 @@
 #include "serenkai/platform.hpp"
 
 #include <SDL3/SDL.h>
+#include <spdlog/spdlog.h>
 
 namespace serenkai::core {
 int run() {
+
+    spdlog::info("started running...");
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Failed to initialize SDL: %s", SDL_GetError());
         return 1;

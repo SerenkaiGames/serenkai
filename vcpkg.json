@@ -1,5 +1,8 @@
 {
     "dependencies": [
-        "sdl3"
+        "sdl3",
+        "glm",
+        "spdlog",
+        "catch2"
     ]
 }
