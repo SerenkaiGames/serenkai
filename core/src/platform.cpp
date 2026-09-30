@@ -6,6 +6,11 @@
 namespace serenkai::core {
 int run() {
 
+    int linked = SDL_GetVersion();
+
+    spdlog::info("Linked SDL version: {}.{}.{}", SDL_VERSIONNUM_MAJOR(linked),
+                 SDL_VERSIONNUM_MINOR(linked), SDL_VERSIONNUM_MICRO(linked));
+
     spdlog::info("started running...");
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
