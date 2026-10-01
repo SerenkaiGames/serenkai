@@ -23,7 +23,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-gcc14-llvm22-deps-v2
+          key: ${{ runner.os }}-apt-gcc14-llvm22-deps-v3
           restore-keys: |
             ${{ runner.os }}-apt-gcc14-llvm22-deps-
 
@@ -36,8 +36,8 @@ jobs:
             libltdl-dev pkg-config \
             libasound2-dev libpulse-dev \
             libx11-dev libxft-dev libxext-dev \
-            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
-            libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxinerama-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev libdrm-dev libgbm-dev libdecor-0-dev \
             libibus-1.0-dev libdbus-1-dev \
             libusb-1.0-0-dev libudev-dev \
             wget software-properties-common gnupg
