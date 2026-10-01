@@ -7,6 +7,12 @@ find_package(spdlog CONFIG REQUIRED)
 add_library(
     ${TARGET_NAME} STATIC 
     src/platform.cpp
+    src/application/window_manager.cpp
+    include/serenkai/application/application.hpp
+    include/serenkai/application/window_manager.hpp
+    src/application/application.cpp
+    include/serenkai/render/renderer.hpp
+    src/render/renderer.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

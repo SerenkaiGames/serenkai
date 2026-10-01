@@ -9,3 +9,8 @@ Diagnostics:
   Suppress: ["*"]
   ClangTidy:
     Remove: ["*"]
+
+
+---
+  Documentation:
+    CommentFormat: Doxygen
