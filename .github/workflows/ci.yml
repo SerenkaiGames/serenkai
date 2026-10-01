@@ -19,16 +19,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache APT packages for LLVM and GCC
+      - name: Cache APT package archives
         uses: actions/cache@v4
         with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-gcc14-llvm22-deps-v3
+          path: ~/.cache/apt-archives
+          key: ${{ runner.os }}-apt-gcc14-llvm22-v1
           restore-keys: |
-            ${{ runner.os }}-apt-gcc14-llvm22-deps-
+            ${{ runner.os }}-apt-gcc14-llvm22-
 
       - name: Install GCC 14, system build dependencies, and LLVM 22
         run: |
+          # Restore cached deb packages if available
+          if [ -d ~/.cache/apt-archives ] && [ "$(ls -A ~/.cache/apt-archives 2>/dev/null)" ]; then
+            sudo cp ~/.cache/apt-archives/*.deb /var/cache/apt/archives/ 2>/dev/null || true
+          fi
+
           sudo apt-get update
           sudo apt-get install -y \
             gcc-14 g++-14 \
@@ -55,6 +60,10 @@ jobs:
           # Setup aliases
           sudo ln -sf /usr/bin/clang-format-22 /usr/local/bin/clang-format
           sudo ln -sf /usr/bin/clang-tidy-22 /usr/local/bin/clang-tidy
+          
+          # Save downloaded deb packages to user cache directory
+          mkdir -p ~/.cache/apt-archives
+          cp /var/cache/apt/archives/*.deb ~/.cache/apt-archives/ 2>/dev/null || true
           
           gcc --version
           g++ --version
