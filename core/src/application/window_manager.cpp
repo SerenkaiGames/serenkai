@@ -31,10 +31,10 @@ WindowManager::WindowManager(WindowConfig config)
             "SDL_CreateWindowWithProperties failed: {}", SDL_GetError()));
     }
 
-    set_fullscreen(m_config.mode);
-
     SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED,
                           SDL_WINDOWPOS_CENTERED);
+
+    set_fullscreen(m_config.mode);
 }
 
 WindowManager::~WindowManager() {
@@ -54,8 +54,6 @@ bool WindowManager::set_fullscreen(FullscreenMode mode) {
         if (!SDL_SetWindowBordered(m_window, true)) {
             return false;
         }
-        SDL_SetWindowFullscreen(m_window, false);
-        SDL_SetWindowBordered(m_window, true);
         SDL_SetWindowPosition(m_window, m_windowed_xpos, m_windowed_ypos);
         SDL_SetWindowSize(m_window, m_windowed_width, m_windowed_height);
     } break;
@@ -74,10 +72,10 @@ bool WindowManager::set_fullscreen(FullscreenMode mode) {
 
         SDL_GetWindowSize(m_window, &m_windowed_width, &m_windowed_height);
 
-        auto m_windowed_display = SDL_GetDisplayForWindow(m_window);
+        auto windowed_display = SDL_GetDisplayForWindow(m_window);
 
         SDL_Rect display_bounds{};
-        if (!SDL_GetDisplayBounds(m_windowed_display, &display_bounds)) {
+        if (!SDL_GetDisplayBounds(windowed_display, &display_bounds)) {
 
             spdlog::error("SDL_GetDisplayBounds failed: {}", SDL_GetError());
             return false;

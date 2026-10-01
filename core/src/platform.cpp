@@ -6,8 +6,8 @@
 #include <exception>
 #include <spdlog/spdlog.h>
 
-namespace serenkai::core {
-int run() {
+namespace serenkai {
+int start_game() {
     try {
         Application app;
         app.run();
@@ -21,4 +21,4 @@ int run() {
 
     return 0;
 }
-} // namespace serenkai::core
+} // namespace serenkai

@@ -39,8 +39,8 @@ private:
     SDL_Window* m_window{nullptr};
 
     // Remember windowed state
-    int m_windowed_xpos{0};
-    int m_windowed_ypos{0};
+    int m_windowed_xpos{SDL_WINDOWPOS_CENTERED};
+    int m_windowed_ypos{SDL_WINDOWPOS_CENTERED};
     int m_windowed_width{1280};
     int m_windowed_height{720};
 };

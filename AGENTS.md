@@ -29,6 +29,7 @@ Keep the style consistent across the codebase.
 * Run `clang-tidy` after making code changes.
 * When reviewing or reading code, point out any code quality issues you notice, such as ambiguous naming, unclear structure, unnecessary complexity, or other maintainability concerns.
 * Do not make unrelated changes to fix these issues without approval.
+* Do not guess CMake presets, targets, options, or commands. Read `CMakePresets.json` and other relevant CMake files before using or discussing them.
 
 ## Comments
 
