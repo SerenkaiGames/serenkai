@@ -16,5 +16,8 @@ include(cmake/Warnings.cmake)
 
 add_subdirectory(core)
 add_subdirectory(app)
-
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 

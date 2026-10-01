@@ -31,6 +31,14 @@ Keep the style consistent across the codebase.
 * Do not make unrelated changes to fix these issues without approval.
 * Do not guess CMake presets, targets, options, or commands. Read `CMakePresets.json` and other relevant CMake files before using or discussing them.
 
+## Testing
+
+When implementing a new feature, add appropriate unit tests for the new functionality.
+
+* Keep tests separate from the game source code.
+* Follow the existing test structure and conventions.
+* Run the relevant tests after making code changes.
+
 ## Comments
 
 Write all comments in English.
@@ -68,4 +76,5 @@ Before finishing:
 
 1. Verify that the changes follow the rules above.
 2. Run `clang-format` and `clang-tidy` if code was changed.
-3. Summarize the changes to the human.
+3. Run the relevant tests if code was changed.
+4. Summarize the changes to the human.

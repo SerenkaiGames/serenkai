@@ -5,6 +5,7 @@
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_version.h>
 #include <fmt/format.h>
 #include <memory>
@@ -36,25 +37,34 @@ Application::Application() {
 
 Application::~Application() {}
 
+bool Application::is_running() const { return m_running; }
+
 void Application::run() {
 
     spdlog::info("Started running...");
+    // Prevent first-frame delta time spikes
+    m_delta_time_ns.last_tick_ns = SDL_GetTicksNS();
+    while (is_running()) {
 
-    bool running = true;
-    SDL_Event event{};
+        m_delta_time_ns.current_tick_ns = SDL_GetTicksNS();
+        double dt = m_delta_time_ns.dt();
+        m_delta_time_ns.last_tick_ns = m_delta_time_ns.current_tick_ns;
 
-    while (running) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT) {
-                running = false;
-            }
-        }
-        update();
-        render();
+        step(dt);
     }
 }
 
-void Application::update() {}
+void Application::step(double dt) {
+    while (SDL_PollEvent(&m_event)) {
+        if (m_event.type == SDL_EVENT_QUIT) {
+            m_running = false;
+        }
+    }
+    update(dt);
+    render();
+}
+
+void Application::update(double) {}
 void Application::render() {
     m_renderer->clear();
 
