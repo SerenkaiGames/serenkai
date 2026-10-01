@@ -14,7 +14,6 @@ jobs:
     env:
       CC: gcc-14
       CXX: g++-14
-      VCPKG_DEFAULT_BINARY_CACHE: ~/.cache/vcpkg/archives
 
     steps:
       - name: Checkout repository
@@ -52,13 +51,17 @@ jobs:
           clang-format --version
           clang-tidy --version
 
-      - name: Ensure vcpkg cache directory exists
-        run: mkdir -p ~/.cache/vcpkg/archives
+      - name: Setup vcpkg cache directory and environment
+        run: |
+          mkdir -p ~/.cache/vcpkg/archives ~/.cache/vcpkg/downloads
+          echo "VCPKG_DEFAULT_BINARY_CACHE=$HOME/.cache/vcpkg/archives" >> $GITHUB_ENV
 
-      - name: Cache vcpkg binary archives
+      - name: Cache vcpkg binary archives and downloads
         uses: actions/cache@v4
         with:
-          path: ~/.cache/vcpkg/archives
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/downloads
           key: vcpkg-archives-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
           restore-keys: |
             vcpkg-archives-${{ runner.os }}-
