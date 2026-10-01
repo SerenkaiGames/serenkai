@@ -2,10 +2,6 @@
 
 namespace serenkai {
 
-namespace core {
-
-int run();
-
-}
+int start_game();
 
 } // namespace serenkai

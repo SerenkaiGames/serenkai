@@ -1,3 +1,3 @@
-#include <serenkai/platform.hpp>
+#include "serenkai/platform.hpp"
 
-int main() { return serenkai::core::run(); }
+int main() { return serenkai::start_game(); }

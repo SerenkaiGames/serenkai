@@ -1,0 +1,109 @@
+name: Ubuntu CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Ubuntu CI (GCC-14 / Clang-22 / Ninja / vcpkg)
+    runs-on: ubuntu-24.04
+
+    env:
+      CC: gcc-14
+      CXX: g++-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache APT package archives
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/apt-archives
+          key: ${{ runner.os }}-apt-gcc14-llvm22-v1
+          restore-keys: |
+            ${{ runner.os }}-apt-gcc14-llvm22-
+
+      - name: Install GCC 14, system build dependencies, and LLVM 22
+        run: |
+          # Restore cached deb packages if available
+          if [ -d ~/.cache/apt-archives ] && [ "$(ls -A ~/.cache/apt-archives 2>/dev/null)" ]; then
+            sudo cp ~/.cache/apt-archives/*.deb /var/cache/apt/archives/ 2>/dev/null || true
+          fi
+
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-14 g++-14 \
+            ninja-build autoconf autoconf-archive automake libtool \
+            libltdl-dev pkg-config \
+            libasound2-dev libpulse-dev \
+            libx11-dev libxft-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxinerama-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev libdrm-dev libgbm-dev libdecor-0-dev \
+            libibus-1.0-dev libdbus-1-dev \
+            libusb-1.0-0-dev libudev-dev \
+            wget software-properties-common gnupg
+          
+          # Configure gcc-14 and g++-14 as default
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14
+          
+          # Add official LLVM 22 repository
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          CODENAME=$(lsb_release -cs)
+          sudo add-apt-repository -y "deb http://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME}-22 main"
+          sudo apt-get update
+          sudo apt-get install -y clang-format-22 clang-tidy-22
+          
+          # Setup aliases
+          sudo ln -sf /usr/bin/clang-format-22 /usr/local/bin/clang-format
+          sudo ln -sf /usr/bin/clang-tidy-22 /usr/local/bin/clang-tidy
+          
+          # Save downloaded deb packages to user cache directory
+          mkdir -p ~/.cache/apt-archives
+          cp /var/cache/apt/archives/*.deb ~/.cache/apt-archives/ 2>/dev/null || true
+          
+          gcc --version
+          g++ --version
+          clang-format --version
+          clang-tidy --version
+
+      - name: Setup vcpkg cache directory and environment
+        run: |
+          mkdir -p ~/.cache/vcpkg/archives ~/.cache/vcpkg/downloads
+          echo "VCPKG_DEFAULT_BINARY_CACHE=$HOME/.cache/vcpkg/archives" >> $GITHUB_ENV
+
+      - name: Cache vcpkg binary archives and downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/downloads
+          key: vcpkg-archives-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          restore-keys: |
+            vcpkg-archives-${{ runner.os }}-
+
+      - name: Configure CMake
+        run: cmake --preset debug
+
+      - name: Run clang-format check
+        run: |
+          FILES=$(git ls-files --cached --others --exclude-standard '*.cpp' '*.hpp' | grep -E '^(app|core|tests)/' || true)
+          if [ -n "$FILES" ]; then
+            clang-format --dry-run --Werror $FILES
+          fi
+
+      - name: Run clang-tidy check
+        run: |
+          FILES=$(git ls-files --cached --others --exclude-standard '*.cpp' | grep -E '^(app|core|tests)/' || true)
+          if [ -n "$FILES" ]; then
+            clang-tidy -p build/debug $FILES
+          fi
+
+      - name: Build
+        run: cmake --build --preset debug
+
+      - name: Run CTest
+        run: ctest --preset test
