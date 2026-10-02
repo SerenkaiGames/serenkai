@@ -4,6 +4,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+using namespace serenkai;
+
 TEST_CASE("DeltaTime calculation", "[application]") {
     Application::DeltaTime delta_time;
     delta_time.last_tick_ns = 1'000'000'000;    // 1.0 second

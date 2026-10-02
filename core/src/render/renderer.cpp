@@ -5,6 +5,7 @@
 #include <fmt/format.h>
 #include <stdexcept>
 
+namespace serenkai {
 Renderer::Renderer(SDL_Window* window, RendererConfig config)
     : m_config(std::move(config)) {
     m_sdl_renderer = SDL_CreateRenderer(window, nullptr);
@@ -29,3 +30,4 @@ void Renderer::clear() {
 
     SDL_RenderClear(m_sdl_renderer);
 }
+} // namespace serenkai

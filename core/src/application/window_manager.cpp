@@ -6,7 +6,7 @@
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <utility>
-
+namespace serenkai {
 WindowManager::WindowManager(WindowConfig config)
     : m_config(std::move(config)) {
     SDL_PropertiesID props = SDL_CreateProperties();
@@ -112,3 +112,4 @@ bool WindowManager::set_fullscreen(FullscreenMode mode) {
 }
 
 SDL_Window* WindowManager::get_window() const { return m_window; }
+} // namespace serenkai

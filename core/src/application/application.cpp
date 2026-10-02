@@ -2,6 +2,7 @@
 
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/render/renderer.hpp"
+#include "serenkai/scenes/scene_manager.hpp"
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_init.h>
@@ -11,6 +12,8 @@
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+
+namespace serenkai {
 
 Application::SdlWrapper::SdlWrapper() {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -33,6 +36,7 @@ Application::Application() {
     m_window_manager = std::make_unique<WindowManager>(WindowConfig{});
     m_renderer = std::make_unique<Renderer>(m_window_manager->get_window(),
                                             RendererConfig{});
+    m_scene_manager = std::make_unique<SceneManager>();
 }
 
 Application::~Application() {}
@@ -50,11 +54,11 @@ void Application::run() {
         double dt = m_delta_time_ns.dt();
         m_delta_time_ns.last_tick_ns = m_delta_time_ns.current_tick_ns;
 
-        step(dt);
+        step(static_cast<float>(dt));
     }
 }
 
-void Application::step(double dt) {
+void Application::step(float dt) {
     while (SDL_PollEvent(&m_event)) {
         if (m_event.type == SDL_EVENT_QUIT) {
             m_running = false;
@@ -64,9 +68,10 @@ void Application::step(double dt) {
     render();
 }
 
-void Application::update(double) {}
+void Application::update(float) {}
 void Application::render() {
     m_renderer->clear();
 
     m_renderer->present();
 }
+} // namespace serenkai
