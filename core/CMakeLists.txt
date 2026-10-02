@@ -27,6 +27,9 @@ add_library(
     include/serenkai/application/event.hpp
     include/serenkai/application/input.hpp
     src/application/input.cpp
+    include/serenkai/gui/widget.hpp
+    include/serenkai/gui/anchor.hpp
+    src/gui/widget.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

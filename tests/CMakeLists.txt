@@ -4,6 +4,7 @@ add_executable(serenkai_tests
     src/application_test.cpp
     src/scene_test.cpp
     src/input_test.cpp
+    src/widget_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core
