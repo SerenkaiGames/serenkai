@@ -1,5 +1,6 @@
 // panic.hpp
 #pragma once
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <source_location>
@@ -49,8 +50,9 @@ inline void print_stacktrace(int skip = 2) {
 
     for (USHORT i = 0; i < n; ++i) {
         DWORD64 addr = reinterpret_cast<DWORD64>(frames[i]);
+        DWORD64 query_addr = (addr > 0) ? (addr - 1) : addr;
         DWORD64 disp = 0;
-        if (SymFromAddr(process, addr, &disp, sym)) {
+        if (SymFromAddr(process, query_addr, &disp, sym)) {
             std::fprintf(stderr, "  #%u %p %s +0x%llx\n", i, frames[i],
                          sym->Name, (unsigned long long)disp);
         } else {
@@ -64,7 +66,10 @@ inline void print_stacktrace(int skip = 2) {
     for (int i = skip; i < n; ++i) {
         Dl_info info{};
         std::string sym = "???";
-        if (dladdr(frames[i], &info) && info.dli_sname) {
+        auto uaddr = reinterpret_cast<uintptr_t>(frames[i]);
+        void* query_addr =
+            (uaddr > 0) ? reinterpret_cast<void*>(uaddr - 1) : frames[i];
+        if (dladdr(query_addr, &info) && info.dli_sname) {
             sym = demangle(info.dli_sname);
         }
         std::fprintf(stderr, "  #%d %p %s\n", i - skip, frames[i], sym.c_str());
