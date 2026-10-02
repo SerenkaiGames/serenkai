@@ -347,7 +347,7 @@ inline std::optional<Event> handle_sdl_key(const SDL_Event& e) {
         break;
 
     default:
-        spdlog::error("Unknown key {}", e.key.key);
+        spdlog::warn("Unknown key {}", e.key.key);
         return std::nullopt;
     }
 
@@ -362,7 +362,7 @@ inline std::optional<Event> handle_sdl_key(const SDL_Event& e) {
     } else if (e.type == SDL_EVENT_KEY_UP) {
         act = KeyAction::Release;
     } else {
-        spdlog::error("Unknown key event {}", e.type);
+        spdlog::warn("Unknown key event {}", e.type);
         return std::nullopt;
     }
 
@@ -398,7 +398,7 @@ inline std::optional<Event> handle_sdl_mouse_button(const SDL_Event& e) {
         break;
 
     default:
-        spdlog::error("Unknown mouse button {}", e.button.button);
+        spdlog::warn("Unknown mouse button {}", e.button.button);
         return std::nullopt;
     }
 
@@ -407,7 +407,7 @@ inline std::optional<Event> handle_sdl_mouse_button(const SDL_Event& e) {
     } else if (e.type == SDL_EVENT_MOUSE_BUTTON_UP) {
         act = KeyAction::Release;
     } else {
-        spdlog::error("Unknown mouse event type {}", e.type);
+        spdlog::warn("Unknown mouse event type {}", e.type);
         return std::nullopt;
     }
 
@@ -431,9 +431,12 @@ std::optional<Event> process_sdl_event(const SDL_Event& e) {
 
     case SDL_EVENT_MOUSE_MOTION:
 
+        // Filter out abnormally large mouse movements to avoid camera
+        // jumps/jitter.
         if (std::abs(e.motion.xrel) > 200 || std::abs(e.motion.yrel) > 200) {
             return std::nullopt;
         }
+
         return MouseMoveEvent{e.motion.x, e.motion.y, e.motion.xrel,
                               e.motion.yrel};
 
@@ -448,6 +451,7 @@ std::optional<Event> process_sdl_event(const SDL_Event& e) {
         float scroll_x = e.wheel.x;
         float scroll_y = e.wheel.y;
         if (e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) {
+            scroll_x = -scroll_x;
             scroll_y = -scroll_y;
         }
         return MouseWheelEvent{scroll_x, scroll_y};

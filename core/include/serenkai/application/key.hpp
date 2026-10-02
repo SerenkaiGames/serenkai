@@ -1,6 +1,8 @@
 #pragma once
 
 namespace serenkai {
+
+/// @brief Enumeration of mouse buttons and keyboard keys.
 enum class Key {
     Unknown,
 
@@ -76,7 +78,7 @@ enum class Key {
     LeftAlt,
     RightAlt,
     LeftSuper,
-    RightSuper, // Windows / Command 键
+    RightSuper, // Windows / Command key
 
     // Navigation keys
     Insert,
@@ -134,5 +136,6 @@ enum class Key {
     MouseForward, // Side button forward
 };
 
+/// @brief Enumeration of key actions.
 enum class KeyAction { Press, Release, Repeat };
 } // namespace serenkai

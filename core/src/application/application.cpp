@@ -85,6 +85,10 @@ void Application::dispatch_event(const Event& e) {
         m_running = false;
         return;
     }
+
+    if (m_scene_manager->handle_event(e)) {
+        return;
+    }
 }
 
 } // namespace serenkai

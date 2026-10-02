@@ -3,7 +3,6 @@
 #include "serenkai/base/unreachable.hpp"
 
 namespace serenkai {
-bool TitleScene::handle_event(const Event&) { todo(); }
 
 void TitleScene::update(float) { todo(); }
 
