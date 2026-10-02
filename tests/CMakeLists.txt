@@ -2,6 +2,7 @@ find_package(Catch2 3 REQUIRED)
 add_executable(serenkai_tests
     src/window_test.cpp
     src/application_test.cpp
+    src/scene_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core

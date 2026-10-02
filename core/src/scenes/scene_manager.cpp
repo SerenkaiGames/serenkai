@@ -111,4 +111,14 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
     unreachable();
 }
 
+[[nodiscard]] std::size_t SceneManager::size() const noexcept {
+    return m_scenes.size();
+}
+[[nodiscard]] bool SceneManager::empty() const noexcept {
+    return m_scenes.empty();
+}
+[[nodiscard]] Scene* SceneManager::current_scene() const noexcept {
+    return m_scenes.empty() ? nullptr : m_scenes.top().get();
+}
+
 } // namespace serenkai

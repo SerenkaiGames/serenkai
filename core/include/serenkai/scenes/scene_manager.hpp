@@ -19,7 +19,7 @@ public:
     SceneManager& operator=(const SceneManager&) = delete;
     SceneManager& operator=(SceneManager&&) = delete;
     SceneManager();
-    ~SceneManager();
+    virtual ~SceneManager();
 
     void update(float dt);
     void render(Renderer& renderer);
@@ -29,6 +29,13 @@ public:
     void request_change(SceneType type);
     void request_push(SceneType type);
     void request_pop();
+
+    [[nodiscard]] std::size_t size() const noexcept;
+    [[nodiscard]] bool empty() const noexcept;
+    [[nodiscard]] Scene* current_scene() const noexcept;
+
+protected:
+    virtual std::unique_ptr<Scene> create_scene(SceneType type);
 
 private:
     enum class OperationType { Push, Pop, Change };
@@ -48,6 +55,5 @@ private:
     void push(SceneType type);
     void change(SceneType type);
     void pop();
-    std::unique_ptr<Scene> create_scene(SceneType type);
 };
 } // namespace serenkai
