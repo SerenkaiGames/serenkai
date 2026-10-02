@@ -3,6 +3,7 @@
 #include "serenkai/base/unreachable.hpp"
 
 namespace serenkai {
+
 void GameScene::update(float) { todo(); }
 
 void GameScene::render(Renderer&) { todo(); }

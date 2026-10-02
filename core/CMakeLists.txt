@@ -23,6 +23,10 @@ add_library(
     include/serenkai/scenes/game_scene.hpp
     src/scenes/game_scene.cpp
     src/scenes/title_scene.cpp
+    include/serenkai/application/key.hpp
+    include/serenkai/application/event.hpp
+    include/serenkai/application/input.hpp
+    src/application/input.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

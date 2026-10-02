@@ -27,14 +27,15 @@ void SceneManager::render(Renderer& renderer) {
     }
     m_scenes.top()->render(renderer);
 }
-/*
+
 bool SceneManager::handle_event(const Event& e) {
+
     if (m_scenes.empty()) {
         return false;
     }
     return m_scenes.top()->handle_event(e);
 }
-*/
+
 void SceneManager::request_change(SceneType type) {
     if (m_operation.has_value()) {
         spdlog::error("Scene operation already pending");

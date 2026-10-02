@@ -24,7 +24,7 @@ public:
     void update(float dt);
     void render(Renderer& renderer);
 
-    // bool handle_event(const Event& e);
+    bool handle_event(const Event& e);
 
     void request_change(SceneType type);
     void request_push(SceneType type);

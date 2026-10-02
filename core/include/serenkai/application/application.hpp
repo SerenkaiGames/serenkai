@@ -1,5 +1,6 @@
 #pragma once
 
+#include "serenkai/application/event.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
@@ -55,5 +56,6 @@ private:
 
     void render();
     void update(float dt);
+    void dispatch_event(const Event& e);
 };
 } // namespace serenkai
