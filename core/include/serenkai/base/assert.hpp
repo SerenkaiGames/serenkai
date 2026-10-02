@@ -1,3 +1,4 @@
+#pragma once
 #include "serenkai/base/panic.hpp" // IWYU pragma: keep
 
 #ifdef NDEBUG

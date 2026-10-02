@@ -13,6 +13,16 @@ add_library(
     src/application/application.cpp
     include/serenkai/render/renderer.hpp
     src/render/renderer.cpp
+    include/serenkai/scenes/scene.hpp
+    include/serenkai/scenes/title_scene.hpp
+    include/serenkai/scenes/scene_manager.hpp
+    src/scenes/scene_manager.cpp
+    include/serenkai/base/assert.hpp
+    include/serenkai/base/panic.hpp
+    include/serenkai/base/unreachable.hpp
+    include/serenkai/scenes/game_scene.hpp
+    src/scenes/game_scene.cpp
+    src/scenes/title_scene.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
@@ -27,3 +37,23 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     spdlog::spdlog
     serenkai::warnings
 )
+
+if (WIN32)
+    target_compile_definitions(${TARGET_NAME} PRIVATE
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
+endif()
+
+# Export executable symbols for runtime stack trace symbol resolution.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    if(APPLE)
+        target_link_options(${TARGET_NAME} INTERFACE
+            -Wl,-export_dynamic
+        )
+    elseif(UNIX)
+        target_link_options(${TARGET_NAME} INTERFACE
+            -rdynamic
+        )
+    endif()
+endif()

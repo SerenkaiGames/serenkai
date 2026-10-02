@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL_video.h>
 
+namespace serenkai {
 enum class FullscreenMode { Windowed, Fullscreen, FullscreenBorderless };
 
 struct WindowConfig {
@@ -44,3 +45,4 @@ private:
     int m_windowed_width{1280};
     int m_windowed_height{720};
 };
+} // namespace serenkai

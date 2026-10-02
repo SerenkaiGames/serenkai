@@ -1,7 +1,7 @@
 #pragma once
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
-
+namespace serenkai {
 struct RendererConfig {
     /// Excessively high frame rates can cause bugs; it's best to enable
     /// vertical sync.
@@ -31,3 +31,4 @@ private:
     SDL_Renderer* m_sdl_renderer{nullptr};
     SDL_Color m_clear_color = {0, 0, 0, SDL_ALPHA_OPAQUE};
 };
+} // namespace serenkai

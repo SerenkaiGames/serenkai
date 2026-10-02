@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h>
 #include <catch2/catch_test_macros.hpp>
-
+using namespace serenkai;
 TEST_CASE("WindowManager headless initialization and destruction", "[window]") {
     SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "dummy");
     REQUIRE(SDL_Init(SDL_INIT_VIDEO));
