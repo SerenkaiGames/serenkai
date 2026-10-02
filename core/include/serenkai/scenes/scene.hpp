@@ -1,5 +1,6 @@
 #pragma once
 
+#include "serenkai/application/event.hpp"
 namespace serenkai {
 class Renderer;
 
@@ -25,7 +26,8 @@ public:
     /// @brief Render function, called after update
     virtual void render(Renderer& renderer) = 0;
 
-    // virtual bool handle_event(const Event& e) = 0;
+    /// @brief Receive event and pass down
+    virtual bool handle_event(const Event& e) = 0;
 
     /// @brief Called once when entering the scene.
     virtual void on_enter() {}
@@ -34,23 +36,22 @@ public:
     virtual void on_leave() {}
 
 protected:
-    /*
-        virtual bool handle_mouse_move_event(const MouseMoveEvent&) {
-            return false;
-        }
-        virtual bool handle_mouse_button_event(const MouseButtonEvent&) {
-            return false;
-        }
-        virtual bool handle_window_resize_event(const WindowResizeEvent&) {
-            return false;
-        }
-        virtual bool handle_mouse_wheel_event(const MouseWheelEvent&) {
-            return false;
-        }
-        virtual bool handle_key_event(const KeyEvent&) { return false; }
-        virtual bool handle_text_input_event(const TextInputEvent&) {
-            return false;
-        }
-            */
+    virtual bool handle_mouse_move_event(const MouseMoveEvent&) {
+        return false;
+    }
+
+    virtual bool handle_window_resize_event(const WindowResizeEvent&) {
+        return false;
+    }
+
+    virtual bool handle_mouse_wheel_event(const MouseWheelEvent&) {
+        return false;
+    }
+
+    virtual bool handle_key_event(const KeyEvent&) { return false; }
+
+    virtual bool handle_text_input_event(const TextInputEvent&) {
+        return false;
+    }
 };
 } // namespace serenkai

@@ -1,3 +1,4 @@
+#include "serenkai/application/event.hpp"
 #include "serenkai/scenes/game_scene.hpp"
 #include "serenkai/scenes/scene.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
@@ -62,6 +63,8 @@ public:
             ++m_stats->render_count;
         }
     }
+
+    bool handle_event(const Event&) override { return true; }
 
     [[nodiscard]] std::shared_ptr<Stats> stats() const { return m_stats; }
 

@@ -1,5 +1,7 @@
 #include "serenkai/application/application.hpp"
 
+#include "serenkai/application/event.hpp"
+#include "serenkai/application/input.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
@@ -12,6 +14,7 @@
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <variant>
 
 namespace serenkai {
 
@@ -59,11 +62,13 @@ void Application::run() {
 }
 
 void Application::step(float dt) {
+
     while (SDL_PollEvent(&m_event)) {
-        if (m_event.type == SDL_EVENT_QUIT) {
-            m_running = false;
+        if (auto event = input::process_sdl_event(m_event)) {
+            dispatch_event(*event);
         }
     }
+
     update(dt);
     render();
 }
@@ -74,4 +79,12 @@ void Application::render() {
 
     m_renderer->present();
 }
+
+void Application::dispatch_event(const Event& e) {
+    if (auto _ = std::get_if<QuitEvent>(&e)) {
+        m_running = false;
+        return;
+    }
+}
+
 } // namespace serenkai
