@@ -4,6 +4,7 @@
 
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
+#include <glm/ext/vector_int2.hpp>
 #include <memory>
 namespace serenkai {
 
@@ -33,7 +34,8 @@ public:
     void clear();
     void present();
 
-    void render_lable(const Lable& lable, GuiContext& context);
+    void draw_text(Font& font, std::string_view utf8, glm::ivec2 pos,
+                   Color color, float scale);
 
 private:
     const RendererConfig m_config;

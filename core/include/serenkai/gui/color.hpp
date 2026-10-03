@@ -4,6 +4,7 @@
 #include <SDL3/SDL_pixels.h>
 #include <glm/ext/vector_float4.hpp>
 namespace serenkai {
+
 enum class Color {
     Black = 0,
     White,
@@ -20,6 +21,7 @@ enum class Color {
     Brown
 };
 
+/// @brief Returns the color value as a floating-point number.
 inline constexpr glm::vec4 color_value(Color color) {
     using glm::vec4;
 
@@ -51,11 +53,11 @@ inline constexpr glm::vec4 color_value(Color color) {
     case Color::Brown:
         return vec4{0.647f, 0.165f, 0.165f, 1.0f};
     default:
-        unreachable("Unkonwn color emun");
+        unreachable("Unknown color enum");
     }
 }
 
-inline constexpr SDL_FColor to_sdl_color(Color color) {
+inline constexpr SDL_FColor to_sdl_fcolor(Color color) {
     auto value = color_value(color);
     return SDL_FColor{value.r, value.g, value.b, value.a};
 }

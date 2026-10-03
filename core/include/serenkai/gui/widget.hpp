@@ -31,7 +31,7 @@ public:
 
     virtual void update(float dt);
 
-    virtual void render(GuiContext& context);
+    virtual void render(GuiContext* context);
 
     virtual void set_anchor(Anchor anchor);
     virtual void set_offset(glm::ivec2 offset);
@@ -70,7 +70,8 @@ protected:
 
     virtual void on_update(float dt);
 
-    virtual void on_render(GuiContext& context);
+    /// @note Need to check whether context is nullptr.
+    virtual void on_render(GuiContext* context);
 
     glm::ivec2 compute_position() const;
 

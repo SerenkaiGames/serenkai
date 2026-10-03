@@ -25,6 +25,7 @@ public:
     explicit TextRenderer(SDL_Renderer* renderer);
     ~TextRenderer();
 
+    /// @brief Renders text using an SDL_FColor for the color.
     void draw_text(Font& font, std::string_view utf8, int x, int y,
                    SDL_FColor color, float scale);
 

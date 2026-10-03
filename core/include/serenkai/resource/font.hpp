@@ -78,20 +78,21 @@ private:
     std::unordered_map<uint32_t, GlyphBitmap> m_bitmap_cache;
 };
 
-constexpr auto FT_LIB_INIT = [](FT_Library lib) {
+inline void ft_lib_init(FT_Library& lib) {
     if (FT_Init_FreeType(&lib)) {
         throw std::runtime_error("Failed to init FreeType library");
     }
 };
 
-constexpr auto FT_LIB_CLEANUP = [](FT_Library lib) {
+inline void ft_lib_cleanup(FT_Library& lib) {
     if (lib) {
         FT_Done_FreeType(lib);
     }
 };
 
+// FreeType library wrapper, automatically manages the FT_Library lifetime.
 using FtLibWrapper =
-    RaiiWrapper<FT_Library, std::decay_t<decltype(FT_LIB_INIT)>,
-                std::decay_t<decltype(FT_LIB_CLEANUP)>>;
+    RaiiWrapper<FT_Library, std::decay_t<decltype(ft_lib_init)>,
+                std::decay_t<decltype(ft_lib_cleanup)>>;
 
 } // namespace serenkai

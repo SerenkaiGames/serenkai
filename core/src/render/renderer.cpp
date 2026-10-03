@@ -1,7 +1,6 @@
 #include "serenkai/render/renderer.hpp"
 
 #include "serenkai/gui/color.hpp"
-#include "serenkai/gui/gui_context.hpp"
 #include "serenkai/render/text_renderer.hpp"
 
 #include <SDL3/SDL_error.h>
@@ -37,10 +36,10 @@ void Renderer::clear() {
     SDL_RenderClear(m_sdl_renderer);
 }
 
-void Renderer::render_lable(const Lable& lable, GuiContext& context) {
-    auto pos = lable.pos();
-    m_text_renderer->draw_text(*lable.font(), lable.text(), pos.x, pos.y,
-                               to_sdl_color(lable.color()), context.ui_scale());
+void Renderer::draw_text(Font& font, std::string_view utf8, glm::ivec2 pos,
+                         Color color, float scale) {
+    m_text_renderer->draw_text(font, utf8, pos.x, pos.y, to_sdl_fcolor(color),
+                               scale);
 }
 
 } // namespace serenkai

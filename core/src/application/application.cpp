@@ -39,7 +39,7 @@ void cleanup_sdl() {
 } // namespace
 
 Application::Application()
-    : m_ft_lib_wrapper(make_raii<FT_Library>(FT_LIB_INIT, FT_LIB_CLEANUP)) {
+    : m_ft_lib_wrapper(make_raii<FT_Library>(ft_lib_init, ft_lib_cleanup)) {
 #ifndef NDEBUG
     spdlog::set_level(spdlog::level::debug);
 #endif
@@ -55,9 +55,7 @@ Application::Application()
     m_renderer = std::make_unique<Renderer>(m_window_manager->get_window(),
                                             RendererConfig{});
 
-    m_gui_context = std::make_unique<GuiContext>(
-        GuiConfig{m_renderer.get(), m_ft_lib_wrapper.get(),
-                  "serenkai:fonts/unifont_t-17.0.05.otf"});
+    m_gui_context = std::make_unique<GuiContext>(GuiConfig{m_renderer.get()});
 
     m_scene_manager = std::make_unique<SceneManager>();
 

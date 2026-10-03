@@ -4,17 +4,12 @@
 #include "serenkai/base/glm_fmt.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/render/renderer.hpp"
-#include "serenkai/resource/font.hpp"
 
 #include <algorithm>
-#include <memory>
 #include <spdlog/spdlog.h>
 
 namespace serenkai {
-GuiContext::GuiContext(GuiConfig config)
-    : m_font(std::make_unique<Font>(std::string(config.font_path), 24,
-                                    config.lib)),
-      m_renderer(config.renderer) {}
+GuiContext::GuiContext(GuiConfig config) : m_renderer(config.renderer) {}
 
 Renderer* GuiContext::get_renderer() const {
     SE_VERIFY(m_renderer);
@@ -57,6 +52,17 @@ bool GuiContext::handle_window_resize_event(const WindowResizeEvent& e) {
     // Let other functions that need to update the window size continue
     // processing without consuming the event.
     return false;
+}
+
+void GuiContext::render_label(const Label& label) {
+
+    auto pos = label.pos();
+    m_renderer->draw_text(*label.font(), label.text(), to_physical_coord(pos),
+                          label.color(), ui_scale());
+}
+
+glm::ivec2 GuiContext::to_physical_coord(glm::ivec2 pos) {
+    return {pos.x * ui_scale(), pos.y * ui_scale()};
 }
 
 } // namespace serenkai

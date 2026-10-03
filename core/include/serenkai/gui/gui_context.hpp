@@ -1,19 +1,15 @@
 #pragma once
 
 #include "serenkai/application/event.hpp"
-#include "serenkai/resource/font.hpp"
+#include "serenkai/gui/label.hpp"
 
 #include <cstddef>
 #include <glm/ext/vector_int2.hpp>
-#include <memory>
-#include <string_view>
 namespace serenkai {
 class Renderer;
 
 struct GuiConfig {
     Renderer* renderer;
-    FT_Library lib;
-    std::string_view font_path;
 };
 
 /// @brief The Gui Context is used to provide GUI-related classes
@@ -29,8 +25,11 @@ public:
     /// @brief Update the UI scaling factor and logical resolution size.
     bool handle_window_resize_event(const WindowResizeEvent& e);
 
+    void render_label(const Label& label);
+
+    glm::ivec2 to_physical_coord(glm::ivec2 pos);
+
 private:
-    std::unique_ptr<Font> m_font;
     Renderer* m_renderer = nullptr;
 
     size_t m_ui_scale = 3;
