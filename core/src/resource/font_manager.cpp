@@ -11,6 +11,11 @@ FontManager::FontManager(AssetManager* asset_manager)
     : m_ft_lib_wrapper(make_raii<FT_Library>(ft_lib_init, ft_lib_cleanup)),
       m_asset_manager(asset_manager) {}
 Font* FontManager::get(std::string_view font, size_t pixel_size) {
+
+    if (!m_asset_manager) {
+        return nullptr;
+    }
+
     auto loc = ResourceLocation::parse(font);
     if (!loc) {
         return nullptr;

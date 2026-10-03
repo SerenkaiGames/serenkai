@@ -19,9 +19,9 @@ class FontManager {
 public:
     static constexpr size_t DEFAULT_PIXEL_SIZE = 12;
 
-    FontManager(AssetManager* asset_manager);
+    explicit FontManager(AssetManager* asset_manager);
 
-    Font* get(std::string_view font, size_t pixel_size);
+    Font* get(std::string_view font, size_t pixel_size = DEFAULT_PIXEL_SIZE);
 
 private:
     struct Key {
