@@ -20,6 +20,9 @@ Texture& Texture::operator=(Texture&& other) noexcept {
 }
 
 void Texture::reset(SDL_Texture* tex) noexcept {
+    if (m_tex == tex) {
+        return;
+    }
     if (m_tex) {
         SDL_DestroyTexture(m_tex);
     }

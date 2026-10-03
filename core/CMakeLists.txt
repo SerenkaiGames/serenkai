@@ -43,6 +43,13 @@ add_library(
     include/serenkai/resource/directory_source.hpp
     include/serenkai/resource/resource_location.hpp
     include/serenkai/base/raii.hpp
+    include/serenkai/base/math.hpp
+    include/serenkai/render/texture.hpp
+    src/render/texture.cpp
+    include/serenkai/render/text_renderer.hpp
+    src/render/text_renderer.cpp
+    include/serenkai/resource/font.hpp
+    src/resource/font.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
