@@ -21,7 +21,7 @@ void Widget::update(float dt) {
     }
 }
 
-void Widget::render(GuiContext* context) {
+void Widget::render(GuiContext& context) {
     if (!m_visible) {
         return;
     }
@@ -88,7 +88,7 @@ glm::ivec2 Widget::compute_position() const {
 }
 
 void Widget::on_update(float) {}
-void Widget::on_render(GuiContext*) {}
+void Widget::on_render(GuiContext&) {}
 
 void Widget::set_anchor(Anchor anchor) { m_anchor = anchor; }
 void Widget::set_offset(glm::ivec2 offset) { m_offset = offset; }

@@ -26,9 +26,7 @@ public:
     ~TextRenderer();
 
     void draw_text(Font& font, std::string_view utf8, int x, int y,
-                   SDL_Color color);
-
-    int measure_width(Font& font, std::string_view utf8);
+                   SDL_FColor color, float scale);
 
     void clear_cache();
 

@@ -1,7 +1,14 @@
 #pragma once
+#include "serenkai/gui/label.hpp"
+#include "serenkai/render/text_renderer.hpp"
+
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
+#include <memory>
 namespace serenkai {
+
+class GuiContext;
+
 struct RendererConfig {
     /// Excessively high frame rates can cause bugs; it's best to enable
     /// vertical sync.
@@ -26,9 +33,12 @@ public:
     void clear();
     void present();
 
+    void render_lable(const Lable& lable, GuiContext& context);
+
 private:
     const RendererConfig m_config;
     SDL_Renderer* m_sdl_renderer{nullptr};
     SDL_Color m_clear_color = {0, 0, 0, SDL_ALPHA_OPAQUE};
+    std::unique_ptr<TextRenderer> m_text_renderer;
 };
 } // namespace serenkai

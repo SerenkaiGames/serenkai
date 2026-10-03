@@ -1,8 +1,13 @@
 #include "serenkai/render/renderer.hpp"
 
+#include "serenkai/gui/color.hpp"
+#include "serenkai/gui/gui_context.hpp"
+#include "serenkai/render/text_renderer.hpp"
+
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_render.h>
 #include <fmt/format.h>
+#include <memory>
 #include <stdexcept>
 
 namespace serenkai {
@@ -15,6 +20,7 @@ Renderer::Renderer(SDL_Window* window, RendererConfig config)
     }
 
     SDL_SetRenderVSync(m_sdl_renderer, static_cast<int>(config.v_sync));
+    m_text_renderer = std::make_unique<TextRenderer>(m_sdl_renderer);
 }
 Renderer::~Renderer() {
     if (m_sdl_renderer) {
@@ -30,4 +36,11 @@ void Renderer::clear() {
 
     SDL_RenderClear(m_sdl_renderer);
 }
+
+void Renderer::render_lable(const Lable& lable, GuiContext& context) {
+    auto pos = lable.pos();
+    m_text_renderer->draw_text(*lable.font(), lable.text(), pos.x, pos.y,
+                               to_sdl_color(lable.color()), context.ui_scale());
+}
+
 } // namespace serenkai
