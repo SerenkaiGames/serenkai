@@ -1,6 +1,7 @@
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include "serenkai/base/unreachable.hpp"
+#include "serenkai/gui/gui_context.hpp"
 #include "serenkai/scenes/game_scene.hpp"
 #include "serenkai/scenes/title_scene.hpp"
 
@@ -20,12 +21,12 @@ void SceneManager::update(float dt) {
         m_scenes.top()->update(dt);
     }
 }
-void SceneManager::render(Renderer& renderer) {
+void SceneManager::render(GuiContext* context) {
 
     if (m_scenes.empty()) {
         return;
     }
-    m_scenes.top()->render(renderer);
+    m_scenes.top()->render(context);
 }
 
 bool SceneManager::handle_event(const Event& e) {

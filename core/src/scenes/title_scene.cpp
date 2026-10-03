@@ -6,5 +6,5 @@ namespace serenkai {
 
 void TitleScene::update(float) { todo(); }
 
-void TitleScene::render(Renderer&) { todo(); }
+void TitleScene::render(GuiContext*) { todo(); }
 } // namespace serenkai

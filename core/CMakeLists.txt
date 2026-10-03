@@ -30,6 +30,9 @@ add_library(
     include/serenkai/gui/widget.hpp
     include/serenkai/gui/anchor.hpp
     src/gui/widget.cpp
+    include/serenkai/gui/gui_context.hpp
+    include/serenkai/base/glm_fmt.hpp
+    src/gui/gui_context.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
@@ -51,6 +54,11 @@ if (WIN32)
         WIN32_LEAN_AND_MEAN
     )
 endif()
+
+target_compile_definitions(${TARGET_NAME} PRIVATE
+    $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG>
+    $<$<CONFIG:Release>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO>
+)
 
 # Export executable symbols for runtime stack trace symbol resolution.
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

@@ -7,6 +7,7 @@
 #include <vector>
 
 namespace serenkai {
+class GuiContext;
 
 /// @brief Base class for Widget components
 ///
@@ -29,8 +30,8 @@ public:
     virtual ~Widget() = default;
 
     virtual void update(float dt);
-    // todo
-    virtual void render();
+
+    virtual void render(GuiContext* context);
 
     virtual void set_anchor(Anchor anchor);
     virtual void set_offset(glm::ivec2 offset);
@@ -68,8 +69,8 @@ protected:
     static inline glm::ivec2 m_logical_window_size{0, 0};
 
     virtual void on_update(float dt);
-    // todo
-    virtual void on_render();
+
+    virtual void on_render(GuiContext* context);
 
     glm::ivec2 compute_position() const;
 

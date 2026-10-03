@@ -8,7 +8,8 @@
 #include <utility>
 namespace serenkai {
 WindowManager::WindowManager(WindowConfig config)
-    : m_config(std::move(config)) {
+    : m_config(std::move(config)), m_windowed_width(m_config.width),
+      m_windowed_height(m_config.height) {
     SDL_PropertiesID props = SDL_CreateProperties();
     SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING,
                           "Serenkai");
@@ -109,6 +110,12 @@ bool WindowManager::set_fullscreen(FullscreenMode mode) {
     SDL_SetTextInputArea(m_window, &ime_rect, 0);
 
     return true;
+}
+
+glm::ivec2 WindowManager::get_window_size() const {
+    int w = 0, h = 0;
+    SDL_GetWindowSize(m_window, &w, &h);
+    return {w, h};
 }
 
 SDL_Window* WindowManager::get_window() const { return m_window; }

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "serenkai/scenes/scene.hpp"
 
 #include <memory>
@@ -6,8 +7,7 @@
 #include <stack>
 #include <vector>
 namespace serenkai {
-class Renderer;
-
+class GuiContext;
 /// @brief Class for managing Scene
 ///
 /// Used to manage and switch the current Scene, ensuring that the Scene enters
@@ -22,7 +22,7 @@ public:
     virtual ~SceneManager();
 
     void update(float dt);
-    void render(Renderer& renderer);
+    void render(GuiContext* context);
 
     bool handle_event(const Event& e);
 
