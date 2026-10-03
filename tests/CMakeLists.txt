@@ -6,6 +6,8 @@ add_executable(serenkai_tests
     src/input_test.cpp
     src/widget_test.cpp
     src/gui_context_test.cpp
+    src/raii_test.cpp
+    src/resource_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core
