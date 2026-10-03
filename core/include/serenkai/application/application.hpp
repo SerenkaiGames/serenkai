@@ -2,6 +2,7 @@
 
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/window_manager.hpp"
+#include "serenkai/gui/gui_context.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 
@@ -47,6 +48,7 @@ private:
     std::unique_ptr<SdlWrapper> m_sdl_wrapper;
     std::unique_ptr<WindowManager> m_window_manager;
     std::unique_ptr<Renderer> m_renderer;
+    std::unique_ptr<GuiContext> m_gui_context;
     std::unique_ptr<SceneManager> m_scene_manager;
 
     bool m_running = true;

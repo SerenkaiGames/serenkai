@@ -30,6 +30,8 @@ add_library(
     include/serenkai/gui/widget.hpp
     include/serenkai/gui/anchor.hpp
     src/gui/widget.cpp
+    include/serenkai/gui/gui_context.hpp
+    src/gui/gui_context.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

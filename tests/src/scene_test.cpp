@@ -58,7 +58,7 @@ public:
         }
     }
 
-    void render(Renderer& /*renderer*/) override {
+    void render(GuiContext*) override {
         if (m_stats) {
             ++m_stats->render_count;
         }

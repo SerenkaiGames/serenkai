@@ -5,6 +5,6 @@ class TitleScene : public Scene {
 public:
     void update(float dt) override;
 
-    void render(Renderer& renderer) override;
+    void render(GuiContext* context) override;
 };
 } // namespace serenkai

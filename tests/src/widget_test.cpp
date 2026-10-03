@@ -23,7 +23,7 @@ protected:
         last_dt = dt;
     }
 
-    void on_render() override { ++render_count; }
+    void on_render(GuiContext*) override { ++render_count; }
 };
 
 } // namespace
@@ -198,7 +198,7 @@ TEST_CASE("Widget lifecycle update and render propagation", "[gui][widget]") {
     }
 
     SECTION("Render propagates when visible") {
-        root.render();
+        root.render(nullptr);
 
         CHECK(root.render_count == 1);
         CHECK(child.render_count == 1);
@@ -207,7 +207,7 @@ TEST_CASE("Widget lifecycle update and render propagation", "[gui][widget]") {
 
     SECTION("Root invisible skips entire tree rendering") {
         root.set_visible(false);
-        root.render();
+        root.render(nullptr);
 
         CHECK(root.render_count == 0);
         CHECK(child.render_count == 0);
@@ -216,7 +216,7 @@ TEST_CASE("Widget lifecycle update and render propagation", "[gui][widget]") {
 
     SECTION("Child invisible skips itself and its descendants") {
         child.set_visible(false);
-        root.render();
+        root.render(nullptr);
 
         CHECK(root.render_count == 1);
         CHECK(child.render_count == 0);

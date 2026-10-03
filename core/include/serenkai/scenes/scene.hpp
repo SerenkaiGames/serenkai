@@ -4,7 +4,8 @@
 
 #include <variant>
 namespace serenkai {
-class Renderer;
+
+class GuiContext;
 
 enum class SceneType { Title, Game };
 
@@ -26,7 +27,7 @@ public:
     virtual void update(float dt) = 0;
 
     /// @brief Render function, called after update
-    virtual void render(Renderer& renderer) = 0;
+    virtual void render(GuiContext* context) = 0;
 
     /// @brief Receive event and pass down
     virtual bool handle_event(const Event& e) {
