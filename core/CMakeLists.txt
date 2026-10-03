@@ -4,6 +4,8 @@ find_package(SDL3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(glaze CONFIG REQUIRED)
+find_package(Freetype REQUIRED)
+find_package(harfbuzz CONFIG REQUIRED)
 
 add_library(
     ${TARGET_NAME} STATIC 
@@ -55,6 +57,8 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     spdlog::spdlog
     serenkai::warnings
     glaze::glaze
+    Freetype::Freetype
+    harfbuzz::harfbuzz
 )
 
 if (WIN32)

@@ -4,6 +4,8 @@
         "glm",
         "spdlog",
         "catch2",
-        "glaze"
+        "glaze",
+        "freetype",
+        "harfbuzz"
     ]
 }
