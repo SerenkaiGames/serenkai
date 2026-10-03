@@ -19,17 +19,21 @@
 
 namespace serenkai {
 
-Application::SdlWrapper::SdlWrapper() {
+namespace {
+void init_sdl() {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         throw std::runtime_error(
             fmt::format("Failed to initialize SDL video subsystem, error: {}",
                         SDL_GetError()));
     }
 }
-Application::SdlWrapper::~SdlWrapper() {
+
+void cleanup_sdl() {
     SDL_Quit();
     spdlog::info("Application quit");
 }
+
+} // namespace
 
 Application::Application() {
 #ifndef NDEBUG
@@ -41,7 +45,7 @@ Application::Application() {
     spdlog::info("Linked SDL version: {}.{}.{}", SDL_VERSIONNUM_MAJOR(linked),
                  SDL_VERSIONNUM_MINOR(linked), SDL_VERSIONNUM_MICRO(linked));
 
-    m_sdl_wrapper = std::make_unique<SdlWrapper>();
+    m_sdl_wrapper = std::make_unique<SdlGuard>(init_sdl, cleanup_sdl);
     m_window_manager = std::make_unique<WindowManager>(WindowConfig{});
     m_renderer = std::make_unique<Renderer>(m_window_manager->get_window(),
                                             RendererConfig{});

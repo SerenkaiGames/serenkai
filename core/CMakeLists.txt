@@ -3,6 +3,7 @@ set(TARGET_NAME serenkai_core)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(glaze CONFIG REQUIRED)
 
 add_library(
     ${TARGET_NAME} STATIC 
@@ -46,6 +47,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     glm::glm
     spdlog::spdlog
     serenkai::warnings
+    glaze::glaze
 )
 
 if (WIN32)

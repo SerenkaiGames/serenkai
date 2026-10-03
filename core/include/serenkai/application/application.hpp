@@ -2,11 +2,13 @@
 
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/window_manager.hpp"
+#include "serenkai/base/raii.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 
 namespace serenkai {
@@ -19,11 +21,6 @@ namespace serenkai {
 /// @note May throw exceptions.
 class Application {
 public:
-    struct SdlWrapper {
-        SdlWrapper();
-        ~SdlWrapper();
-    };
-
     struct DeltaTime {
         uint64_t last_tick_ns = 0;
         uint64_t current_tick_ns = 0;
@@ -44,8 +41,9 @@ public:
     void step(float dt);
 
 private:
+    using SdlGuard = RaiiGuard<std::function<void()>, std::function<void()>>;
     // Must be declared first to ensure it is destroyed last.
-    std::unique_ptr<SdlWrapper> m_sdl_wrapper;
+    std::unique_ptr<SdlGuard> m_sdl_wrapper;
     std::unique_ptr<WindowManager> m_window_manager;
     std::unique_ptr<Renderer> m_renderer;
     std::unique_ptr<GuiContext> m_gui_context;
