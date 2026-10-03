@@ -3,6 +3,7 @@
         "sdl3",
         "glm",
         "spdlog",
-        "catch2"
+        "catch2",
+        "glaze"
     ]
 }

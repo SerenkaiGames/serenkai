@@ -3,6 +3,7 @@ set(TARGET_NAME serenkai_core)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(glaze CONFIG REQUIRED)
 
 add_library(
     ${TARGET_NAME} STATIC 
@@ -33,6 +34,13 @@ add_library(
     include/serenkai/gui/gui_context.hpp
     include/serenkai/base/glm_fmt.hpp
     src/gui/gui_context.cpp
+    src/resource/asset_manager.cpp
+    src/resource/directory_source.cpp
+    include/serenkai/resource/asset_manager.hpp
+    include/serenkai/resource/asset_source.hpp
+    include/serenkai/resource/directory_source.hpp
+    include/serenkai/resource/resource_location.hpp
+    include/serenkai/base/raii.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
@@ -46,6 +54,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     glm::glm
     spdlog::spdlog
     serenkai::warnings
+    glaze::glaze
 )
 
 if (WIN32)
