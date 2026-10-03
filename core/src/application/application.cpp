@@ -3,10 +3,10 @@
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
 #include "serenkai/application/window_manager.hpp"
-#include "serenkai/base/raii.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/render/renderer.hpp"
-#include "serenkai/resource/font.hpp"
+#include "serenkai/resource/asset_manager.hpp"
+#include "serenkai/resource/font_manager.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include <SDL3/SDL_error.h>
@@ -14,7 +14,6 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_version.h>
 #include <fmt/format.h>
-#include <freetype/freetype.h>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -38,11 +37,12 @@ void cleanup_sdl() {
 
 } // namespace
 
-Application::Application()
-    : m_ft_lib_wrapper(make_raii<FT_Library>(ft_lib_init, ft_lib_cleanup)) {
+Application::Application() {
 #ifndef NDEBUG
     spdlog::set_level(spdlog::level::debug);
 #endif
+    m_asset_manager = std::make_unique<AssetManager>();
+    m_font_manager = std::make_unique<FontManager>(m_asset_manager.get());
 
     int linked = SDL_GetVersion();
 
