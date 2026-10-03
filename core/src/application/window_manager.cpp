@@ -8,7 +8,8 @@
 #include <utility>
 namespace serenkai {
 WindowManager::WindowManager(WindowConfig config)
-    : m_config(std::move(config)) {
+    : m_config(std::move(config)), m_windowed_width(m_config.width),
+      m_windowed_height(m_config.height) {
     SDL_PropertiesID props = SDL_CreateProperties();
     SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING,
                           "Serenkai");

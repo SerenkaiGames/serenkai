@@ -11,12 +11,14 @@ TEST_CASE("WindowManager headless initialization and destruction", "[window]") {
         WindowConfig config{};
         WindowManager wm(config);
         REQUIRE(wm.get_window() != nullptr);
+        CHECK(wm.get_window_size() == glm::ivec2{1280, 720});
     }
 
     SECTION("Custom window dimensions") {
         WindowConfig config{.width = 1920, .height = 1080};
         WindowManager wm(config);
         REQUIRE(wm.get_window() != nullptr);
+        CHECK(wm.get_window_size() == glm::ivec2{1920, 1080});
     }
 
     SDL_Quit();
