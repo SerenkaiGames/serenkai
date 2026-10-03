@@ -20,7 +20,7 @@ std::optional<std::string> AssetManager::get(std::string_view loc) const {
 
     return it->second;
 }
-void AssetManager::add(std::shared_ptr<AssetSource> source) {
+void AssetManager::merge_source(std::shared_ptr<AssetSource> source) {
 
     auto& assets = source->get_asset_files();
 
@@ -28,7 +28,7 @@ void AssetManager::add(std::shared_ptr<AssetSource> source) {
 
     m_files.merge(assets);
     if (assets.size()) {
-        spdlog::warn("There are {} and conflicting keys.", assets.size());
+        spdlog::warn("There are {} conflicting keys", assets.size());
     }
 
     spdlog::info("Added {} assets from {}", total_size - assets.size(),

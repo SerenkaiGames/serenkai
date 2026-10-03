@@ -25,21 +25,23 @@ struct ResourceLocation {
 
     std::string to_string() const { return ns + ":" + path; }
 
-    static bool is_valid_char(char c) {
+    static bool is_valid_path(char c) {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
                (c >= '0' && c <= '9') || c == '.' || c == '_' || c == ':' ||
                c == '/' || c == '-';
     }
 
-    // Parses "ns:path"; ns defaults to "serenkai" when no colon present.
+    static bool is_valid_ns(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+               (c >= '0' && c <= '9') || c == '_' || c == '-';
+    }
+
+    /// @brief Parses "ns:path"; ns defaults to "serenkai" when no colon
+    /// present.
     static std::optional<ResourceLocation> parse(std::string_view str) {
         if (str.empty() || str.contains("..") || str.front() == '/' ||
             str.front() == ':' || str.back() == ':') {
             return std::nullopt;
-        }
-        for (char c : str) {
-            if (!is_valid_char(c))
-                return std::nullopt;
         }
 
         auto it = str.find(':');
@@ -54,6 +56,21 @@ struct ResourceLocation {
             if (ns.empty() || path.empty()) {
                 return std::nullopt;
             }
+        }
+
+        if (path.front() == '/') {
+            return std::nullopt;
+        }
+
+        for (char c : ns) {
+            if (!is_valid_ns(c)) {
+                return std::nullopt;
+            }
+        }
+
+        for (char c : path) {
+            if (!is_valid_path(c))
+                return std::nullopt;
         }
 
         return ResourceLocation{ns, path};

@@ -34,6 +34,13 @@ add_library(
     include/serenkai/gui/gui_context.hpp
     include/serenkai/base/glm_fmt.hpp
     src/gui/gui_context.cpp
+    src/resource/asset_manager.cpp
+    src/resource/directory_source.cpp
+    include/serenkai/resource/asset_manager.hpp
+    include/serenkai/resource/asset_source.hpp
+    include/serenkai/resource/directory_source.hpp
+    include/serenkai/resource/resource_location.hpp
+    include/serenkai/base/raii.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

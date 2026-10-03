@@ -77,23 +77,24 @@ void DirectorySource::search(std::filesystem::path dir) {
             continue;
         }
 
-        std::string entry_str = entry.path().lexically_normal().string();
-        auto pos = entry_str.find(m_dir_str);
-        if (pos == std::string::npos) {
-            spdlog::error("Invaild entry path string {}", entry_str);
+        if (entry.path().filename().string() == detail::CONFIG_NAME) {
             continue;
         }
 
-        auto p = entry_str.substr(pos + m_dir_str.size() + 1);
+        std::string entry_str = entry.path().lexically_normal().string();
+
+        auto p = fs::relative(entry.path(), dir).generic_string();
 
         auto resource = ResourceLocation::parse(data.ns + ":" + p);
         if (!resource) {
-            spdlog::warn("Invaild path string {}:{}", data.ns, p);
+            spdlog::warn("Invalid path string {}:{}", data.ns, p);
             continue;
         }
         m_files.emplace(std::move(*resource), std::move(entry_str));
     }
 }
+
+AssetFileMap& DirectorySource::get_asset_files() { return m_files; }
 
 std::string DirectorySource::source_name() const {
     return fmt::format("Directory Source: {}", m_dir_str);

@@ -7,11 +7,11 @@ using AssetFileMap = std::unordered_map<ResourceLocation, std::string>;
 
 class AssetSource {
 public:
+    virtual ~AssetSource() = default;
+
     /// @brief Returns a reference to an AssetFileMap.
     virtual AssetFileMap& get_asset_files() = 0;
 
     virtual std::string source_name() const = 0;
-
-protected:
 };
 } // namespace serenkai
