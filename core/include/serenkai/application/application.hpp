@@ -10,7 +10,6 @@
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include <cstdint>
-#include <freetype/freetype.h>
 #include <functional>
 #include <memory>
 

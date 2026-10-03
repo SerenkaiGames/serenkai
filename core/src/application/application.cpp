@@ -14,7 +14,6 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_version.h>
 #include <fmt/format.h>
-#include <freetype/freetype.h>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
