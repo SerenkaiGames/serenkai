@@ -194,3 +194,29 @@ TEST_CASE("DirectorySource scanning and asset discovery", "[resource]") {
         CHECK(missing_config_source.get_asset_files().empty());
     }
 }
+
+TEST_CASE("DirectorySource integration with project assets", "[resource]") {
+    fs::path asset_dir;
+#ifdef SERENKAI_TEST_ASSET_DIR
+    if (fs::exists(SERENKAI_TEST_ASSET_DIR)) {
+        asset_dir = SERENKAI_TEST_ASSET_DIR;
+    }
+#endif
+    if (asset_dir.empty()) {
+        if (fs::exists("assets")) {
+            asset_dir = "assets";
+        } else if (fs::exists("../../assets")) {
+            asset_dir = "../../assets";
+        }
+    }
+
+    REQUIRE_FALSE(asset_dir.empty());
+
+    auto source = std::make_shared<DirectorySource>(asset_dir);
+    AssetManager manager;
+    manager.merge_source(source);
+
+    auto font_path = manager.get("serenkai:fonts/unifont_t-17.0.05.otf");
+    REQUIRE(font_path.has_value());
+    CHECK(fs::exists(*font_path));
+}
