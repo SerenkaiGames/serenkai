@@ -52,7 +52,7 @@ void TextRenderer::draw_text(Font& font, std::string_view utf8, int x, int y,
         }
 
         pen_x += g.x_advance / 64.0f;
-        pen_x += g.y_advance / 64.0f;
+        pen_y += g.y_advance / 64.0f;
     }
 }
 
@@ -61,7 +61,7 @@ int TextRenderer::measure_width(Font& font, std::string_view utf8) {
     for (const auto& g : font.shape(utf8)) {
         total_26_6 += g.x_advance;
     }
-    // 26.6 → piexl
+    // 26.6 → pixel
     return (total_26_6 + 32) / 64;
 }
 
