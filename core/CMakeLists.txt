@@ -54,6 +54,11 @@ if (WIN32)
     )
 endif()
 
+target_compile_definitions(${TARGET_NAME} PRIVATE
+    $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG>
+    $<$<CONFIG:Release>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO>
+)
+
 # Export executable symbols for runtime stack trace symbol resolution.
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     if(APPLE)

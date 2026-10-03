@@ -111,5 +111,11 @@ bool WindowManager::set_fullscreen(FullscreenMode mode) {
     return true;
 }
 
+glm::ivec2 WindowManager::get_window_size() const {
+    int w = 0, h = 0;
+    SDL_GetWindowSize(m_window, &w, &h);
+    return {w, h};
+}
+
 SDL_Window* WindowManager::get_window() const { return m_window; }
 } // namespace serenkai

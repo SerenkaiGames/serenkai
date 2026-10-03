@@ -32,16 +32,25 @@ Application::SdlWrapper::~SdlWrapper() {
 }
 
 Application::Application() {
+#ifndef NDEBUG
+    spdlog::set_level(spdlog::level::debug);
+#endif
+
     int linked = SDL_GetVersion();
 
     spdlog::info("Linked SDL version: {}.{}.{}", SDL_VERSIONNUM_MAJOR(linked),
                  SDL_VERSIONNUM_MINOR(linked), SDL_VERSIONNUM_MICRO(linked));
+
     m_sdl_wrapper = std::make_unique<SdlWrapper>();
     m_window_manager = std::make_unique<WindowManager>(WindowConfig{});
     m_renderer = std::make_unique<Renderer>(m_window_manager->get_window(),
                                             RendererConfig{});
     m_gui_context = std::make_unique<GuiContext>(m_renderer.get());
     m_scene_manager = std::make_unique<SceneManager>();
+
+    auto window_size = m_window_manager->get_window_size();
+    m_gui_context->handle_window_resize_event(
+        WindowResizeEvent{window_size.x, window_size.y});
 }
 
 Application::~Application() {}
@@ -86,6 +95,10 @@ void Application::dispatch_event(const Event& e) {
     if (auto _ = std::get_if<QuitEvent>(&e)) {
         m_running = false;
         return;
+    }
+
+    if (auto event = std::get_if<WindowResizeEvent>(&e)) {
+        m_gui_context->handle_window_resize_event(*event);
     }
 
     if (m_scene_manager->handle_event(e)) {

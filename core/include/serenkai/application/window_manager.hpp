@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL_video.h>
+#include <glm/vec2.hpp>
 
 namespace serenkai {
 enum class FullscreenMode { Windowed, Fullscreen, FullscreenBorderless };
@@ -32,6 +33,8 @@ public:
     ~WindowManager();
 
     bool set_fullscreen(FullscreenMode mode);
+
+    glm::ivec2 get_window_size() const;
 
     SDL_Window* get_window() const;
 
