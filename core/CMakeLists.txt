@@ -50,6 +50,9 @@ add_library(
     src/render/text_renderer.cpp
     include/serenkai/resource/font.hpp
     src/resource/font.cpp
+    include/serenkai/gui/label.hpp
+    src/gui/label.cpp
+    include/serenkai/gui/color.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

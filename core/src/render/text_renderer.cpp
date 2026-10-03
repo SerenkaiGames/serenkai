@@ -12,7 +12,7 @@ TextRenderer::TextRenderer(SDL_Renderer* renderer) : m_renderer(renderer) {}
 TextRenderer::~TextRenderer() { clear_cache(); }
 
 void TextRenderer::draw_text(Font& font, std::string_view utf8, int x, int y,
-                             SDL_Color color) {
+                             SDL_FColor color, float scale) {
     auto glyphs = font.shape(utf8);
     if (glyphs.empty()) {
         return;
@@ -21,7 +21,8 @@ void TextRenderer::draw_text(Font& font, std::string_view utf8, int x, int y,
     // HarfBuzz coordinates are in 26.6 fixed-point format; divide by 64 to get
     // pixels.
     float pen_x = static_cast<float>(x);
-    float pen_y = static_cast<float>(y);
+    float pen_y =
+        static_cast<float>(y) + static_cast<float>(font.ascender()) * scale;
 
     for (const auto& g : glyphs) {
         const Font::GlyphBitmap& bmp = font.get_glyph_bitmap(g.glyph_id);
@@ -36,33 +37,28 @@ void TextRenderer::draw_text(Font& font, std::string_view utf8, int x, int y,
                 // Glyph top-left = pen position + bearing + HarfBuzz offset
                 // The y-axis points down in SDL and up in FreeType, so bearingY
                 // must be subtracted.
-                float gx = pen_x + bmp.bearing_x + g.x_offset / 64.0f;
-                float gy = pen_y - bmp.bearing_y - g.y_offset / 64.0f;
+                float gx = pen_x + (static_cast<float>(bmp.bearing_x) +
+                                    g.x_offset / 64.0f) *
+                                       scale;
+                float gy = pen_y - (static_cast<float>(bmp.bearing_y) +
+                                    g.y_offset / 64.0f) *
+                                       scale;
 
                 // Round to integer coordinates to avoid LINEAR sampling landing
                 // between pixels and causing blurriness.
                 SDL_FRect dst{std::floor(gx), std::floor(gy),
-                              static_cast<float>(bmp.width),
-                              static_cast<float>(bmp.height)};
+                              static_cast<float>(bmp.width) * scale,
+                              static_cast<float>(bmp.height) * scale};
 
-                SDL_SetTextureColorMod(tex, color.r, color.g, color.b);
-                SDL_SetTextureAlphaMod(tex, color.a);
+                SDL_SetTextureColorModFloat(tex, color.r, color.g, color.b);
+                SDL_SetTextureAlphaModFloat(tex, color.a);
                 SDL_RenderTexture(m_renderer, tex, nullptr, &dst);
             }
         }
 
-        pen_x += g.x_advance / 64.0f;
-        pen_y += g.y_advance / 64.0f;
+        pen_x += (g.x_advance / 64.0f) * scale;
+        pen_y += (g.y_advance / 64.0f) * scale;
     }
-}
-
-int TextRenderer::measure_width(Font& font, std::string_view utf8) {
-    int total_26_6 = 0;
-    for (const auto& g : font.shape(utf8)) {
-        total_26_6 += g.x_advance;
-    }
-    // 26.6 → pixel
-    return (total_26_6 + 32) / 64;
 }
 
 void TextRenderer::clear_cache() { m_tex_cache.clear(); }

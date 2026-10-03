@@ -9,12 +9,14 @@
 #include <spdlog/spdlog.h>
 
 namespace serenkai {
-GuiContext::GuiContext(Renderer* renderer) : m_renderer(renderer) {}
+GuiContext::GuiContext(GuiConfig config) : m_renderer(config.renderer) {}
 
 Renderer* GuiContext::get_renderer() const {
     SE_VERIFY(m_renderer);
     return m_renderer;
 }
+
+size_t GuiContext::ui_scale() const { return m_ui_scale; }
 
 bool GuiContext::handle_window_resize_event(const WindowResizeEvent& e) {
     const int w = e.width;
@@ -50,6 +52,17 @@ bool GuiContext::handle_window_resize_event(const WindowResizeEvent& e) {
     // Let other functions that need to update the window size continue
     // processing without consuming the event.
     return false;
+}
+
+void GuiContext::render_label(const Label& label) {
+
+    auto pos = label.pos();
+    m_renderer->draw_text(*label.font(), label.text(), to_physical_coord(pos),
+                          label.color(), ui_scale());
+}
+
+glm::ivec2 GuiContext::to_physical_coord(glm::ivec2 pos) {
+    return {pos.x * ui_scale(), pos.y * ui_scale()};
 }
 
 } // namespace serenkai

@@ -5,9 +5,11 @@
 #include "serenkai/base/raii.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/render/renderer.hpp"
+#include "serenkai/resource/font.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include <cstdint>
+#include <freetype/freetype.h>
 #include <functional>
 #include <memory>
 
@@ -43,6 +45,7 @@ public:
 private:
     using SdlGuard = RaiiGuard<std::function<void()>, std::function<void()>>;
     // Must be declared first to ensure it is destroyed last.
+    FtLibWrapper m_ft_lib_wrapper;
     std::unique_ptr<SdlGuard> m_sdl_wrapper;
     std::unique_ptr<WindowManager> m_window_manager;
     std::unique_ptr<Renderer> m_renderer;

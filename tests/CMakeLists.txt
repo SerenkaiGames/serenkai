@@ -12,6 +12,8 @@ add_executable(serenkai_tests
     src/texture_test.cpp
     src/text_renderer_test.cpp
     src/font_test.cpp
+    src/color_test.cpp
+    src/label_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core

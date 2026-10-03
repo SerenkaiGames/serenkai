@@ -73,23 +73,25 @@ TEST_CASE("TextRenderer lifecycle and cache operations",
         TextRenderer tr(renderer);
 
         // Measurement assertions
-        CHECK(tr.measure_width(font, "") == 0);
-        int width_single = tr.measure_width(font, "A");
-        int width_multi = tr.measure_width(font, "ABCD");
+        CHECK(font.measure_width("") == 0);
+        int width_single = font.measure_width("A");
+        int width_multi = font.measure_width("ABCD");
         CHECK(width_single > 0);
         CHECK(width_multi > width_single);
 
         // Rendering empty string
-        tr.draw_text(font, "", 0, 0, {255, 255, 255, 255});
+        tr.draw_text(font, "", 0, 0, SDL_FColor{1.0f, 1.0f, 1.0f, 1.0f}, 1.0f);
 
         // Initial rendering populates texture cache
-        tr.draw_text(font, "Hello", 0, 0, {255, 255, 255, 255});
+        tr.draw_text(font, "Hello", 0, 0, SDL_FColor{1.0f, 1.0f, 1.0f, 1.0f},
+                     1.0f);
 
         // Subsequent rendering hits cached textures
-        tr.draw_text(font, "Hello", 10, 10, {255, 0, 0, 128});
+        tr.draw_text(font, "Hello", 10, 10, SDL_FColor{1.0f, 0.0f, 0.0f, 0.5f},
+                     1.0f);
 
         // Clearing cache and re-rendering
         tr.clear_cache();
-        tr.draw_text(font, "Hello", 0, 0, {0, 255, 0, 255});
+        tr.draw_text(font, "Hello", 0, 0, SDL_FColor{0, 1.0f, 0, 1.0f}, 1.0f);
     }
 }

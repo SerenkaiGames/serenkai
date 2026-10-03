@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <fmt/format.h>
+#include <glm/ext/vector_int2.hpp>
 #include <stdexcept>
 
 namespace serenkai {
@@ -96,6 +97,15 @@ const Font::GlyphBitmap& Font::get_glyph_bitmap(uint32_t glyph_id) {
 
     auto [ins, _] = m_bitmap_cache.emplace(glyph_id, std::move(gb));
     return ins->second;
+}
+
+int Font::measure_width(std::string_view utf8) {
+    int total_26_6 = 0;
+    for (const auto& g : shape(utf8)) {
+        total_26_6 += g.x_advance;
+    }
+    // 26.6 → pixel
+    return (total_26_6 + 32) / 64;
 }
 
 size_t Font::pixel_size() const { return m_pixel_size; }

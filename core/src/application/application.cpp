@@ -3,8 +3,10 @@
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
 #include "serenkai/application/window_manager.hpp"
+#include "serenkai/base/raii.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/render/renderer.hpp"
+#include "serenkai/resource/font.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include <SDL3/SDL_error.h>
@@ -12,6 +14,7 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_version.h>
 #include <fmt/format.h>
+#include <freetype/freetype.h>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -35,7 +38,8 @@ void cleanup_sdl() {
 
 } // namespace
 
-Application::Application() {
+Application::Application()
+    : m_ft_lib_wrapper(make_raii<FT_Library>(ft_lib_init, ft_lib_cleanup)) {
 #ifndef NDEBUG
     spdlog::set_level(spdlog::level::debug);
 #endif
@@ -46,10 +50,13 @@ Application::Application() {
                  SDL_VERSIONNUM_MINOR(linked), SDL_VERSIONNUM_MICRO(linked));
 
     m_sdl_wrapper = std::make_unique<SdlGuard>(init_sdl, cleanup_sdl);
+
     m_window_manager = std::make_unique<WindowManager>(WindowConfig{});
     m_renderer = std::make_unique<Renderer>(m_window_manager->get_window(),
                                             RendererConfig{});
-    m_gui_context = std::make_unique<GuiContext>(m_renderer.get());
+
+    m_gui_context = std::make_unique<GuiContext>(GuiConfig{m_renderer.get()});
+
     m_scene_manager = std::make_unique<SceneManager>();
 
     auto window_size = m_window_manager->get_window_size();

@@ -70,6 +70,7 @@ protected:
 
     virtual void on_update(float dt);
 
+    /// @note Need to check whether context is nullptr.
     virtual void on_render(GuiContext* context);
 
     glm::ivec2 compute_position() const;

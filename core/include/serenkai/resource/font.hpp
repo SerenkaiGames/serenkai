@@ -3,13 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <ft2build.h>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include FT_FREETYPE_H
+#include "serenkai/base/raii.hpp"
+
 #include <hb-ft.h>
 #include <hb.h>
 #include <vector>
-
 namespace serenkai {
 
 /// @brief Font loading manager class
@@ -55,6 +57,8 @@ public:
     /// @brief Get the glyph bitmap, cached internally
     const GlyphBitmap& get_glyph_bitmap(uint32_t glyph_id);
 
+    int measure_width(std::string_view utf8);
+
     // Metrics
     size_t pixel_size() const;
     int ascender() const;
@@ -73,4 +77,22 @@ private:
     // Rasterized glyph bitmap cache, key = glyph id
     std::unordered_map<uint32_t, GlyphBitmap> m_bitmap_cache;
 };
+
+inline void ft_lib_init(FT_Library& lib) {
+    if (FT_Init_FreeType(&lib)) {
+        throw std::runtime_error("Failed to init FreeType library");
+    }
+};
+
+inline void ft_lib_cleanup(FT_Library& lib) {
+    if (lib) {
+        FT_Done_FreeType(lib);
+    }
+};
+
+// FreeType library wrapper, automatically manages the FT_Library lifetime.
+using FtLibWrapper =
+    RaiiWrapper<FT_Library, std::decay_t<decltype(ft_lib_init)>,
+                std::decay_t<decltype(ft_lib_cleanup)>>;
+
 } // namespace serenkai
