@@ -6,7 +6,6 @@
 #include "serenkai/render/renderer.hpp"
 
 #include <algorithm>
-#include <glm/ext/vector_float2.hpp>
 #include <spdlog/spdlog.h>
 
 namespace serenkai {
@@ -45,7 +44,7 @@ bool GuiContext::handle_window_resize_event(const WindowResizeEvent& e) {
 
     Widget::set_logical_window_size(m_logical_window_size);
 
-    spdlog::debug("New ui scale {}, window size {},logical window size {}",
+    spdlog::debug("New ui scale {}, window size {}, logical window size {}",
                   m_ui_scale, glm::ivec2{w, h}, m_logical_window_size);
 
     // Let other functions that need to update the window size continue

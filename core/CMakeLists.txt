@@ -31,6 +31,7 @@ add_library(
     include/serenkai/gui/anchor.hpp
     src/gui/widget.cpp
     include/serenkai/gui/gui_context.hpp
+    include/serenkai/base/glm_fmt.hpp
     src/gui/gui_context.cpp
 )
 
