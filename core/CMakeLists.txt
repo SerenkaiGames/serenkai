@@ -53,6 +53,8 @@ add_library(
     include/serenkai/gui/label.hpp
     src/gui/label.cpp
     include/serenkai/gui/color.hpp
+    include/serenkai/resource/font_manager.hpp
+    src/resource/font_manager.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
