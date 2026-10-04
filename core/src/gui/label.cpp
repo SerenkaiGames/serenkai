@@ -6,8 +6,11 @@
 #include "serenkai/resource/font.hpp"
 
 #include <spdlog/spdlog.h>
+#include <string>
+#include <utility>
 namespace serenkai {
-Label::Label(Widget* parent) : Widget(parent) {}
+Label::Label(std::string name, Widget* parent)
+    : Widget(std::move(name), parent) {}
 
 void Label::set_text(std::string text) {
     m_text = text;

@@ -12,7 +12,7 @@ class Font;
 /// The label's size is determined by the text size.
 class Label : public Widget {
 public:
-    Label(Widget* parent);
+    Label(std::string name, Widget* parent);
 
     void set_text(std::string text);
     void set_color(Color color);

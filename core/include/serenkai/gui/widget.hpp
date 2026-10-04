@@ -1,9 +1,13 @@
 #pragma once
 #include "serenkai/gui/anchor.hpp"
 
+#include <algorithm>
+#include <concepts>
 #include <glm/vec2.hpp>
 #include <memory>
 #include <span>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace serenkai {
@@ -22,7 +26,7 @@ public:
     Widget& operator=(const Widget&) = delete;
     Widget& operator=(Widget&&) = delete;
 
-    explicit Widget(Widget* parent);
+    explicit Widget(std::string name, Widget* parent);
 
     static void set_logical_window_size(glm::ivec2 size);
     static glm::ivec2 logical_window_size();
@@ -49,6 +53,18 @@ public:
         return ref;
     }
 
+    template <std::derived_from<Widget> T>
+    T* fetch_child(std::string_view name) {
+        auto it = std::find_if(m_children.begin(), m_children.end(),
+                               [name](const std::unique_ptr<Widget>& widget) {
+                                   return name == widget->m_name;
+                               });
+        if (it == m_children.end()) {
+            return nullptr;
+        }
+        return dynamic_cast<T*>(it->get());
+    }
+
     glm::ivec2 size() const;
     glm::ivec2 offset() const;
 
@@ -61,6 +77,9 @@ public:
     bool is_visible() const;
 
     Widget* parent() const;
+
+    std::string name() const;
+
     std::span<const std::unique_ptr<Widget>> children() const;
 
 protected:
@@ -76,6 +95,7 @@ protected:
     glm::ivec2 compute_position() const;
 
 private:
+    const std::string m_name;
     Widget* m_parent = nullptr;
     std::vector<std::unique_ptr<Widget>> m_children;
     glm::ivec2 m_size{0};   // Logical size

@@ -3,6 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
+#include <utility>
 
 using namespace serenkai;
 
@@ -11,7 +12,8 @@ namespace {
 /// @brief Mock widget to verify update and render lifecycle invocations.
 class MockWidget : public Widget {
 public:
-    explicit MockWidget(Widget* parent = nullptr) : Widget(parent) {}
+    explicit MockWidget(std::string name, Widget* parent = nullptr)
+        : Widget(std::move(name), parent) {}
 
     int update_count{0};
     int render_count{0};
@@ -29,7 +31,7 @@ protected:
 } // namespace
 
 TEST_CASE("Widget default state and property setters", "[gui][widget]") {
-    Widget widget(nullptr);
+    Widget widget("test", nullptr);
 
     CHECK(widget.parent() == nullptr);
     CHECK(widget.children().empty());
@@ -60,7 +62,7 @@ TEST_CASE("Widget default state and property setters", "[gui][widget]") {
 
 TEST_CASE("Root widget anchor position calculations", "[gui][widget]") {
     Widget::set_logical_window_size({1000, 800});
-    Widget widget(nullptr);
+    Widget widget("test", nullptr);
     widget.set_size({200, 100});
 
     SECTION("Top anchors") {
@@ -107,7 +109,7 @@ TEST_CASE("Root widget anchor position calculations", "[gui][widget]") {
 TEST_CASE("Hierarchical widget positions", "[gui][widget]") {
     Widget::set_logical_window_size({1280, 720});
 
-    Widget root(nullptr);
+    Widget root("test", nullptr);
     root.set_size({400, 300});
     root.set_anchor(Anchor::TopLeft);
     root.set_offset({100, 50});
@@ -115,7 +117,7 @@ TEST_CASE("Hierarchical widget positions", "[gui][widget]") {
     REQUIRE(root.pos() == glm::ivec2{100, 50});
 
     SECTION("Child positioned relative to parent") {
-        auto& child = root.create_child<Widget>();
+        auto& child = root.create_child<Widget>("test_child");
         child.set_size({100, 60});
 
         child.set_anchor(Anchor::TopLeft);
@@ -134,13 +136,13 @@ TEST_CASE("Hierarchical widget positions", "[gui][widget]") {
     }
 
     SECTION("Multi-level widget nesting") {
-        auto& child = root.create_child<Widget>();
+        auto& child = root.create_child<Widget>("child");
         child.set_size({200, 200});
         child.set_anchor(Anchor::TopLeft);
         child.set_offset({20, 20});
         // child.pos() == {120, 70}
 
-        auto& grandchild = child.create_child<Widget>();
+        auto& grandchild = child.create_child<Widget>("grandchild");
         grandchild.set_size({50, 50});
         grandchild.set_anchor(Anchor::BottomRight);
         grandchild.set_offset({5, 5});
@@ -152,18 +154,18 @@ TEST_CASE("Hierarchical widget positions", "[gui][widget]") {
 }
 
 TEST_CASE("Child widget management and reparenting", "[gui][widget]") {
-    Widget root(nullptr);
+    Widget root("root", nullptr);
     REQUIRE(root.children().empty());
 
     SECTION("create_child binds parent and stores child") {
-        auto& child = root.create_child<Widget>();
+        auto& child = root.create_child<Widget>("child");
         CHECK(child.parent() == &root);
         REQUIRE(root.children().size() == 1);
         CHECK(root.children()[0].get() == &child);
     }
 
     SECTION("add_child transfers ownership and assigns parent") {
-        auto standalone = std::make_unique<Widget>(nullptr);
+        auto standalone = std::make_unique<Widget>("standalone", nullptr);
         auto* raw_ptr = standalone.get();
         CHECK(standalone->parent() == nullptr);
 
@@ -180,9 +182,9 @@ TEST_CASE("Child widget management and reparenting", "[gui][widget]") {
 }
 
 TEST_CASE("Widget lifecycle update and render propagation", "[gui][widget]") {
-    MockWidget root(nullptr);
-    auto& child = root.create_child<MockWidget>();
-    auto& grandchild = child.create_child<MockWidget>();
+    MockWidget root("root", nullptr);
+    auto& child = root.create_child<MockWidget>("child");
+    auto& grandchild = child.create_child<MockWidget>("grandchild");
 
     SECTION("Update propagates through hierarchy") {
         root.update(0.016F);
