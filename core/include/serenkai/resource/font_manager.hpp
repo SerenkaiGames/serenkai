@@ -18,7 +18,8 @@ class AssetManager;
 class FontManager {
 public:
     static constexpr size_t DEFAULT_PIXEL_SIZE = 12;
-
+    static constexpr const char* DEFAULT_FONT =
+        "serenkai:fonts/unifont_t-17.0.05.otf";
     explicit FontManager(AssetManager* asset_manager);
 
     Font* get(std::string_view font, size_t pixel_size = DEFAULT_PIXEL_SIZE);

@@ -55,6 +55,8 @@ add_library(
     include/serenkai/gui/color.hpp
     include/serenkai/resource/font_manager.hpp
     src/resource/font_manager.cpp
+    src/gui/widget_parser.cpp
+    include/serenkai/gui/widget_parser.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

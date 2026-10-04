@@ -1,5 +1,6 @@
 #include "serenkai/gui/label.hpp"
 
+#include "serenkai/base/assert.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/render/renderer.hpp"
@@ -29,11 +30,17 @@ std::string Label::text() const { return m_text; }
 Color Label::color() const { return m_color; }
 Font* Label::font() const { return m_font; }
 
+void Label::set_size(glm::ivec2) {
+    spdlog::error("Label::set_size is deleted");
+    SE_ASSERT(false);
+}
+
 void Label::measure_size() {
     if (!m_font) {
         return;
     }
-    set_size(glm::ivec2{m_font->measure_width(m_text), m_font->line_height()});
+    Widget::set_size(
+        glm::ivec2{m_font->measure_width(m_text), m_font->line_height()});
 }
 
 void Label::on_render(GuiContext* context) {

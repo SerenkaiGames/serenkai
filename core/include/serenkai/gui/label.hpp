@@ -26,7 +26,7 @@ private:
     std::string m_text;
     Color m_color = Color::White;
     Font* m_font = nullptr;
-
+    void set_size(glm::ivec2 size) override;
     void measure_size();
     void on_render(GuiContext* context) override;
 };
