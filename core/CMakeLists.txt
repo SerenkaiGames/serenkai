@@ -22,6 +22,9 @@ add_library(
     include/serenkai/scenes/scene_manager.hpp
     src/scenes/scene_manager.cpp
     include/serenkai/base/assert.hpp
+    include/serenkai/base/concepts.hpp
+    include/serenkai/base/type_name.hpp
+    include/serenkai/base/enum_meta.hpp
     include/serenkai/base/panic.hpp
     include/serenkai/base/unreachable.hpp
     include/serenkai/scenes/game_scene.hpp
