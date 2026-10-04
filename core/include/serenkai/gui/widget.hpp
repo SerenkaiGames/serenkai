@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <concepts>
+#include <cstddef>
 #include <glm/vec2.hpp>
 #include <memory>
 #include <span>
@@ -30,6 +31,9 @@ public:
 
     static void set_logical_window_size(glm::ivec2 size);
     static glm::ivec2 logical_window_size();
+
+    static void set_ui_scale(size_t ui_scale);
+    static size_t ui_scale();
 
     virtual ~Widget() = default;
 
@@ -94,10 +98,6 @@ public:
     std::span<const std::unique_ptr<Widget>> children() const;
 
 protected:
-    // When parent is nullptr, it can compute the root node's coordinates
-    // relative to the logical window.
-    static inline glm::ivec2 m_logical_window_size{0, 0};
-
     virtual void on_update(float dt);
 
     /// @note Need to check whether context is nullptr.
@@ -106,6 +106,13 @@ protected:
     glm::ivec2 compute_position() const;
 
 private:
+    // When parent is nullptr, it can compute the root node's coordinates
+    // relative to the logical window.
+    static inline glm::ivec2 m_logical_window_size{0, 0};
+
+    // For widgets that need to handle mouse events.
+    static inline size_t m_ui_scale{3};
+
     const std::string m_name;
     Widget* m_parent = nullptr;
     std::vector<std::unique_ptr<Widget>> m_children;

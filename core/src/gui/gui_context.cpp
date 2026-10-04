@@ -45,6 +45,7 @@ bool GuiContext::handle_window_resize_event(const WindowResizeEvent& e) {
     m_logical_window_size = new_logical_size;
 
     Widget::set_logical_window_size(m_logical_window_size);
+    Widget::set_ui_scale(m_ui_scale);
 
     spdlog::debug("New ui scale {}, window size {}, logical window size {}",
                   m_ui_scale, glm::ivec2{w, h}, m_logical_window_size);
