@@ -4,6 +4,7 @@
 #include "serenkai/gui/widget.hpp"
 
 #include <string>
+#include <string_view>
 namespace serenkai {
 class Font;
 
@@ -12,7 +13,7 @@ class Font;
 /// The label's size is determined by the text size.
 class Label : public Widget {
 public:
-    Label(std::string name, Widget* parent);
+    Label(std::string_view name, Widget* parent);
 
     void set_text(std::string text);
     void set_color(Color color);

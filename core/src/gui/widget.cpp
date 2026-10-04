@@ -2,11 +2,12 @@
 
 #include <glm/ext/vector_int2.hpp>
 #include <spdlog/spdlog.h>
+#include <string_view>
 #include <utility>
 
 namespace serenkai {
-Widget::Widget(std::string name, Widget* parent)
-    : m_name(std::move(name)), m_parent(parent) {}
+Widget::Widget(std::string_view name, Widget* parent)
+    : m_name(std::string(name)), m_parent(parent) {}
 
 void Widget::set_logical_window_size(glm::ivec2 size) {
     m_logical_window_size = size;
@@ -110,6 +111,8 @@ glm::ivec2 Widget::pos() const { return compute_position(); }
 Anchor Widget::anchor() const { return m_anchor; }
 
 bool Widget::is_visible() const { return m_visible; }
+
+bool Widget::has_parent() const { return m_parent != nullptr; }
 
 Widget* Widget::parent() const { return m_parent; }
 

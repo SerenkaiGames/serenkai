@@ -1,4 +1,5 @@
 #pragma once
+#include "serenkai/gui/color.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/render/text_renderer.hpp"
 
@@ -33,9 +34,12 @@ public:
 
     void clear();
     void present();
-
+    /// @note Please pass physical coordinates, not logical coordinates.
     void draw_text(Font& font, std::string_view utf8, glm::ivec2 pos,
                    Color color, float scale);
+    /// @note Please pass physical coordinates, not logical coordinates.
+    void draw_rect(glm::ivec2 pos, glm::ivec2 size, Color color, float alpha,
+                   float scale);
 
 private:
     const RendererConfig m_config;
