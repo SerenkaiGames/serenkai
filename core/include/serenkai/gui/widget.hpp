@@ -1,4 +1,5 @@
 #pragma once
+#include "serenkai/application/event.hpp"
 #include "serenkai/gui/anchor.hpp"
 
 #include <algorithm>
@@ -45,6 +46,9 @@ public:
     virtual void set_offset(glm::ivec2 offset);
     virtual void set_size(glm::ivec2 size);
     virtual void set_visible(bool visible);
+
+    virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
+    virtual bool handle_key_event(const KeyEvent& e);
 
     /// @brief Adds an existing widget as a child and updates its parent to this
     /// node.
