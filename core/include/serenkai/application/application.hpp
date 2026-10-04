@@ -8,6 +8,7 @@
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/font_manager.hpp"
+#include "serenkai/resource/texture_manager.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include <cstdint>
@@ -46,11 +47,13 @@ public:
 private:
     using SdlGuard = RaiiGuard<std::function<void()>, std::function<void()>>;
     // Must be declared first to ensure it is destroyed last.
+    // Do not change the order
     std::unique_ptr<AssetManager> m_asset_manager;
     std::unique_ptr<FontManager> m_font_manager;
     std::unique_ptr<SdlGuard> m_sdl_wrapper;
     std::unique_ptr<WindowManager> m_window_manager;
     std::unique_ptr<Renderer> m_renderer;
+    std::unique_ptr<TextureManager> m_texture_manager;
     std::unique_ptr<GuiContext> m_gui_context;
     std::unique_ptr<SceneManager> m_scene_manager;
     std::unique_ptr<WidgetParser> m_widget_parser;
