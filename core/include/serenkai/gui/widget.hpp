@@ -53,6 +53,10 @@ public:
         return ref;
     }
 
+    /// @brief Gets the component of a child node by name
+    ///
+    /// If the type does not match, it will return nullptr
+    /// Linear time complexity
     template <std::derived_from<Widget> T>
     T* fetch_child(std::string_view name) {
         auto it = std::find_if(m_children.begin(), m_children.end(),
