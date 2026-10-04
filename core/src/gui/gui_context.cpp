@@ -61,6 +61,12 @@ void GuiContext::render_label(const Label& label) {
                           label.color(), ui_scale());
 }
 
+void GuiContext::render_rect(const Rect& rect) {
+    auto pos = rect.pos();
+    m_renderer->draw_rect(to_physical_coord(pos), rect.size(), rect.color(),
+                          rect.alpha(), ui_scale());
+}
+
 glm::ivec2 GuiContext::to_physical_coord(glm::ivec2 pos) {
     return {pos.x * ui_scale(), pos.y * ui_scale()};
 }

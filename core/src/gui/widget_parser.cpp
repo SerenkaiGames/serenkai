@@ -6,6 +6,7 @@
 #include "serenkai/gui/anchor.hpp"
 #include "serenkai/gui/color.hpp"
 #include "serenkai/gui/label.hpp"
+#include "serenkai/gui/rect.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/font_manager.hpp"
@@ -22,6 +23,32 @@
 #include <string>
 #include <string_view>
 #include <utility>
+
+namespace serenkai {
+struct Root {
+    glz::generic root;
+};
+
+struct LabelData {
+    std::string text;
+    size_t pixel_size = FontManager::DEFAULT_PIXEL_SIZE;
+    std::string font = FontManager::DEFAULT_FONT;
+    Anchor anchor = Anchor::TopLeft;
+    glm::ivec2 offset{0, 0};
+    Color color = Color::White;
+};
+
+struct RectData {
+
+    std::optional<glm::ivec2> size;
+    std::optional<bool> fill_parent;
+
+    float alpha = 1.0f;
+    Anchor anchor = Anchor::TopLeft;
+    glm::ivec2 offset{0, 0};
+    Color color = Color::White;
+};
+} // namespace serenkai
 
 template <> struct glz::meta<glm::ivec2> {
     using T = glm::ivec2;
@@ -63,19 +90,6 @@ std::optional<T> get(const glz::generic& json, std::string_view key) {
 
 } // namespace
 
-struct Root {
-    glz::generic root;
-};
-
-struct LabelData {
-    std::string text;
-    size_t pixel_size = FontManager::DEFAULT_PIXEL_SIZE;
-    std::string font = FontManager::DEFAULT_FONT;
-    Anchor anchor = Anchor::TopLeft;
-    glm::ivec2 offset{0, 0};
-    Color color = Color::White;
-};
-
 WidgetParser::WidgetParser(AssetManager* asset_manager,
                            FontManager* font_manager)
     : m_asset_manager(asset_manager), m_font_manager(font_manager) {
@@ -83,6 +97,10 @@ WidgetParser::WidgetParser(AssetManager* asset_manager,
     m_factories.try_emplace(
         "label", [this](std::string_view name, const glz::generic& json) {
             return parse_label(name, json);
+        });
+    m_factories.try_emplace(
+        "rect", [this](std::string_view name, const glz::generic& json) {
+            return parse_rect(name, json);
         });
 }
 
@@ -145,10 +163,40 @@ std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {
     return it->second(name, value);
 }
 
+void WidgetParser::handle_children(Widget* widget,
+                                   const glz::generic& json) const {
+    if (!widget) {
+        return;
+    }
+
+    if (!json.is_object()) {
+        return;
+    }
+
+    if (!json.contains("children")) {
+        return;
+    }
+
+    if (!json["children"].is_array()) {
+        spdlog::error("Widget json error, children is not an array");
+        print_debug_json(json);
+        return;
+    }
+
+    auto& children = json["children"].get_array();
+
+    for (auto& child : children) {
+        auto c = walk(child);
+        if (c) {
+            widget->add_child(std::move(c));
+        }
+    }
+}
+
 std::unique_ptr<Widget>
 WidgetParser::parse_label(std::string_view name,
                           const glz::generic& json) const {
-    auto label = std::make_unique<Label>(std::string(name), nullptr);
+    auto label = std::make_unique<Label>(name, nullptr);
     LabelData data{};
     auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json);
     if (ec) {
@@ -166,26 +214,49 @@ WidgetParser::parse_label(std::string_view name,
     label->set_anchor(data.anchor);
     label->set_offset(data.offset);
 
-    if (!json.contains("children")) {
-        return label;
-    }
-
-    if (!json["children"].is_array()) {
-        spdlog::error("Label {} json: children is not an array", name);
-        print_debug_json(json);
-        return label;
-    }
-
-    auto& children = json["children"].get_array();
-
-    for (auto& child : children) {
-        auto c = walk(child);
-        if (c) {
-            label->add_child(std::move(c));
-        }
-    }
+    handle_children(label.get(), json);
 
     return label;
+}
+
+std::unique_ptr<Widget>
+WidgetParser::parse_rect(std::string_view name,
+                         const glz::generic& json) const {
+
+    auto rect = std::make_unique<Rect>(name, nullptr);
+    RectData data{};
+
+    auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json);
+    if (ec) {
+        spdlog::error("Failed to read {}, {}", name, glz::format_error(ec));
+        print_debug_json(json);
+        return nullptr;
+    }
+
+    if (!data.size.has_value() && !data.fill_parent.has_value()) {
+        spdlog::error("Failed to parse rect {}: must specify either 'size' or "
+                      "'fill_parent'",
+                      name);
+        print_debug_json(json);
+        return nullptr;
+    }
+
+    rect->set_alpha(data.alpha);
+    rect->set_color(data.color);
+    rect->set_anchor(data.anchor);
+    rect->set_offset(data.offset);
+
+    if (data.fill_parent) {
+        rect->set_fill_parent(*data.fill_parent);
+    }
+
+    if (data.size) {
+        rect->set_size(*data.size);
+    }
+
+    handle_children(rect.get(), json);
+
+    return rect;
 }
 
 } // namespace serenkai

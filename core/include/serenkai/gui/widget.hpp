@@ -26,7 +26,7 @@ public:
     Widget& operator=(const Widget&) = delete;
     Widget& operator=(Widget&&) = delete;
 
-    explicit Widget(std::string name, Widget* parent);
+    explicit Widget(std::string_view name, Widget* parent);
 
     static void set_logical_window_size(glm::ivec2 size);
     static glm::ivec2 logical_window_size();
@@ -84,6 +84,8 @@ public:
     Anchor anchor() const;
 
     bool is_visible() const;
+
+    bool has_parent() const;
 
     Widget* parent() const;
 

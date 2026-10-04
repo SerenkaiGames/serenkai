@@ -8,10 +8,8 @@
 
 #include <spdlog/spdlog.h>
 #include <string>
-#include <utility>
 namespace serenkai {
-Label::Label(std::string name, Widget* parent)
-    : Widget(std::move(name), parent) {}
+Label::Label(std::string_view name, Widget* parent) : Widget(name, parent) {}
 
 void Label::set_text(std::string text) {
     m_text = text;

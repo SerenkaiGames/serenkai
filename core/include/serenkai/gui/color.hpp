@@ -4,7 +4,9 @@
 #include <SDL3/SDL_pixels.h>
 #include <glm/ext/vector_float4.hpp>
 namespace serenkai {
-
+/// @brief Color enumeration
+///
+/// Contains only the three RGB channels, and does not include alpha.
 enum class Color {
     Black = 0,
     White,

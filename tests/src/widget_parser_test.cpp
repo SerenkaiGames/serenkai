@@ -4,6 +4,7 @@
 #include "serenkai/gui/anchor.hpp"
 #include "serenkai/gui/color.hpp"
 #include "serenkai/gui/label.hpp"
+#include "serenkai/gui/rect.hpp"
 #include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/directory_source.hpp"
@@ -113,6 +114,98 @@ TEST_CASE("WidgetParser label construction and property parsing",
         REQUIRE(label != nullptr);
         CHECK(label->text().empty());
         CHECK(label->color() == Color::White);
+    }
+}
+
+TEST_CASE("WidgetParser rect construction and property parsing",
+          "[gui][parser]") {
+    fs::path temp_dir = fs::temp_directory_path() / "serenkai_test_parser_rect";
+    fs::remove_all(temp_dir);
+    fs::create_directories(temp_dir / "ui");
+    RaiiGuard cleanup([]() {}, [&temp_dir]() { fs::remove_all(temp_dir); });
+
+    write_file(temp_dir / "assets.json", R"({"ns": "test"})");
+
+    SECTION("Parse single rect with explicit size and custom properties") {
+        write_file(temp_dir / "ui" / "rect_custom.json", R"({
+            "root": {
+                "panel_rect": {
+                    "type": "rect",
+                    "size": [320, 240],
+                    "color": "Blue",
+                    "alpha": 0.8,
+                    "anchor": "Center",
+                    "offset": [10, -5]
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/rect_custom.json");
+        REQUIRE(widget != nullptr);
+        CHECK(widget->name() == "panel_rect");
+        CHECK(widget->anchor() == Anchor::Center);
+        CHECK(widget->offset() == glm::ivec2{10, -5});
+
+        auto* rect = dynamic_cast<Rect*>(widget.get());
+        REQUIRE(rect != nullptr);
+        CHECK(rect->size() == glm::ivec2{320, 240});
+        CHECK(rect->color() == Color::Blue);
+        CHECK(rect->alpha() == 0.8f);
+        CHECK_FALSE(rect->fill_parent());
+    }
+
+    SECTION("Parse rect with fill_parent") {
+        write_file(temp_dir / "ui" / "rect_fill.json", R"({
+            "root": {
+                "background_rect": {
+                    "type": "rect",
+                    "fill_parent": true,
+                    "color": "Black"
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/rect_fill.json");
+        REQUIRE(widget != nullptr);
+        CHECK(widget->name() == "background_rect");
+
+        auto* rect = dynamic_cast<Rect*>(widget.get());
+        REQUIRE(rect != nullptr);
+        CHECK(rect->fill_parent());
+        CHECK(rect->color() == Color::Black);
+        CHECK(rect->alpha() == 1.0f);
+    }
+
+    SECTION("Parse rect with children") {
+        write_file(temp_dir / "ui" / "rect_tree.json", R"({
+            "root": {
+                "parent_rect": {
+                    "type": "rect",
+                    "size": [400, 300],
+                    "children": [
+                        {
+                            "child_rect": {
+                                "type": "rect",
+                                "fill_parent": true
+                            }
+                        }
+                    ]
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto root = ctx.parser.parse("test:ui/rect_tree.json");
+        REQUIRE(root != nullptr);
+        CHECK(root->name() == "parent_rect");
+        CHECK(root->children().size() == 1);
+
+        auto* child = root->fetch_child<Rect>("child_rect");
+        REQUIRE(child != nullptr);
+        CHECK(child->fill_parent());
+        CHECK(child->parent() == root.get());
     }
 }
 
@@ -254,5 +347,19 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
         auto widget = ctx.parser.parse("test:ui/invalid_children.json");
         REQUIRE(widget != nullptr);
         CHECK(widget->children().empty());
+    }
+
+    SECTION("Rect missing both size and fill_parent returns nullptr") {
+        write_file(temp_dir / "ui" / "rect_no_size.json", R"({
+            "root": {
+                "invalid_rect": {
+                    "type": "rect",
+                    "color": "Red"
+                }
+            }
+        })");
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/rect_no_size.json");
+        CHECK(widget == nullptr);
     }
 }

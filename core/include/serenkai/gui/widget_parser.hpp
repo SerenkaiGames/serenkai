@@ -38,8 +38,14 @@ private:
     ///             value is a JSON object.
     std::unique_ptr<Widget> walk(const glz::generic& json) const;
 
-    /// @brief
     std::unique_ptr<Widget> parse_label(std::string_view name,
                                         const glz::generic& json) const;
+    std::unique_ptr<Widget> parse_rect(std::string_view name,
+                                       const glz::generic& json) const;
+
+    /// @brief Function that automatically handles the children field
+    ///
+    /// @param json JSON object containing the children field
+    void handle_children(Widget* widget, const glz::generic& json) const;
 };
 } // namespace serenkai
