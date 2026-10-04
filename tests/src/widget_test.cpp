@@ -33,6 +33,7 @@ protected:
 TEST_CASE("Widget default state and property setters", "[gui][widget]") {
     Widget widget("test", nullptr);
 
+    CHECK(widget.name() == "test");
     CHECK(widget.parent() == nullptr);
     CHECK(widget.children().empty());
     CHECK(widget.size() == glm::ivec2{0, 0});
@@ -223,5 +224,63 @@ TEST_CASE("Widget lifecycle update and render propagation", "[gui][widget]") {
         CHECK(root.render_count == 1);
         CHECK(child.render_count == 0);
         CHECK(grandchild.render_count == 0);
+    }
+}
+
+TEST_CASE("Widget lookup by name via fetch_child", "[gui][widget]") {
+    Widget root("root", nullptr);
+    auto& widget_child = root.create_child<Widget>("button");
+    auto& mock_child = root.create_child<MockWidget>("panel");
+
+    SECTION("fetch_child returns matching child with exact type") {
+        auto* found_widget = root.fetch_child<Widget>("button");
+        REQUIRE(found_widget != nullptr);
+        CHECK(found_widget == &widget_child);
+        CHECK(found_widget->name() == "button");
+
+        auto* found_mock = root.fetch_child<MockWidget>("panel");
+        REQUIRE(found_mock != nullptr);
+        CHECK(found_mock == &mock_child);
+        CHECK(found_mock->name() == "panel");
+    }
+
+    SECTION("fetch_child returns base type pointer for derived child") {
+        auto* found_as_base = root.fetch_child<Widget>("panel");
+        REQUIRE(found_as_base != nullptr);
+        CHECK(found_as_base == &mock_child);
+    }
+
+    SECTION("fetch_child returns nullptr when name not found") {
+        CHECK(root.fetch_child<Widget>("non_existent") == nullptr);
+    }
+
+    SECTION("fetch_child returns nullptr on type mismatch") {
+        CHECK(root.fetch_child<MockWidget>("button") == nullptr);
+    }
+
+    SECTION("fetch_child returns first matching child when names duplicate") {
+        auto& first = root.create_child<Widget>("duplicate");
+        auto& second = root.create_child<Widget>("duplicate");
+        auto* found = root.fetch_child<Widget>("duplicate");
+        REQUIRE(found != nullptr);
+        CHECK(found == &first);
+        CHECK(found != &second);
+    }
+
+    SECTION("fetch_child works on const widget") {
+        const Widget& const_root = root;
+        const auto* found_const = const_root.fetch_child<Widget>("button");
+        REQUIRE(found_const != nullptr);
+        CHECK(found_const == &widget_child);
+        CHECK(found_const->name() == "button");
+
+        CHECK(const_root.fetch_child<Widget>("non_existent") == nullptr);
+        CHECK(const_root.fetch_child<MockWidget>("button") == nullptr);
+    }
+
+    SECTION("fetch_child does not search nested descendants") {
+        mock_child.create_child<Widget>("nested");
+        CHECK(root.fetch_child<Widget>("nested") == nullptr);
+        CHECK(mock_child.fetch_child<Widget>("nested") != nullptr);
     }
 }

@@ -34,6 +34,7 @@ fs::path get_test_font_path() {
 TEST_CASE("Label default state and property setters", "[gui][label]") {
     Label label("label", nullptr);
 
+    CHECK(label.name() == "label");
     CHECK(label.text().empty());
     CHECK(label.color() == Color::White);
     CHECK(label.font() == nullptr);
