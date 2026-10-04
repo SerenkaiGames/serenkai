@@ -97,6 +97,26 @@ void Widget::set_offset(glm::ivec2 offset) { m_offset = offset; }
 void Widget::set_size(glm::ivec2 size) { m_size = size; }
 void Widget::set_visible(bool visible) { m_visible = visible; }
 
+bool Widget::handle_mouse_move_event(const MouseMoveEvent& e) {
+    // Reverse iterator ensures events are processed starting from the topmost
+    // widget.
+    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+        if ((*it)->handle_mouse_move_event(e)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Widget::handle_key_event(const KeyEvent& e) {
+    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+        if ((*it)->handle_key_event(e)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Widget::add_child(std::unique_ptr<Widget> child) {
     if (!child) {
         return;

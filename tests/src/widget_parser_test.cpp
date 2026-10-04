@@ -1,7 +1,9 @@
+#include "serenkai/application/event.hpp"
 #include "serenkai/base/concepts.hpp"
 #include "serenkai/base/raii.hpp"
 #include "serenkai/base/type_name.hpp"
 #include "serenkai/gui/anchor.hpp"
+#include "serenkai/gui/button.hpp"
 #include "serenkai/gui/color.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
@@ -35,7 +37,8 @@ struct TestParserContext {
     WidgetParser parser;
 
     explicit TestParserContext(const fs::path& dir)
-        : font_manager(&asset_manager), parser(&asset_manager, &font_manager) {
+        : font_manager(&asset_manager),
+          parser(WidgetParserConfig{&asset_manager, &font_manager}) {
         asset_manager.merge_source(std::make_shared<DirectorySource>(dir));
     }
 };
@@ -361,5 +364,86 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
         TestParserContext ctx(temp_dir);
         auto widget = ctx.parser.parse("test:ui/rect_no_size.json");
         CHECK(widget == nullptr);
+    }
+}
+
+TEST_CASE("WidgetParser button construction, property parsing, and callbacks",
+          "[gui][parser]") {
+    fs::path temp_dir = fs::temp_directory_path() / "serenkai_test_parser_btn";
+    fs::remove_all(temp_dir);
+    fs::create_directories(temp_dir / "ui");
+    RaiiGuard cleanup([]() {}, [&temp_dir]() { fs::remove_all(temp_dir); });
+
+    write_file(temp_dir / "assets.json", R"({"ns": "test"})");
+
+    SECTION("Parse button with anchor, offset, children, and callback") {
+        write_file(temp_dir / "ui" / "button.json", R"({
+            "root": {
+                "submit_button": {
+                    "type": "button",
+                    "anchor": "Center",
+                    "offset": [10, -5],
+                    "callback": "on_submit",
+                    "children": [
+                        {
+                            "btn_bg": {
+                                "type": "rect",
+                                "size": [100, 40]
+                            }
+                        }
+                    ]
+                }
+            }
+        })");
+
+        int callback_calls = 0;
+        TestParserContext ctx(temp_dir);
+        ctx.parser.register_callback("on_submit", [&]() { ++callback_calls; });
+
+        auto widget = ctx.parser.parse("test:ui/button.json");
+        REQUIRE(widget != nullptr);
+        CHECK(widget->name() == "submit_button");
+        CHECK(widget->anchor() == Anchor::Center);
+        CHECK(widget->offset() == glm::ivec2{10, -5});
+
+        auto* button = dynamic_cast<Button*>(widget.get());
+        REQUIRE(button != nullptr);
+        CHECK(button->is_enabled());
+        CHECK_FALSE(button->is_hovered());
+
+        // Update to measure children
+        button->update(0.016f);
+        CHECK(button->size() == glm::ivec2{100, 40});
+
+        // Test callback invocation through simulated click
+        auto* child_bg = button->fetch_child<Rect>("btn_bg");
+        REQUIRE(child_bg != nullptr);
+
+        auto pos = button->pos();
+        MouseMoveEvent move_in{static_cast<float>(pos.x + 10),
+                               static_cast<float>(pos.y + 10), 0.0f, 0.0f};
+        button->handle_mouse_move_event(move_in);
+        REQUIRE(button->is_hovered());
+
+        KeyEvent left_click{Key::MouseLeft, KeyAction::Press};
+        CHECK(button->handle_key_event(left_click));
+        CHECK(callback_calls == 1);
+    }
+
+    SECTION("Button without callback still parses successfully") {
+        write_file(temp_dir / "ui" / "btn_no_cb.json", R"({
+            "root": {
+                "plain_btn": {
+                    "type": "button"
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/btn_no_cb.json");
+        REQUIRE(widget != nullptr);
+        auto* button = dynamic_cast<Button*>(widget.get());
+        REQUIRE(button != nullptr);
+        CHECK(button->name() == "plain_btn");
     }
 }

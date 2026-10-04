@@ -63,6 +63,8 @@ add_library(
     include/serenkai/gui/widget_parser.hpp
     src/gui/rect.cpp
     include/serenkai/gui/rect.hpp
+    src/gui/button.cpp
+    include/serenkai/gui/button.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

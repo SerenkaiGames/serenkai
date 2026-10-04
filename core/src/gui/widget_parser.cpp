@@ -4,6 +4,7 @@
 #include "serenkai/base/concepts.hpp"
 #include "serenkai/base/type_name.hpp"
 #include "serenkai/gui/anchor.hpp"
+#include "serenkai/gui/button.hpp"
 #include "serenkai/gui/color.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
@@ -48,6 +49,13 @@ struct RectData {
     glm::ivec2 offset{0, 0};
     Color color = Color::White;
 };
+
+struct ButtonData {
+    Anchor anchor = Anchor::TopLeft;
+    glm::ivec2 offset{0, 0};
+    std::optional<std::string> callback;
+};
+
 } // namespace serenkai
 
 template <> struct glz::meta<glm::ivec2> {
@@ -90,18 +98,22 @@ std::optional<T> get(const glz::generic& json, std::string_view key) {
 
 } // namespace
 
-WidgetParser::WidgetParser(AssetManager* asset_manager,
-                           FontManager* font_manager)
-    : m_asset_manager(asset_manager), m_font_manager(font_manager) {
+WidgetParser::WidgetParser(const WidgetParserConfig& config)
+    : m_asset_manager(config.asset_manager),
+      m_font_manager(config.font_manager) {
 
-    m_factories.try_emplace(
-        "label", [this](std::string_view name, const glz::generic& json) {
-            return parse_label(name, json);
-        });
-    m_factories.try_emplace(
-        "rect", [this](std::string_view name, const glz::generic& json) {
-            return parse_rect(name, json);
-        });
+    register_factory("label",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_label(name, json);
+                     });
+    register_factory("rect",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_rect(name, json);
+                     });
+    register_factory("button",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_button(name, json);
+                     });
 }
 
 std::unique_ptr<Widget> WidgetParser::parse(std::string_view loc) {
@@ -257,6 +269,35 @@ WidgetParser::parse_rect(std::string_view name,
     handle_children(rect.get(), json);
 
     return rect;
+}
+
+std::unique_ptr<Widget>
+WidgetParser::parse_button(std::string_view name,
+                           const glz::generic& json) const {
+    auto button = std::make_unique<Button>(name, nullptr);
+    ButtonData data{};
+
+    auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json);
+    if (ec) {
+        spdlog::error("Failed to read {}, {}", name, glz::format_error(ec));
+        print_debug_json(json);
+        return nullptr;
+    }
+
+    button->set_anchor(data.anchor);
+    button->set_offset(data.offset);
+    if (data.callback) {
+        auto it = m_callbacks.find(*data.callback);
+        if (it != m_callbacks.end()) {
+            button->set_clicked(it->second);
+        } else {
+            spdlog::error("Can't find button {} callback {}", name,
+                          *data.callback);
+        }
+    }
+
+    handle_children(button.get(), json);
+    return button;
 }
 
 } // namespace serenkai

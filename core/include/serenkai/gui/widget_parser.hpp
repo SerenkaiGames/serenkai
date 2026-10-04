@@ -4,29 +4,50 @@
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/font_manager.hpp"
 
+#include <concepts>
 #include <functional>
 #include <glaze/json/generic_fwd.hpp>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 namespace serenkai {
 
 class AssetManager;
+class Application;
+
+struct WidgetParserConfig {
+    AssetManager* asset_manager = nullptr;
+    FontManager* font_manager = nullptr;
+};
 
 /// @brief Constructs UI widgets from JSON.
 class WidgetParser {
 
 public:
-    explicit WidgetParser(AssetManager* asset_manager,
-                          FontManager* font_manager);
+    explicit WidgetParser(const WidgetParserConfig& config);
     std::unique_ptr<Widget> parse(std::string_view path);
+
+    template <typename Fn>
+        requires std::invocable<Fn, std::string_view, const glz::generic&>
+    void register_factory(std::string_view name, Fn f) {
+        m_factories.try_emplace(std::string(name), std::move(f));
+    }
+
+    template <std::invocable Fn>
+    void register_callback(std::string_view name, Fn f) {
+        m_callbacks.try_emplace(std::string(name), std::move(f));
+    }
 
 private:
     using CreateFunc = std::function<std::unique_ptr<Widget>(
         std::string_view key, const glz::generic& json)>;
 
+    using Callback = std::function<void()>;
+
     std::unordered_map<std::string, CreateFunc> m_factories;
+    std::unordered_map<std::string, Callback> m_callbacks;
 
     AssetManager* m_asset_manager = nullptr;
     FontManager* m_font_manager = nullptr;
@@ -42,6 +63,8 @@ private:
                                         const glz::generic& json) const;
     std::unique_ptr<Widget> parse_rect(std::string_view name,
                                        const glz::generic& json) const;
+    std::unique_ptr<Widget> parse_button(std::string_view name,
+                                         const glz::generic& json) const;
 
     /// @brief Function that automatically handles the children field
     ///

@@ -67,8 +67,12 @@ void GuiContext::render_rect(const Rect& rect) {
                           rect.alpha(), ui_scale());
 }
 
-glm::ivec2 GuiContext::to_physical_coord(glm::ivec2 pos) {
+glm::ivec2 GuiContext::to_physical_coord(glm::ivec2 pos) const {
     return {pos.x * ui_scale(), pos.y * ui_scale()};
+}
+
+glm::vec2 GuiContext::to_logical_coord(glm::vec2 physical_pos) const {
+    return physical_pos / static_cast<float>(m_ui_scale);
 }
 
 } // namespace serenkai

@@ -1,4 +1,5 @@
 #pragma once
+#include "serenkai/application/event.hpp"
 #include "serenkai/gui/anchor.hpp"
 
 #include <algorithm>
@@ -41,6 +42,9 @@ public:
     virtual void set_offset(glm::ivec2 offset);
     virtual void set_size(glm::ivec2 size);
     virtual void set_visible(bool visible);
+
+    virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
+    virtual bool handle_key_event(const KeyEvent& e);
 
     /// @brief Adds an existing widget as a child and updates its parent to this
     /// node.
@@ -94,10 +98,6 @@ public:
     std::span<const std::unique_ptr<Widget>> children() const;
 
 protected:
-    // When parent is nullptr, it can compute the root node's coordinates
-    // relative to the logical window.
-    static inline glm::ivec2 m_logical_window_size{0, 0};
-
     virtual void on_update(float dt);
 
     /// @note Need to check whether context is nullptr.
@@ -106,6 +106,10 @@ protected:
     glm::ivec2 compute_position() const;
 
 private:
+    // When parent is nullptr, it can compute the root node's coordinates
+    // relative to the logical window.
+    static inline glm::ivec2 m_logical_window_size{0, 0};
+
     const std::string m_name;
     Widget* m_parent = nullptr;
     std::vector<std::unique_ptr<Widget>> m_children;

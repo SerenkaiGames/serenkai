@@ -4,9 +4,11 @@
 #include "serenkai/application/input.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/gui/gui_context.hpp"
+#include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/font_manager.hpp"
+#include "serenkai/scenes/scene.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include <SDL3/SDL_error.h>
@@ -14,6 +16,7 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_version.h>
 #include <fmt/format.h>
+#include <glm/ext/vector_float2.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -59,6 +62,22 @@ Application::Application() {
 
     m_scene_manager = std::make_unique<SceneManager>();
 
+    m_widget_parser = std::make_unique<WidgetParser>(
+        WidgetParserConfig{m_asset_manager.get(), m_font_manager.get()});
+
+    m_widget_parser->register_callback("on_exit_game",
+                                       [this]() { m_running = false; });
+    m_widget_parser->register_callback(
+        "on_pop_scene", [this]() { m_scene_manager->request_pop(); });
+
+    m_widget_parser->register_callback("on_change_title_scene", [this]() {
+        m_scene_manager->request_change(SceneType::Title);
+    });
+
+    m_widget_parser->register_callback("on_change_game_scene", [this]() {
+        m_scene_manager->request_change(SceneType::Game);
+    });
+
     auto window_size = m_window_manager->get_window_size();
     m_gui_context->handle_window_resize_event(
         WindowResizeEvent{window_size.x, window_size.y});
@@ -102,7 +121,7 @@ void Application::render() {
     m_renderer->present();
 }
 
-void Application::dispatch_event(const Event& e) {
+void Application::dispatch_event(Event& e) {
     if (auto _ = std::get_if<QuitEvent>(&e)) {
         m_running = false;
         return;
@@ -110,6 +129,17 @@ void Application::dispatch_event(const Event& e) {
 
     if (auto event = std::get_if<WindowResizeEvent>(&e)) {
         m_gui_context->handle_window_resize_event(*event);
+    }
+
+    if (auto event = std::get_if<MouseMoveEvent>(&e)) {
+        if (m_gui_context) {
+
+            auto logical = m_gui_context->to_logical_coord(
+                glm::vec2{event->xpos, event->ypos});
+
+            event->logical_x = logical.x;
+            event->logical_y = logical.y;
+        }
     }
 
     if (m_scene_manager->handle_event(e)) {

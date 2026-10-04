@@ -6,14 +6,20 @@
 #include <variant>
 
 namespace serenkai {
-
+class GuiContext;
 struct MouseMoveEvent {
     float xpos;
     float ypos;
     float xrel;
     float yrel;
+
+    // Needs gui context for conversion, initialized to physical coordinates by
+    // default.
+    float logical_x;
+    float logical_y;
+
     MouseMoveEvent(float x, float y, float dx, float dy)
-        : xpos(x), ypos(y), xrel(dx), yrel(dy) {}
+        : xpos(x), ypos(y), xrel(dx), yrel(dy), logical_x(x), logical_y(y) {}
 };
 
 struct MouseWheelEvent {
