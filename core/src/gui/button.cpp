@@ -1,7 +1,12 @@
 #include "serenkai/gui/button.hpp"
 
+#include "serenkai/base/assert.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/gui/widget.hpp"
+
+#include <algorithm>
+#include <glm/ext/vector_int2.hpp>
+#include <spdlog/spdlog.h>
 
 namespace serenkai {
 Button::Button(std::string_view name, Widget* parent) : Widget(name, parent) {}
@@ -52,6 +57,26 @@ bool Button::handle_key_event(const KeyEvent& e) {
     }
 
     return false;
+}
+
+void Button::on_update(float) { measure_from_children(); }
+
+void Button::set_size(glm::ivec2) {
+    spdlog::error("Button::set_size is deleted");
+    SE_ASSERT(false);
+}
+
+void Button::measure_from_children() {
+    auto children_span = children();
+
+    auto max_size = std::ranges::fold_left(
+        children_span, glm::ivec2{0}, [](glm::ivec2 acc, const auto& c) {
+            glm::ivec2 c_szie = c->size();
+            return glm::ivec2{std::max(c_szie.x, acc.x),
+                              std::max(c_szie.y, acc.y)};
+        });
+
+    Widget::set_size(max_size);
 }
 
 } // namespace serenkai

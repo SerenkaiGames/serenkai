@@ -29,10 +29,17 @@ public:
     }
 
 private:
-    void set_size(glm::ivec2 size) override;
-
     bool m_hovered = false;
     bool m_enable = true;
     std::function<void()> m_clicked;
+
+    void on_update(float dt) override;
+
+    /// @brief set_size must not be called manually; it is automatically
+    /// computed from the children.
+    void set_size(glm::ivec2 size) override;
+
+    /// @brief Automatically calculates the actual size from its children.
+    void measure_from_children();
 };
 } // namespace serenkai
