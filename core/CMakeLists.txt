@@ -6,6 +6,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(glaze CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
+find_package(magic_enum CONFIG REQUIRED)
 
 add_library(
     ${TARGET_NAME} STATIC 
@@ -73,6 +74,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     glaze::glaze
     Freetype::Freetype
     harfbuzz::harfbuzz
+    magic_enum::magic_enum
 )
 
 if (WIN32)

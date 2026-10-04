@@ -6,6 +6,7 @@
         "catch2",
         "glaze",
         "freetype",
-        "harfbuzz"
+        "harfbuzz",
+        "magic-enum"
     ]
 }

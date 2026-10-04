@@ -71,7 +71,7 @@ struct LabelData {
     std::string text;
     size_t pixel_size = FontManager::DEFAULT_PIXEL_SIZE;
     std::string font = FontManager::DEFAULT_FONT;
-    Anchor anchtor = Anchor::TopLeft;
+    Anchor anchor = Anchor::TopLeft;
     glm::ivec2 offset{0, 0};
     Color color = Color::White;
 };
@@ -86,7 +86,7 @@ WidgetParser::WidgetParser(AssetManager* asset_manager,
         });
 }
 
-std::unique_ptr<Widget> WidgetParser::parser(std::string_view loc) {
+std::unique_ptr<Widget> WidgetParser::parse(std::string_view loc) {
     spdlog::info("Parsing widget {} ...", loc);
     if (!m_asset_manager) {
         spdlog::error("AssetManager is nullptr");
@@ -118,7 +118,7 @@ std::unique_ptr<Widget> WidgetParser::parser(std::string_view loc) {
 std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {
 
     if (!json.is_object()) {
-        spdlog::error("Json is not a object");
+        spdlog::error("Json is not an object");
         print_debug_json(json);
         return nullptr;
     }
@@ -152,7 +152,7 @@ WidgetParser::parse_label(std::string_view name,
     LabelData data{};
     auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json);
     if (ec) {
-        spdlog::error("failed to read {}, {}", name, glz::format_error(ec));
+        spdlog::error("Failed to read {}, {}", name, glz::format_error(ec));
         print_debug_json(json);
         return nullptr;
     }
@@ -163,7 +163,7 @@ WidgetParser::parse_label(std::string_view name,
     label->set_font(font);
     label->set_color(data.color);
     label->set_text(data.text);
-    label->set_anchor(data.anchtor);
+    label->set_anchor(data.anchor);
     label->set_offset(data.offset);
 
     if (!json.contains("children")) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "serenkai/base/enum_meta.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/font_manager.hpp"
 
@@ -19,13 +20,13 @@ class WidgetParser {
 public:
     explicit WidgetParser(AssetManager* asset_manager,
                           FontManager* font_manager);
-    std::unique_ptr<Widget> parser(std::string_view path);
+    std::unique_ptr<Widget> parse(std::string_view path);
 
 private:
-    using CreateFun = std::function<std::unique_ptr<Widget>(
+    using CreateFunc = std::function<std::unique_ptr<Widget>(
         std::string_view key, const glz::generic& json)>;
 
-    std::unordered_map<std::string, CreateFun> m_factories;
+    std::unordered_map<std::string, CreateFunc> m_factories;
 
     AssetManager* m_asset_manager = nullptr;
     FontManager* m_font_manager = nullptr;
