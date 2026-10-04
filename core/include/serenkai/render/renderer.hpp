@@ -34,9 +34,15 @@ public:
 
     void clear();
     void present();
+
+    /// @param pos  pos is in physical coordinates
+    /// @param size size is the logical size
     /// @note Please pass physical coordinates, not logical coordinates.
     void draw_text(Font& font, std::string_view utf8, glm::ivec2 pos,
                    Color color, float scale);
+
+    /// @param pos  pos is in physical coordinates
+    /// @param size size is the logical size
     /// @note Please pass physical coordinates, not logical coordinates.
     void draw_rect(glm::ivec2 pos, glm::ivec2 size, Color color, float alpha,
                    float scale);

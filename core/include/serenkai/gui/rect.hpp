@@ -20,6 +20,7 @@ public:
 
     Color color() const;
     float alpha() const;
+    bool fill_parent() const;
 
 private:
     void on_render(GuiContext* context) override;

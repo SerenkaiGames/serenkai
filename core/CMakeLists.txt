@@ -61,6 +61,8 @@ add_library(
     src/resource/font_manager.cpp
     src/gui/widget_parser.cpp
     include/serenkai/gui/widget_parser.hpp
+    src/gui/rect.cpp
+    include/serenkai/gui/rect.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

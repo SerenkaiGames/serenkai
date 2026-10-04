@@ -15,14 +15,16 @@ void Rect::set_fill_parent(bool fill) { m_fill_parent = fill; }
 void Rect::set_size(glm::ivec2 size) {
     if (m_fill_parent) {
         spdlog::warn(
-            "Rect {} fill parent is true, set_size will not take effect ",
+            "Rect {} fill parent is true, set_size will not take effect",
             name());
+    } else {
+        Widget::set_size(size);
     }
-    Widget::set_size(size);
 }
 
 Color Rect::color() const { return m_color; }
 float Rect::alpha() const { return m_alpha; }
+bool Rect::fill_parent() const { return m_fill_parent; }
 
 void Rect::on_render(GuiContext* context) { context->render_rect(*this); }
 void Rect::on_update(float) {

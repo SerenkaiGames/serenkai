@@ -65,9 +65,9 @@ template <> struct from<JSON, serenkai::RectData> {
         parse<JSON>::op<Opts>(value, ctx, it, end);
 
         const bool has_size = value.size.has_value();
-        const bool has_name = value.fill_parent.has_value();
+        const bool has_fill_parent = value.fill_parent.has_value();
 
-        if (!has_size && !has_name) {
+        if (!has_size && !has_fill_parent) {
             ctx.error = error_code::constraint_violated;
             return;
         }
@@ -217,7 +217,7 @@ void WidgetParser::handle_children(Widget* widget,
 std::unique_ptr<Widget>
 WidgetParser::parse_label(std::string_view name,
                           const glz::generic& json) const {
-    auto label = std::make_unique<Label>(std::string(name), nullptr);
+    auto label = std::make_unique<Label>(name, nullptr);
     LabelData data{};
     auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json);
     if (ec) {
