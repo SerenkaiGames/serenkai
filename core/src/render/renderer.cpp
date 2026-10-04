@@ -11,9 +11,9 @@
 #include <stdexcept>
 
 namespace serenkai {
-Renderer::Renderer(SDL_Window* window, RendererConfig config)
-    : m_config(std::move(config)) {
-    m_sdl_renderer = SDL_CreateRenderer(window, nullptr);
+Renderer::Renderer(const RendererConfig& config)
+    : m_config(config), m_texture_manager(config.texture_manager) {
+    m_sdl_renderer = SDL_CreateRenderer(config.window, nullptr);
     if (!m_sdl_renderer) {
         throw std::runtime_error(fmt::format(
             "Failed to initialize SDL_Renderer, error: {}", SDL_GetError()));
@@ -27,6 +27,8 @@ Renderer::~Renderer() {
         SDL_DestroyRenderer(m_sdl_renderer);
     }
 }
+
+SDL_Renderer* Renderer::get_sdl_renderer() const { return m_sdl_renderer; }
 
 void Renderer::present() { SDL_RenderPresent(m_sdl_renderer); }
 

@@ -82,6 +82,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     Freetype::Freetype
     harfbuzz::harfbuzz
     magic_enum::magic_enum
+    stb
 )
 
 if (WIN32)

@@ -8,6 +8,8 @@
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/font_manager.hpp"
+#include "serenkai/resource/image_loader.hpp"
+#include "serenkai/resource/texture_manager.hpp"
 #include "serenkai/scenes/scene.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 
@@ -41,22 +43,28 @@ void cleanup_sdl() {
 } // namespace
 
 Application::Application() {
+
 #ifndef NDEBUG
     spdlog::set_level(spdlog::level::debug);
 #endif
+
     m_asset_manager = std::make_unique<AssetManager>();
     m_font_manager = std::make_unique<FontManager>(m_asset_manager.get());
 
     int linked = SDL_GetVersion();
-
     spdlog::info("Linked SDL version: {}.{}.{}", SDL_VERSIONNUM_MAJOR(linked),
                  SDL_VERSIONNUM_MINOR(linked), SDL_VERSIONNUM_MICRO(linked));
-
     m_sdl_wrapper = std::make_unique<SdlGuard>(init_sdl, cleanup_sdl);
 
+    ImageLoader::init_stb();
+    m_texture_manager = std::make_unique<TextureManager>(m_asset_manager.get());
+
     m_window_manager = std::make_unique<WindowManager>(WindowConfig{});
-    m_renderer = std::make_unique<Renderer>(m_window_manager->get_window(),
-                                            RendererConfig{});
+
+    m_renderer = std::make_unique<Renderer>(RendererConfig{
+        true, m_window_manager->get_window(), m_texture_manager.get()});
+
+    m_texture_manager->init_renderer(m_renderer->get_sdl_renderer());
 
     m_gui_context = std::make_unique<GuiContext>(GuiConfig{m_renderer.get()});
 
@@ -69,11 +77,9 @@ Application::Application() {
                                        [this]() { m_running = false; });
     m_widget_parser->register_callback(
         "on_pop_scene", [this]() { m_scene_manager->request_pop(); });
-
     m_widget_parser->register_callback("on_change_title_scene", [this]() {
         m_scene_manager->request_change(SceneType::Title);
     });
-
     m_widget_parser->register_callback("on_change_game_scene", [this]() {
         m_scene_manager->request_change(SceneType::Game);
     });

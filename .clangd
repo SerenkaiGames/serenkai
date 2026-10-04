@@ -4,7 +4,7 @@ CompileFlags:
 ---
 
 If:
-  PathMatch: .*(build|vcpkg_installed)/.*
+  PathMatch: .*(build|vcpkg_installed|third_party)/.*
 Diagnostics:
   Suppress: ["*"]
   ClangTidy:

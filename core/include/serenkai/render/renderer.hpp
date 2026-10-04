@@ -10,11 +10,15 @@
 namespace serenkai {
 
 class GuiContext;
+class TextureManager;
 
 struct RendererConfig {
     /// Excessively high frame rates can cause bugs; it's best to enable
     /// vertical sync.
     bool v_sync = true;
+
+    SDL_Window* window = nullptr;
+    TextureManager* texture_manager = nullptr;
 };
 
 /// @brief Renderer
@@ -29,8 +33,10 @@ public:
     Renderer& operator=(const Renderer&) = delete;
     Renderer& operator=(Renderer&&) = delete;
 
-    Renderer(SDL_Window* window, RendererConfig config);
+    Renderer(const RendererConfig& config);
     ~Renderer();
+
+    SDL_Renderer* get_sdl_renderer() const;
 
     void clear();
     void present();
@@ -50,6 +56,7 @@ public:
 private:
     const RendererConfig m_config;
     SDL_Renderer* m_sdl_renderer{nullptr};
+    TextureManager* m_texture_manager{nullptr};
     SDL_Color m_clear_color = {0, 0, 0, SDL_ALPHA_OPAQUE};
     std::unique_ptr<TextRenderer> m_text_renderer;
 };
