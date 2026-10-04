@@ -26,7 +26,12 @@ Color Rect::color() const { return m_color; }
 float Rect::alpha() const { return m_alpha; }
 bool Rect::fill_parent() const { return m_fill_parent; }
 
-void Rect::on_render(GuiContext* context) { context->render_rect(*this); }
+void Rect::on_render(GuiContext* context) {
+    if (!context) {
+        return;
+    }
+    context->render_rect(*this);
+}
 void Rect::on_update(float) {
     if (m_fill_parent) {
         Widget::set_size(Widget::has_parent() ? Widget::parent()->size()

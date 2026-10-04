@@ -55,27 +55,6 @@ template <> struct glz::meta<glm::ivec2> {
     static constexpr auto value = glz::array(&T::x, &T::y); // NOLINT
 };
 
-namespace glz {
-
-template <> struct from<JSON, serenkai::RectData> {
-    template <auto Opts>
-    static void op(serenkai::RectData& value, is_context auto&& ctx, auto&& it,
-                   auto&& end) {
-
-        parse<JSON>::op<Opts>(value, ctx, it, end);
-
-        const bool has_size = value.size.has_value();
-        const bool has_fill_parent = value.fill_parent.has_value();
-
-        if (!has_size && !has_fill_parent) {
-            ctx.error = error_code::constraint_violated;
-            return;
-        }
-    }
-};
-
-} // namespace glz
-
 namespace serenkai {
 
 namespace {
@@ -250,6 +229,14 @@ WidgetParser::parse_rect(std::string_view name,
     auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json);
     if (ec) {
         spdlog::error("Failed to read {}, {}", name, glz::format_error(ec));
+        print_debug_json(json);
+        return nullptr;
+    }
+
+    if (!data.size.has_value() && !data.fill_parent.has_value()) {
+        spdlog::error("Failed to parse rect {}: must specify either 'size' or "
+                      "'fill_parent'",
+                      name);
         print_debug_json(json);
         return nullptr;
     }
