@@ -15,9 +15,6 @@ void Widget::set_logical_window_size(glm::ivec2 size) {
 
 glm::ivec2 Widget::logical_window_size() { return m_logical_window_size; }
 
-void Widget::set_ui_scale(size_t ui_scale) { m_ui_scale = ui_scale; }
-size_t Widget::ui_scale() { return m_ui_scale; }
-
 void Widget::update(float dt) {
     on_update(dt);
 

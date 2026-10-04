@@ -416,7 +416,8 @@ inline std::optional<Event> handle_sdl_mouse_button(const SDL_Event& e) {
 
 } // namespace
 
-std::optional<Event> process_sdl_event(const SDL_Event& e) {
+std::optional<Event> process_sdl_event(const SDL_Event& e,
+                                       GuiContext* context) {
     switch (e.type) {
     case SDL_EVENT_QUIT:
         return QuitEvent{};
@@ -438,7 +439,7 @@ std::optional<Event> process_sdl_event(const SDL_Event& e) {
         }
 
         return MouseMoveEvent{e.motion.x, e.motion.y, e.motion.xrel,
-                              e.motion.yrel};
+                              e.motion.yrel, context};
 
     case SDL_EVENT_WINDOW_RESIZED:
         return WindowResizeEvent{e.window.data1, e.window.data2};

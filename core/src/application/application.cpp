@@ -86,7 +86,8 @@ void Application::run() {
 void Application::step(float dt) {
 
     while (SDL_PollEvent(&m_event)) {
-        if (auto event = input::process_sdl_event(m_event)) {
+        if (auto event =
+                input::process_sdl_event(m_event, m_gui_context.get())) {
             dispatch_event(*event);
         }
     }
