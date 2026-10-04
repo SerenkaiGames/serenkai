@@ -98,22 +98,22 @@ std::optional<T> get(const glz::generic& json, std::string_view key) {
 
 } // namespace
 
-WidgetParser::WidgetParser(AssetManager* asset_manager,
-                           FontManager* font_manager)
-    : m_asset_manager(asset_manager), m_font_manager(font_manager) {
+WidgetParser::WidgetParser(const WidgetParserConfig& config)
+    : m_asset_manager(config.asset_manager),
+      m_font_manager(config.font_manager) {
 
-    m_factories.try_emplace(
-        "label", [this](std::string_view name, const glz::generic& json) {
-            return parse_label(name, json);
-        });
-    m_factories.try_emplace(
-        "rect", [this](std::string_view name, const glz::generic& json) {
-            return parse_rect(name, json);
-        });
-    m_factories.try_emplace(
-        "button", [this](std::string_view name, const glz::generic& json) {
-            return parse_button(name, json);
-        });
+    register_factory("label",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_label(name, json);
+                     });
+    register_factory("rect",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_rect(name, json);
+                     });
+    register_factory("button",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_button(name, json);
+                     });
 }
 
 std::unique_ptr<Widget> WidgetParser::parse(std::string_view loc) {

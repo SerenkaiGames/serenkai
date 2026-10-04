@@ -12,10 +12,14 @@ struct MouseMoveEvent {
     float ypos;
     float xrel;
     float yrel;
-    GuiContext* gui_context; // Used by the UI to handle coordinate system
-                             // transformations.
-    MouseMoveEvent(float x, float y, float dx, float dy, GuiContext* context)
-        : xpos(x), ypos(y), xrel(dx), yrel(dy), gui_context(context) {}
+
+    // Needs gui context for conversion, initialized to physical coordinates by
+    // default.
+    float logical_x;
+    float logical_y;
+
+    MouseMoveEvent(float x, float y, float dx, float dy)
+        : xpos(x), ypos(y), xrel(dx), yrel(dy), logical_x(x), logical_y(y) {}
 };
 
 struct MouseWheelEvent {

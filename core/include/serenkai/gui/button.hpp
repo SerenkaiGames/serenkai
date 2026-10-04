@@ -15,10 +15,10 @@ class Button : public Widget {
 public:
     Button(std::string_view name, Widget* parent);
 
-    void set_enable(bool enable);
+    void set_enabled(bool enable);
 
     bool is_hovered() const;
-    bool is_enable() const;
+    bool is_enabled() const;
 
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_key_event(const KeyEvent& e) override;

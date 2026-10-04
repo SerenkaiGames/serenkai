@@ -5,6 +5,7 @@
 #include "serenkai/gui/rect.hpp"
 
 #include <cstddef>
+#include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
 namespace serenkai {
 class Renderer;
@@ -26,7 +27,8 @@ public:
     /// @brief Update the UI scaling factor and logical resolution size.
     bool handle_window_resize_event(const WindowResizeEvent& e);
 
-    glm::ivec2 to_physical_coord(glm::ivec2 pos);
+    [[nodiscard]] glm::ivec2 to_physical_coord(glm::ivec2 pos) const;
+    [[nodiscard]] glm::vec2 to_logical_coord(glm::vec2 physical_pos) const;
 
     void render_label(const Label& label);
     void render_rect(const Rect& rect);

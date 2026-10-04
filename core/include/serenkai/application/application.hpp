@@ -4,6 +4,7 @@
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/base/raii.hpp"
 #include "serenkai/gui/gui_context.hpp"
+#include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/font_manager.hpp"
@@ -52,6 +53,7 @@ private:
     std::unique_ptr<Renderer> m_renderer;
     std::unique_ptr<GuiContext> m_gui_context;
     std::unique_ptr<SceneManager> m_scene_manager;
+    std::unique_ptr<WidgetParser> m_widget_parser;
 
     bool m_running = true;
     SDL_Event m_event{};
@@ -60,6 +62,6 @@ private:
 
     void render();
     void update(float dt);
-    void dispatch_event(const Event& e);
+    void dispatch_event(Event& e);
 };
 } // namespace serenkai

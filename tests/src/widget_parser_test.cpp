@@ -35,7 +35,8 @@ struct TestParserContext {
     WidgetParser parser;
 
     explicit TestParserContext(const fs::path& dir)
-        : font_manager(&asset_manager), parser(&asset_manager, &font_manager) {
+        : font_manager(&asset_manager),
+          parser(WidgetParserConfig{&asset_manager, &font_manager}) {
         asset_manager.merge_source(std::make_shared<DirectorySource>(dir));
     }
 };
