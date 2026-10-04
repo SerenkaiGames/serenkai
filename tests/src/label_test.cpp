@@ -32,7 +32,7 @@ fs::path get_test_font_path() {
 } // namespace
 
 TEST_CASE("Label default state and property setters", "[gui][label]") {
-    Label label(nullptr);
+    Label label("label", nullptr);
 
     CHECK(label.text().empty());
     CHECK(label.color() == Color::White);
@@ -67,7 +67,7 @@ TEST_CASE("Label size measurement and rendering with font", "[gui][label]") {
     constexpr size_t pixel_size = 16;
     Font font(font_path.string(), pixel_size, lib);
 
-    Label label(nullptr);
+    Label label("label", nullptr);
 
     SECTION("Setting text before font computes size once font is set") {
         label.set_text("Serenkai");

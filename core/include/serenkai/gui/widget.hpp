@@ -65,6 +65,11 @@ public:
         return dynamic_cast<T*>(it->get());
     }
 
+    template <std::derived_from<Widget> T>
+    const T* fetch_child(std::string_view name) const {
+        return const_cast<Widget*>(this)->fetch_child<T>(name);
+    }
+
     glm::ivec2 size() const;
     glm::ivec2 offset() const;
 
@@ -78,7 +83,7 @@ public:
 
     Widget* parent() const;
 
-    std::string name() const;
+    const std::string& name() const;
 
     std::span<const std::unique_ptr<Widget>> children() const;
 

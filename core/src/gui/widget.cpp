@@ -113,7 +113,7 @@ bool Widget::is_visible() const { return m_visible; }
 
 Widget* Widget::parent() const { return m_parent; }
 
-std::string Widget::name() const { return m_name; }
+const std::string& Widget::name() const { return m_name; }
 
 std::span<const std::unique_ptr<Widget>> Widget::children() const {
     return m_children;
