@@ -5,5 +5,5 @@ add_library(stb STATIC
 )
 
 target_include_directories(stb PUBLIC
-    ${CMAKE_SOURCE_DIR}/third_party/stb
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )

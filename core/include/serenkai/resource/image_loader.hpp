@@ -8,7 +8,7 @@ class AssetManager;
 struct ImageData {
     int width{};
     int height{};
-    int channels{};
+    int channels{4};
     unsigned char* data{};
 };
 
@@ -22,7 +22,6 @@ using ImageWrapper =
 class ImageLoader {
 public:
     explicit ImageLoader(AssetManager* asset_manager);
-    static void init_stb();
 
     static void init_image_wrapper(ImageData& image);
     static void cleanup_image_wrapper(ImageData& image);

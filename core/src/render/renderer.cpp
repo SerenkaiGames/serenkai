@@ -11,8 +11,7 @@
 #include <stdexcept>
 
 namespace serenkai {
-Renderer::Renderer(const RendererConfig& config)
-    : m_config(config), m_texture_manager(config.texture_manager) {
+Renderer::Renderer(const RendererConfig& config) : m_config(config) {
     m_sdl_renderer = SDL_CreateRenderer(config.window, nullptr);
     if (!m_sdl_renderer) {
         throw std::runtime_error(fmt::format(

@@ -20,10 +20,9 @@ public:
     TextureManager& operator=(const TextureManager&) = delete;
     TextureManager& operator=(TextureManager&&) = delete;
 
-    explicit TextureManager(AssetManager* asset_manager);
+    explicit TextureManager(AssetManager* asset_manager,
+                            SDL_Renderer* renderer);
     ~TextureManager();
-
-    void init_renderer(SDL_Renderer* renderer);
 
     SDL_Texture* get(std::string_view loc);
 

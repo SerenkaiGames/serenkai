@@ -18,7 +18,6 @@ struct RendererConfig {
     bool v_sync = true;
 
     SDL_Window* window = nullptr;
-    TextureManager* texture_manager = nullptr;
 };
 
 /// @brief Renderer
@@ -56,7 +55,6 @@ public:
 private:
     const RendererConfig m_config;
     SDL_Renderer* m_sdl_renderer{nullptr};
-    TextureManager* m_texture_manager{nullptr};
     SDL_Color m_clear_color = {0, 0, 0, SDL_ALPHA_OPAQUE};
     std::unique_ptr<TextRenderer> m_text_renderer;
 };

@@ -65,6 +65,10 @@ add_library(
     include/serenkai/gui/rect.hpp
     src/gui/button.cpp
     include/serenkai/gui/button.hpp
+    include/serenkai/resource/image_loader.hpp
+    src/resource/image_loader.cpp
+    include/serenkai/resource/texture_manager.hpp
+    src/resource/texture_manager.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

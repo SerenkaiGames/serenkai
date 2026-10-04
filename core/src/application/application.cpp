@@ -56,15 +56,12 @@ Application::Application() {
                  SDL_VERSIONNUM_MINOR(linked), SDL_VERSIONNUM_MICRO(linked));
     m_sdl_wrapper = std::make_unique<SdlGuard>(init_sdl, cleanup_sdl);
 
-    ImageLoader::init_stb();
-    m_texture_manager = std::make_unique<TextureManager>(m_asset_manager.get());
-
     m_window_manager = std::make_unique<WindowManager>(WindowConfig{});
 
-    m_renderer = std::make_unique<Renderer>(RendererConfig{
-        true, m_window_manager->get_window(), m_texture_manager.get()});
-
-    m_texture_manager->init_renderer(m_renderer->get_sdl_renderer());
+    m_renderer = std::make_unique<Renderer>(
+        RendererConfig{true, m_window_manager->get_window()});
+    m_texture_manager = std::make_unique<TextureManager>(
+        m_asset_manager.get(), m_renderer->get_sdl_renderer());
 
     m_gui_context = std::make_unique<GuiContext>(GuiConfig{m_renderer.get()});
 
