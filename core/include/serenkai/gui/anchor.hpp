@@ -1,4 +1,5 @@
 #pragma once
+
 namespace serenkai {
 enum class Anchor {
     TopLeft,

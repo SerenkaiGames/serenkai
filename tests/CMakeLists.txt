@@ -14,6 +14,7 @@ add_executable(serenkai_tests
     src/font_test.cpp
     src/color_test.cpp
     src/label_test.cpp
+    src/widget_parser_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core

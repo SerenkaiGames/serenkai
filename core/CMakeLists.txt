@@ -6,6 +6,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(glaze CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
+find_package(magic_enum CONFIG REQUIRED)
 
 add_library(
     ${TARGET_NAME} STATIC 
@@ -21,6 +22,9 @@ add_library(
     include/serenkai/scenes/scene_manager.hpp
     src/scenes/scene_manager.cpp
     include/serenkai/base/assert.hpp
+    include/serenkai/base/concepts.hpp
+    include/serenkai/base/type_name.hpp
+    include/serenkai/base/enum_meta.hpp
     include/serenkai/base/panic.hpp
     include/serenkai/base/unreachable.hpp
     include/serenkai/scenes/game_scene.hpp
@@ -55,6 +59,8 @@ add_library(
     include/serenkai/gui/color.hpp
     include/serenkai/resource/font_manager.hpp
     src/resource/font_manager.cpp
+    src/gui/widget_parser.cpp
+    include/serenkai/gui/widget_parser.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
@@ -71,6 +77,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     glaze::glaze
     Freetype::Freetype
     harfbuzz::harfbuzz
+    magic_enum::magic_enum
 )
 
 if (WIN32)
