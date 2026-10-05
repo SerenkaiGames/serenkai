@@ -7,6 +7,8 @@ find_package(glaze CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
 find_package(magic_enum CONFIG REQUIRED)
+find_package(luabridge3 CONFIG REQUIRED)
+find_package(unofficial-luau CONFIG REQUIRED)
 
 add_library(
     ${TARGET_NAME} STATIC 
@@ -91,6 +93,9 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     harfbuzz::harfbuzz
     magic_enum::magic_enum
     stb
+    luabridge3::luabridge3
+    Luau.VM
+    Luau.Compiler
 )
 
 if (WIN32)
