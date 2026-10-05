@@ -2,14 +2,13 @@
 
 #include "serenkai/base/raii.hpp"
 
-#include <functional>
-#include <memory>
+#include <string>
 
 struct lua_State;
 
 namespace serenkai {
-using LuaState = RaiiWrapper<lua_State*, std::function<void(lua_State*)>,
-                             std::function<void(lua_State*)>>;
+using LuaState =
+    RaiiWrapper<lua_State*, void (*)(lua_State*&), void (*)(lua_State*&)>;
 /// @brief Lua scripting engine
 ///
 /// Automatically manages the lifecycle of lua_State.
@@ -19,13 +18,14 @@ public:
 
     /// @brief Runs a Lua script from a string.
     /// @return true on success, false on error (error is logged).
-    bool run_string(const std::string& script);
+    bool run_string(const std::string& script,
+                    const std::string& chunk_name = "chunk");
 
     /// @brief Runs a Lua script from a file.
     /// @return true on success, false on error (error is logged).
     bool run_file(const std::string& path);
 
 private:
-    std::unique_ptr<LuaState> m_state;
+    LuaState m_state;
 };
 } // namespace serenkai

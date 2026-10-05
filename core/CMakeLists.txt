@@ -7,8 +7,10 @@ find_package(glaze CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
 find_package(magic_enum CONFIG REQUIRED)
-find_package(luabridge3 CONFIG REQUIRED)
 find_package(unofficial-luau CONFIG REQUIRED)
+
+find_path(LUABRIDGE3_INCLUDE_DIRS "luabridge3/LuaBridge/Any.h")
+
 
 add_library(
     ${TARGET_NAME} STATIC 
@@ -75,12 +77,17 @@ add_library(
     src/gui/image_widget.cpp
     include/serenkai/gui/column_layout.hpp
     src/gui/column_layout.cpp
+    include/serenkai/script/script_engine.hpp
+    src/script/script_engine.cpp
+    include/serenkai/script/bindings/bind_log.hpp
+    src/script/bindings/bind_log.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
 
 target_include_directories(${TARGET_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${LUABRIDGE3_INCLUDE_DIRS}
 )
 
 target_link_libraries(${TARGET_NAME} PUBLIC
@@ -93,9 +100,8 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     harfbuzz::harfbuzz
     magic_enum::magic_enum
     stb
-    luabridge3::luabridge3
-    Luau.VM
-    Luau.Compiler
+    unofficial::luau::Luau.VM
+    unofficial::luau::Luau.Compiler
 )
 
 if (WIN32)

@@ -1,20 +1,24 @@
 #include "serenkai/script/bindings/bind_log.hpp"
 
-#include <lauxlib.h>
-#include <lua.h>
-#include <luabridge3/LuaBridge/LuaBridge.h>
-#include <luabridge3/LuaBridge/detail/Namespace.h>
+// clang-format off
+    #include <lua.h>
+    #include <lualib.h>
+    #include <luabridge3/LuaBridge/LuaBridge.h>
+// clang-format on
+
 #include <spdlog/spdlog.h>
 #include <sstream>
 #include <string>
 namespace {
+
 std::string lua_args_to_string(lua_State* state) {
     int n = lua_gettop(state);
     std::ostringstream oss;
     for (int i = 1; i <= n; ++i) {
-        const char* s = luaL_tolstring(state, i, nullptr);
-        if (i > 1)
+        if (i > 1) {
             oss << '\t';
+        }
+        const char* s = luaL_tolstring(state, i, nullptr);
         oss << (s ? s : "(null)");
         lua_pop(state, 1);
     }
