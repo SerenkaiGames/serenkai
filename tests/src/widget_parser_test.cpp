@@ -5,6 +5,7 @@
 #include "serenkai/gui/anchor.hpp"
 #include "serenkai/gui/button.hpp"
 #include "serenkai/gui/color.hpp"
+#include "serenkai/gui/column_layout.hpp"
 #include "serenkai/gui/image_widget.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
@@ -579,5 +580,109 @@ TEST_CASE("WidgetParser image construction and property parsing",
         REQUIRE(img != nullptr);
         CHECK(img->get_image() == "test:icon12x8.png");
         CHECK(img->size() == glm::ivec2{12, 8});
+    }
+}
+
+TEST_CASE("WidgetParser column construction and property parsing",
+          "[gui][parser]") {
+    fs::path temp_dir = fs::temp_directory_path() / "serenkai_test_parser_col";
+    fs::remove_all(temp_dir);
+    fs::create_directories(temp_dir / "ui");
+    RaiiGuard cleanup([]() {}, [&temp_dir]() { fs::remove_all(temp_dir); });
+
+    write_file(temp_dir / "assets.json", R"({"ns": "test"})");
+
+    SECTION("Parse column with default properties") {
+        write_file(temp_dir / "ui" / "col_default.json", R"({
+            "root": {
+                "menu_col": {
+                    "type": "column"
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/col_default.json");
+        REQUIRE(widget != nullptr);
+        CHECK(widget->name() == "menu_col");
+        CHECK(widget->anchor() == Anchor::TopLeft);
+        CHECK(widget->offset() == glm::ivec2{0, 0});
+
+        auto* col = dynamic_cast<ColumnLayout*>(widget.get());
+        REQUIRE(col != nullptr);
+        CHECK(col->spacing() == 0);
+        CHECK(col->child_anchor() == ChildAnchor::Left);
+        CHECK(col->size() == glm::ivec2{0, 0});
+    }
+
+    SECTION("Parse column with custom properties") {
+        write_file(temp_dir / "ui" / "col_custom.json", R"({
+            "root": {
+                "nav_col": {
+                    "type": "column",
+                    "spacing": 15,
+                    "child_anchor": "Center",
+                    "anchor": "Center",
+                    "offset": [10, -20]
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/col_custom.json");
+        REQUIRE(widget != nullptr);
+        CHECK(widget->name() == "nav_col");
+        CHECK(widget->anchor() == Anchor::Center);
+        CHECK(widget->offset() == glm::ivec2{10, -20});
+
+        auto* col = dynamic_cast<ColumnLayout*>(widget.get());
+        REQUIRE(col != nullptr);
+        CHECK(col->spacing() == 15);
+        CHECK(col->child_anchor() == ChildAnchor::Center);
+    }
+
+    SECTION("Parse column with children and verify layout") {
+        write_file(temp_dir / "ui" / "col_tree.json", R"({
+            "root": {
+                "box_col": {
+                    "type": "column",
+                    "spacing": 10,
+                    "child_anchor": "Right",
+                    "children": [
+                        {
+                            "item1": {
+                                "type": "rect",
+                                "size": [100, 40]
+                            }
+                        },
+                        {
+                            "item2": {
+                                "type": "rect",
+                                "size": [50, 30]
+                            }
+                        }
+                    ]
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/col_tree.json");
+        REQUIRE(widget != nullptr);
+
+        auto* col = dynamic_cast<ColumnLayout*>(widget.get());
+        REQUIRE(col != nullptr);
+        CHECK(col->children().size() == 2);
+        CHECK(col->size() == glm::ivec2{100, 80});
+
+        auto* item1 = col->fetch_child<Rect>("item1");
+        REQUIRE(item1 != nullptr);
+        CHECK(item1->anchor() == Anchor::TopRight);
+        CHECK(item1->offset() == glm::ivec2{0, 0});
+
+        auto* item2 = col->fetch_child<Rect>("item2");
+        REQUIRE(item2 != nullptr);
+        CHECK(item2->anchor() == Anchor::TopRight);
+        CHECK(item2->offset() == glm::ivec2{0, 50});
     }
 }
