@@ -1,5 +1,7 @@
 #include "serenkai/script/script_engine.hpp"
 
+#include "serenkai/resource/asset_manager.hpp"
+#include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
 
 #include <fstream>
@@ -16,6 +18,8 @@ void init_lua(lua_State*& L) {
     }
 
     luaL_openlibs(L);
+    // Enable sandbox to prevent malicious code.
+    luaL_sandbox(L);
 }
 
 void cleanup_lua(lua_State*& L) { lua_close(L); }
@@ -40,12 +44,13 @@ lua_CompileOptions get_lua_options() {
 } // namespace
 
 namespace serenkai {
-ScriptEngine::ScriptEngine() : m_state(init_lua, cleanup_lua) {
+ScriptEngine::ScriptEngine(AssetManager* asset_manager)
+    : m_asset_manager(asset_manager), m_root_state(init_lua, cleanup_lua) {
 
-    register_lua_log(m_state.get());
+    register_lua_log(m_root_state.get());
 }
 
-bool ScriptEngine::run_string(const std::string& script,
+bool ScriptEngine::run_string(lua_State* L, const std::string& script,
                               const std::string& chunk_name) {
     size_t bytecode_size = 0;
 
@@ -58,28 +63,28 @@ bool ScriptEngine::run_string(const std::string& script,
         return false;
     }
 
-    int load_result = luau_load(m_state.get(), chunk_name.c_str(), bytecode,
-                                bytecode_size, 0);
+    int load_result =
+        luau_load(L, chunk_name.c_str(), bytecode, bytecode_size, 0);
     free(bytecode);
 
     if (load_result != 0) {
-        const char* err = lua_tostring(m_state.get(), -1);
+        const char* err = lua_tostring(L, -1);
         spdlog::error("luau_load failed: {}", err ? err : "Unknown error");
-        lua_pop(m_state.get(), 1);
+        lua_pop(L, 1);
         return false;
     }
 
-    if (lua_pcall(m_state.get(), 0, 0, 0) != LUA_OK) {
-        const char* err = lua_tostring(m_state.get(), -1);
+    if (lua_resume(L, nullptr, 0) != LUA_OK) {
+        const char* err = lua_tostring(L, -1);
         spdlog::error("Lua runtime error: {}", err ? err : "Unknown error");
-        lua_pop(m_state.get(), 1);
+        lua_pop(L, 1);
         return false;
     }
 
     return true;
 }
 
-bool ScriptEngine::run_file(const std::string& path) {
+bool ScriptEngine::run_file(lua_State* L, const std::string& path) {
 
     std::ifstream file(path, std::ios::binary);
     if (!file) {
@@ -89,7 +94,57 @@ bool ScriptEngine::run_file(const std::string& path) {
 
     std::ostringstream oss;
     oss << file.rdbuf();
-    return run_string(oss.str(), path);
+    return run_string(L, oss.str(), path);
+}
+
+bool ScriptEngine::load(std::string_view loc) {
+    auto res = ResourceLocation::parse(loc);
+    if (!res) {
+
+        return false;
+    }
+    if (m_states.find(*res) != m_states.end()) {
+        spdlog::warn("Script {} already loaded, do nothing", loc);
+        return false;
+    }
+
+    auto state = lua_newthread(m_root_state.get());
+    luaL_sandboxthread(state);
+
+    auto id = lua_ref(state, -1);
+    lua_pop(m_root_state.get(), 1);
+
+    m_states.try_emplace(*res, state);
+    m_thread_refs.try_emplace(*res, id);
+
+    auto path = m_asset_manager->get(loc);
+    if (!path) {
+        return false;
+    }
+    return run_file(state, *path);
+}
+
+bool ScriptEngine::unload(std::string_view loc) {
+    auto res = ResourceLocation::parse(loc);
+    if (!res) {
+
+        return false;
+    }
+    auto l_it = m_states.find(*res);
+    auto id_it = m_thread_refs.find(*res);
+    if (l_it == m_states.end() || id_it == m_thread_refs.end()) {
+        spdlog::warn("Can't find script {} in states map", loc);
+        return false;
+    }
+    auto id = id_it->second;
+    if (id != LUA_NOREF && id != LUA_REFNIL) {
+        lua_unref(m_root_state.get(), id);
+        id = LUA_NOREF;
+    }
+
+    m_states.erase(l_it);
+    m_thread_refs.erase(id_it);
+    return true;
 }
 
 } // namespace serenkai

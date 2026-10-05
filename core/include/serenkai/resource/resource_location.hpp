@@ -1,5 +1,7 @@
 #pragma once
 
+#include "serenkai/base/math.hpp"
+
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -21,7 +23,9 @@ struct ResourceLocation {
     const size_t hash;
 
     ResourceLocation(std::string_view ns, std::string_view path)
-        : ns(ns), path(path), hash(std::hash<std::string>()(to_string())) {}
+        : ns(ns), path(path),
+          hash(combine32(std::hash<std::string_view>{}(ns),
+                         std::hash<std::string_view>{}(path))) {}
 
     std::string to_string() const { return ns + ":" + path; }
 
