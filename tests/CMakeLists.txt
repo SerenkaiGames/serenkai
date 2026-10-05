@@ -21,6 +21,7 @@ add_executable(serenkai_tests
     src/texture_manager_test.cpp
     src/image_widget_test.cpp
     src/column_layout_test.cpp
+    src/script_engine_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core
