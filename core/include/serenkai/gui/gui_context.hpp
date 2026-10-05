@@ -14,9 +14,6 @@ class TextureManager;
 struct GuiConfig {
     Renderer* renderer{nullptr};
     TextureManager* texture_manager{nullptr};
-
-    GuiConfig(Renderer* r, TextureManager* t)
-        : renderer(r), texture_manager(t) {}
 };
 
 /// @brief The Gui Context is used to provide GUI-related classes
@@ -37,7 +34,7 @@ public:
 
     void render_label(const Label& label);
     void render_rect(const Rect& rect);
-    void render_image(const ImageWidget* image);
+    void render_image(const ImageWidget& image);
 
 private:
     Renderer* m_renderer = nullptr;

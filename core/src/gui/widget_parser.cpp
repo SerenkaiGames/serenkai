@@ -120,7 +120,8 @@ std::optional<T> get(const glz::generic& json, std::string_view key) {
 
 WidgetParser::WidgetParser(const WidgetParserConfig& config)
     : m_asset_manager(config.asset_manager),
-      m_font_manager(config.font_manager) {
+      m_font_manager(config.font_manager),
+      m_texture_manager(config.texture_manager) {
 
     register_factory("label",
                      [this](std::string_view name, const glz::generic& json) {
@@ -133,6 +134,10 @@ WidgetParser::WidgetParser(const WidgetParserConfig& config)
     register_factory("button",
                      [this](std::string_view name, const glz::generic& json) {
                          return parse_button(name, json);
+                     });
+    register_factory("image",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_image(name, json);
                      });
 }
 
@@ -323,6 +328,12 @@ WidgetParser::parse_button(std::string_view name,
 std::unique_ptr<Widget>
 WidgetParser::parse_image(std::string_view name,
                           const glz::generic& json) const {
+
+    if (!m_texture_manager) {
+        spdlog::error("TextureManager is nullptr");
+        SE_ASSERT(false);
+        return nullptr;
+    }
 
     auto image = std::make_unique<ImageWidget>(name, nullptr);
     ImageWidgetData data{};

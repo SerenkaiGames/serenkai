@@ -62,9 +62,9 @@ SDL_Texture* TextureManager::get(std::string_view loc) {
     if (!texture) {
         spdlog::error("Failed to create SDL texture {} {}", loc,
                       SDL_GetError());
+    } else {
+        SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
     }
-
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
 
     // Also insert failed textures to prevent repeated loading.
     m_textures.try_emplace(*resource, texture);

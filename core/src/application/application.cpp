@@ -68,8 +68,8 @@ Application::Application() {
 
     m_scene_manager = std::make_unique<SceneManager>();
 
-    m_widget_parser = std::make_unique<WidgetParser>(
-        WidgetParserConfig{m_asset_manager.get(), m_font_manager.get()});
+    m_widget_parser = std::make_unique<WidgetParser>(WidgetParserConfig{
+        m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get()});
 
     m_widget_parser->register_callback("on_exit_game",
                                        [this]() { m_running = false; });

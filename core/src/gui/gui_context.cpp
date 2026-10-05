@@ -69,11 +69,15 @@ void GuiContext::render_rect(const Rect& rect) {
                           rect.alpha(), ui_scale());
 }
 
-void GuiContext::render_image(const ImageWidget* image) {
-    auto texture = m_texture_manager->get(image->get_image());
+void GuiContext::render_image(const ImageWidget& image) {
+    if (!m_texture_manager) {
+        return;
+    }
 
-    m_renderer->draw_image(texture, to_physical_coord(image->pos()),
-                           image->size(), ui_scale());
+    auto texture = m_texture_manager->get(image.get_image());
+
+    m_renderer->draw_image(texture, to_physical_coord(image.pos()),
+                           image.size(), ui_scale());
 }
 
 glm::ivec2 GuiContext::to_physical_coord(glm::ivec2 pos) const {

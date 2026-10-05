@@ -59,6 +59,9 @@ void Renderer::draw_rect(glm::ivec2 pos, glm::ivec2 size, Color color,
 
 void Renderer::draw_image(SDL_Texture* texture, glm::ivec2 pos, glm::ivec2 size,
                           float scale) {
+    if (!texture) {
+        return;
+    }
     SDL_FRect dst{static_cast<float>(pos.x), static_cast<float>(pos.y),
                   static_cast<float>(size.x) * scale,
                   static_cast<float>(size.y) * scale};

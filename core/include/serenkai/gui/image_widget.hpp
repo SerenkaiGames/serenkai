@@ -17,6 +17,8 @@ public:
     const std::string& get_image() const;
 
 private:
+    void on_render(GuiContext* context) override;
+
     std::string m_image;
 };
 } // namespace serenkai
