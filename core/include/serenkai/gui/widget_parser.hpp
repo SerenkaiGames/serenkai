@@ -69,7 +69,8 @@ private:
                                          const glz::generic& json) const;
     std::unique_ptr<Widget> parse_image(std::string_view name,
                                         const glz::generic& json) const;
-
+    std::unique_ptr<Widget> parse_column(std::string_view name,
+                                         const glz::generic& json) const;
     /// @brief Function that automatically handles the children field
     ///
     /// @param json JSON object containing the children field

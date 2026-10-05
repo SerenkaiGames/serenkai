@@ -71,6 +71,8 @@ add_library(
     src/resource/texture_manager.cpp
     include/serenkai/gui/image_widget.hpp
     src/gui/image_widget.cpp
+    include/serenkai/gui/column_layout.hpp
+    src/gui/column_layout.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
