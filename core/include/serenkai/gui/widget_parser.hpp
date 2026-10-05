@@ -15,11 +15,12 @@
 namespace serenkai {
 
 class AssetManager;
-class Application;
+class TextureManager;
 
 struct WidgetParserConfig {
     AssetManager* asset_manager = nullptr;
     FontManager* font_manager = nullptr;
+    TextureManager* texture_manager = nullptr;
 };
 
 /// @brief Constructs UI widgets from JSON.
@@ -51,6 +52,7 @@ private:
 
     AssetManager* m_asset_manager = nullptr;
     FontManager* m_font_manager = nullptr;
+    TextureManager* m_texture_manager = nullptr;
 
     /// @brief Recursively traverse the JSON tree to construct the widget tree.
     ///
@@ -65,6 +67,8 @@ private:
                                        const glz::generic& json) const;
     std::unique_ptr<Widget> parse_button(std::string_view name,
                                          const glz::generic& json) const;
+    std::unique_ptr<Widget> parse_image(std::string_view name,
+                                        const glz::generic& json) const;
 
     /// @brief Function that automatically handles the children field
     ///

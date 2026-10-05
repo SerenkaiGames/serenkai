@@ -63,7 +63,8 @@ Application::Application() {
     m_texture_manager = std::make_unique<TextureManager>(
         m_asset_manager.get(), m_renderer->get_sdl_renderer());
 
-    m_gui_context = std::make_unique<GuiContext>(GuiConfig{m_renderer.get()});
+    m_gui_context = std::make_unique<GuiContext>(
+        GuiConfig{m_renderer.get(), m_texture_manager.get()});
 
     m_scene_manager = std::make_unique<SceneManager>();
 

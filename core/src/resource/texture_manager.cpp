@@ -8,6 +8,7 @@
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_surface.h>
 #include <memory>
 #include <spdlog/spdlog.h>
 
@@ -62,9 +63,28 @@ SDL_Texture* TextureManager::get(std::string_view loc) {
         spdlog::error("Failed to create SDL texture {} {}", loc,
                       SDL_GetError());
     }
+
+    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
+
     // Also insert failed textures to prevent repeated loading.
     m_textures.try_emplace(*resource, texture);
     return texture;
+}
+
+glm::ivec2 TextureManager::measure_size(std::string_view loc) {
+    float w = 0, h = 0;
+    auto texture = get(loc);
+    if (!texture) {
+        spdlog::error("Failed to measure texture {} size, texture is nullptr",
+                      loc);
+        return {};
+    }
+    if (!SDL_GetTextureSize(texture, &w, &h)) {
+        spdlog::error("Failed to measure texture {} size, {}", loc,
+                      SDL_GetError());
+    }
+
+    return {w, h};
 }
 
 } // namespace serenkai

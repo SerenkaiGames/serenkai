@@ -52,6 +52,9 @@ public:
     void draw_rect(glm::ivec2 pos, glm::ivec2 size, Color color, float alpha,
                    float scale);
 
+    void draw_image(SDL_Texture* texture, glm::ivec2 pos, glm::ivec2 size,
+                    float scale);
+
 private:
     const RendererConfig m_config;
     SDL_Renderer* m_sdl_renderer{nullptr};

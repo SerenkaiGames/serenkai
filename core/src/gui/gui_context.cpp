@@ -4,12 +4,14 @@
 #include "serenkai/base/glm_fmt.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/render/renderer.hpp"
+#include "serenkai/resource/texture_manager.hpp"
 
 #include <algorithm>
 #include <spdlog/spdlog.h>
 
 namespace serenkai {
-GuiContext::GuiContext(GuiConfig config) : m_renderer(config.renderer) {}
+GuiContext::GuiContext(GuiConfig config)
+    : m_renderer(config.renderer), m_texture_manager(config.texture_manager) {}
 
 Renderer* GuiContext::get_renderer() const {
     SE_VERIFY(m_renderer);
@@ -65,6 +67,13 @@ void GuiContext::render_rect(const Rect& rect) {
     auto pos = rect.pos();
     m_renderer->draw_rect(to_physical_coord(pos), rect.size(), rect.color(),
                           rect.alpha(), ui_scale());
+}
+
+void GuiContext::render_image(const ImageWidget* image) {
+    auto texture = m_texture_manager->get(image->get_image());
+
+    m_renderer->draw_image(texture, to_physical_coord(image->pos()),
+                           image->size(), ui_scale());
 }
 
 glm::ivec2 GuiContext::to_physical_coord(glm::ivec2 pos) const {

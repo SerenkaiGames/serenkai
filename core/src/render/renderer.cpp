@@ -57,4 +57,12 @@ void Renderer::draw_rect(glm::ivec2 pos, glm::ivec2 size, Color color,
     SDL_RenderFillRect(m_sdl_renderer, &dst);
 }
 
+void Renderer::draw_image(SDL_Texture* texture, glm::ivec2 pos, glm::ivec2 size,
+                          float scale) {
+    SDL_FRect dst{static_cast<float>(pos.x), static_cast<float>(pos.y),
+                  static_cast<float>(size.x) * scale,
+                  static_cast<float>(size.y) * scale};
+    SDL_RenderTexture(m_sdl_renderer, texture, nullptr, &dst);
+}
+
 } // namespace serenkai

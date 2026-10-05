@@ -1,6 +1,7 @@
 #pragma once
 
 #include "serenkai/application/event.hpp"
+#include "serenkai/gui/image_widget.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
 
@@ -9,9 +10,13 @@
 #include <glm/ext/vector_int2.hpp>
 namespace serenkai {
 class Renderer;
-
+class TextureManager;
 struct GuiConfig {
-    Renderer* renderer;
+    Renderer* renderer{nullptr};
+    TextureManager* texture_manager{nullptr};
+
+    GuiConfig(Renderer* r, TextureManager* t)
+        : renderer(r), texture_manager(t) {}
 };
 
 /// @brief The Gui Context is used to provide GUI-related classes
@@ -32,10 +37,11 @@ public:
 
     void render_label(const Label& label);
     void render_rect(const Rect& rect);
+    void render_image(const ImageWidget* image);
 
 private:
     Renderer* m_renderer = nullptr;
-
+    TextureManager* m_texture_manager = nullptr;
     size_t m_ui_scale = 3;
     glm::ivec2 m_logical_window_size{0};
 };
