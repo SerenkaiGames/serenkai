@@ -17,7 +17,15 @@ class ScriptEngine {
 public:
     ScriptEngine();
 
+    /// @brief Runs a Lua script from a string.
+    /// @return true on success, false on error (error is logged).
+    bool run_string(const std::string& script);
+
+    /// @brief Runs a Lua script from a file.
+    /// @return true on success, false on error (error is logged).
+    bool run_file(const std::string& path);
+
 private:
-    std::unique_ptr<LuaState> m_lua_state;
+    std::unique_ptr<LuaState> m_state;
 };
 } // namespace serenkai
