@@ -5,17 +5,21 @@
 #include "serenkai/gui/anchor.hpp"
 #include "serenkai/gui/button.hpp"
 #include "serenkai/gui/color.hpp"
+#include "serenkai/gui/image_widget.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
 #include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/directory_source.hpp"
 #include "serenkai/resource/font_manager.hpp"
+#include "serenkai/resource/texture_manager.hpp"
 
+#include <SDL3/SDL.h>
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <stb_image_write.h>
 #include <string>
 
 namespace fs = std::filesystem;
@@ -34,11 +38,15 @@ void write_file(const fs::path& path, std::string_view content) {
 struct TestParserContext {
     AssetManager asset_manager;
     FontManager font_manager;
+    TextureManager texture_manager;
     WidgetParser parser;
 
-    explicit TestParserContext(const fs::path& dir)
+    explicit TestParserContext(const fs::path& dir,
+                               SDL_Renderer* renderer = nullptr)
         : font_manager(&asset_manager),
-          parser(WidgetParserConfig{&asset_manager, &font_manager}) {
+          texture_manager(&asset_manager, renderer),
+          parser(WidgetParserConfig{&asset_manager, &font_manager,
+                                    &texture_manager}) {
         asset_manager.merge_source(std::make_shared<DirectorySource>(dir));
     }
 };
@@ -445,5 +453,131 @@ TEST_CASE("WidgetParser button construction, property parsing, and callbacks",
         auto* button = dynamic_cast<Button*>(widget.get());
         REQUIRE(button != nullptr);
         CHECK(button->name() == "plain_btn");
+    }
+}
+
+TEST_CASE("WidgetParser image construction and property parsing",
+          "[gui][parser]") {
+    fs::path temp_dir = fs::temp_directory_path() / "serenkai_test_parser_img";
+    fs::remove_all(temp_dir);
+    fs::create_directories(temp_dir / "ui");
+    RaiiGuard cleanup([]() {}, [&temp_dir]() { fs::remove_all(temp_dir); });
+
+    write_file(temp_dir / "assets.json", R"({"ns": "test"})");
+
+    SECTION("Parse image with explicit size and custom anchor/offset") {
+        write_file(temp_dir / "ui" / "image_explicit.json", R"({
+            "root": {
+                "avatar": {
+                    "type": "image",
+                    "image": "test:textures/avatar.png",
+                    "size": [64, 48],
+                    "anchor": "Center",
+                    "offset": [15, -10]
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/image_explicit.json");
+        REQUIRE(widget != nullptr);
+        CHECK(widget->name() == "avatar");
+        CHECK(widget->anchor() == Anchor::Center);
+        CHECK(widget->offset() == glm::ivec2{15, -10});
+
+        auto* img = dynamic_cast<ImageWidget*>(widget.get());
+        REQUIRE(img != nullptr);
+        CHECK(img->get_image() == "test:textures/avatar.png");
+        CHECK(img->size() == glm::ivec2{64, 48});
+    }
+
+    SECTION("Parse image with children") {
+        write_file(temp_dir / "ui" / "image_tree.json", R"({
+            "root": {
+                "banner": {
+                    "type": "image",
+                    "image": "test:textures/banner.png",
+                    "size": [300, 100],
+                    "children": [
+                        {
+                            "title": {
+                                "type": "label",
+                                "text": "Header"
+                            }
+                        }
+                    ]
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/image_tree.json");
+        REQUIRE(widget != nullptr);
+        CHECK(widget->children().size() == 1);
+        auto* child = widget->fetch_child<Label>("title");
+        REQUIRE(child != nullptr);
+        CHECK(child->text() == "Header");
+    }
+
+    SECTION("Image missing required image field returns nullptr") {
+        write_file(temp_dir / "ui" / "image_no_src.json", R"({
+            "root": {
+                "bad_image": {
+                    "type": "image",
+                    "size": [32, 32]
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto widget = ctx.parser.parse("test:ui/image_no_src.json");
+        CHECK(widget == nullptr);
+    }
+
+    SECTION("Parse image with auto size measurement") {
+        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "dummy");
+        REQUIRE(SDL_Init(SDL_INIT_VIDEO));
+
+        SDL_Window* window = SDL_CreateWindow("Test", 64, 64, 0);
+        REQUIRE(window != nullptr);
+
+        SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
+        REQUIRE(renderer != nullptr);
+
+        RaiiGuard sdl_guard([]() {},
+                            [&]() {
+                                SDL_DestroyRenderer(renderer);
+                                SDL_DestroyWindow(window);
+                                SDL_Quit();
+                            });
+
+        const int width = 12;
+        const int height = 8;
+        const int channels = 4;
+        const std::vector<uint8_t> pixels(width * height * channels, 255);
+        fs::path img_path = temp_dir / "icon12x8.png";
+        int write_res =
+            stbi_write_png(img_path.string().c_str(), width, height, channels,
+                           pixels.data(), width * channels);
+        REQUIRE(write_res != 0);
+
+        write_file(temp_dir / "ui" / "image_auto_size.json", R"({
+            "root": {
+                "measured_image": {
+                    "type": "image",
+                    "image": "test:icon12x8.png"
+                }
+            }
+        })");
+
+        TestParserContext ctx(temp_dir, renderer);
+        auto widget = ctx.parser.parse("test:ui/image_auto_size.json");
+        REQUIRE(widget != nullptr);
+        CHECK(widget->name() == "measured_image");
+
+        auto* img = dynamic_cast<ImageWidget*>(widget.get());
+        REQUIRE(img != nullptr);
+        CHECK(img->get_image() == "test:icon12x8.png");
+        CHECK(img->size() == glm::ivec2{12, 8});
     }
 }
