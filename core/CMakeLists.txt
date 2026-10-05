@@ -69,6 +69,8 @@ add_library(
     src/resource/image_loader.cpp
     include/serenkai/resource/texture_manager.hpp
     src/resource/texture_manager.cpp
+    include/serenkai/gui/image_widget.hpp
+    src/gui/image_widget.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

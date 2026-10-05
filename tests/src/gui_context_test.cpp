@@ -11,7 +11,7 @@ using namespace serenkai;
 
 TEST_CASE("GuiContext window resize event handling and scaling",
           "[gui][context]") {
-    GuiContext context(GuiConfig{nullptr});
+    GuiContext context(GuiConfig{nullptr, nullptr});
 
     SECTION("Invalid dimensions do not update logical size") {
         Widget::set_logical_window_size({100, 100});

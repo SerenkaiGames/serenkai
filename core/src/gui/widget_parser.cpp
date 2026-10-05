@@ -6,11 +6,13 @@
 #include "serenkai/gui/anchor.hpp"
 #include "serenkai/gui/button.hpp"
 #include "serenkai/gui/color.hpp"
+#include "serenkai/gui/image_widget.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/font_manager.hpp"
+#include "serenkai/resource/texture_manager.hpp"
 
 #include <cstddef>
 #include <glaze/core/reflect.hpp>
@@ -56,11 +58,29 @@ struct ButtonData {
     std::optional<std::string> callback;
 };
 
+struct ImageWidgetData {
+    Anchor anchor = Anchor::TopLeft;
+    glm::ivec2 offset{0, 0};
+    std::optional<glm::ivec2> size;
+    std::string image;
+};
+
 } // namespace serenkai
 
 template <> struct glz::meta<glm::ivec2> {
     using T = glm::ivec2;
     static constexpr auto value = glz::array(&T::x, &T::y); // NOLINT
+};
+
+template <> struct glz::meta<serenkai::ImageWidgetData> {
+    static constexpr bool requires_key(std::string_view key, bool) {
+
+        if (key == "image") {
+            return true;
+        }
+
+        return false;
+    }
 };
 
 namespace serenkai {
@@ -100,7 +120,8 @@ std::optional<T> get(const glz::generic& json, std::string_view key) {
 
 WidgetParser::WidgetParser(const WidgetParserConfig& config)
     : m_asset_manager(config.asset_manager),
-      m_font_manager(config.font_manager) {
+      m_font_manager(config.font_manager),
+      m_texture_manager(config.texture_manager) {
 
     register_factory("label",
                      [this](std::string_view name, const glz::generic& json) {
@@ -113,6 +134,10 @@ WidgetParser::WidgetParser(const WidgetParserConfig& config)
     register_factory("button",
                      [this](std::string_view name, const glz::generic& json) {
                          return parse_button(name, json);
+                     });
+    register_factory("image",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_image(name, json);
                      });
 }
 
@@ -298,6 +323,41 @@ WidgetParser::parse_button(std::string_view name,
 
     handle_children(button.get(), json);
     return button;
+}
+
+std::unique_ptr<Widget>
+WidgetParser::parse_image(std::string_view name,
+                          const glz::generic& json) const {
+
+    if (!m_texture_manager) {
+        spdlog::error("TextureManager is nullptr");
+        SE_ASSERT(false);
+        return nullptr;
+    }
+
+    auto image = std::make_unique<ImageWidget>(name, nullptr);
+    ImageWidgetData data{};
+
+    auto ec = glz::read<glz::opts{.error_on_unknown_keys = false,
+                                  .error_on_missing_keys = true}>(data, json);
+    if (ec) {
+        spdlog::error("Failed to read {}, {}", name, glz::format_error(ec));
+        print_debug_json(json);
+        return nullptr;
+    }
+
+    image->set_image(data.image);
+    image->set_anchor(data.anchor);
+    image->set_offset(data.offset);
+    if (data.size) {
+        image->set_size(*data.size);
+    } else {
+        auto size = m_texture_manager->measure_size(data.image);
+        image->set_size(size);
+    }
+
+    handle_children(image.get(), json);
+    return image;
 }
 
 } // namespace serenkai

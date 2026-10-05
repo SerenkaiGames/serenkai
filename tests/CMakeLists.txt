@@ -19,6 +19,7 @@ add_executable(serenkai_tests
     src/widget_parser_test.cpp
     src/image_loader_test.cpp
     src/texture_manager_test.cpp
+    src/image_widget_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core

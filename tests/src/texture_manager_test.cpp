@@ -145,4 +145,16 @@ TEST_CASE("TextureManager loads, caches, and clears textures",
         CHECK(w == 4.0f);
         CHECK(h == 4.0f);
     }
+
+    SECTION("Measure size returns correct dimensions") {
+        auto size = texture_manager.measure_size("test:textures/white4x4.png");
+        CHECK(size == glm::ivec2{4, 4});
+
+        auto missing_size =
+            texture_manager.measure_size("test:textures/missing.png");
+        CHECK(missing_size == glm::ivec2{0, 0});
+
+        auto invalid_size = texture_manager.measure_size(":invalid");
+        CHECK(invalid_size == glm::ivec2{0, 0});
+    }
 }
