@@ -8,8 +8,10 @@
 #include <lua.h>
 #include <luacode.h>
 #include <lualib.h>
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <string>
 namespace {
 void init_lua(lua_State*& L) {
     L = luaL_newstate();
@@ -100,7 +102,7 @@ bool ScriptEngine::run_file(lua_State* L, const std::string& path) {
 bool ScriptEngine::load(std::string_view loc) {
     auto res = ResourceLocation::parse(loc);
     if (!res) {
-
+        spdlog::error("Invaild loc {}", loc);
         return false;
     }
     if (m_states.find(*res) != m_states.end()) {
@@ -119,6 +121,7 @@ bool ScriptEngine::load(std::string_view loc) {
 
     auto path = m_asset_manager->get(loc);
     if (!path) {
+        spdlog::error("Can't find loc {} assets", loc);
         return false;
     }
     return run_file(state, *path);
@@ -127,7 +130,7 @@ bool ScriptEngine::load(std::string_view loc) {
 bool ScriptEngine::unload(std::string_view loc) {
     auto res = ResourceLocation::parse(loc);
     if (!res) {
-
+        spdlog::error("Invaild loc {}", loc);
         return false;
     }
     auto l_it = m_states.find(*res);
@@ -145,6 +148,24 @@ bool ScriptEngine::unload(std::string_view loc) {
     m_states.erase(l_it);
     m_thread_refs.erase(id_it);
     return true;
+}
+
+std::optional<luabridge::LuaRef>
+ScriptEngine::get_global(std::string_view loc, std::string_view global) {
+    auto res = ResourceLocation::parse(loc);
+
+    if (!res) {
+        spdlog::error("Invaild loc {}", loc);
+        return std::nullopt;
+    }
+
+    auto it = m_states.find(*res);
+    if (it == m_states.end()) {
+        spdlog::warn("Can't find script {} in states map", loc);
+        return std::nullopt;
+    }
+
+    return luabridge::getGlobal(it->second, std::string(global).c_str());
 }
 
 } // namespace serenkai
