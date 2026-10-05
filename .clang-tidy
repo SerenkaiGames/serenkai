@@ -37,6 +37,8 @@ CheckOptions:
   - { key: readability-identifier-naming.LocalVariableCase,   value: lower_case }
   - { key: readability-identifier-naming.StaticVariableCase,  value: lower_case }
   - { key: readability-identifier-naming.ParameterCase,       value: lower_case }
+  - { key: readability-identifier-naming.ParameterIgnoredRegexp, value: "^[Ll]$"}
+    
   - { key: readability-identifier-naming.MemberCase,          value: lower_case }
   - { key: readability-identifier-naming.ConstantMemberCase,  value: lower_case }
 
