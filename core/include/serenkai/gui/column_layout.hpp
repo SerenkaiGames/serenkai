@@ -5,6 +5,9 @@
 #include <glm/ext/vector_int2.hpp>
 #include <string_view>
 namespace serenkai {
+/// @brief Layout class
+///
+/// Does not render itself; used only for layout.
 class ColumnLayout : public Widget {
 public:
     ColumnLayout(std::string_view name, Widget* parent);
@@ -12,7 +15,8 @@ public:
     void set_spacing(int spacing);
     void set_child_anchor(ChildAnchor anchor);
 
-    int spacing();
+    int spacing() const;
+    ChildAnchor child_anchor() const;
 
     void layout();
 

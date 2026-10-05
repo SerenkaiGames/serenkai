@@ -15,7 +15,8 @@ void ColumnLayout::set_child_anchor(ChildAnchor anchor) {
     m_child_anchor = anchor;
 }
 
-int ColumnLayout::spacing() { return m_spacing; }
+int ColumnLayout::spacing() const { return m_spacing; }
+ChildAnchor ColumnLayout::child_anchor() const { return m_child_anchor; }
 
 void ColumnLayout::layout() {
     auto children = Widget::children();
@@ -41,6 +42,7 @@ void ColumnLayout::layout() {
         self_size.x = std::max(self_size.x, size.x);
     }
     self_size.y = children.empty() ? 0 : (y - m_spacing);
+    Widget::set_size(self_size);
 }
 
 void ColumnLayout::on_update(float) { layout(); }

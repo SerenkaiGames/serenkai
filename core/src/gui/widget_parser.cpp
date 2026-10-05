@@ -378,8 +378,7 @@ WidgetParser::parse_column(std::string_view name,
     auto column = std::make_unique<ColumnLayout>(name, nullptr);
     ColumnData data{};
 
-    auto ec = glz::read<glz::opts{.error_on_unknown_keys = false,
-                                  .error_on_missing_keys = true}>(data, json);
+    auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json);
     if (ec) {
         spdlog::error("Failed to read {}, {}", name, glz::format_error(ec));
         print_debug_json(json);
