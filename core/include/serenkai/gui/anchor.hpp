@@ -1,6 +1,7 @@
 #pragma once
 
 namespace serenkai {
+
 enum class Anchor {
     TopLeft,
     TopCenter,
@@ -15,4 +16,7 @@ enum class Anchor {
     BottomRight,
 
 };
-}
+// Unified anchor for layout widgets to control child components.
+enum class ChildAnchor { Left, Center, Right };
+
+} // namespace serenkai

@@ -6,6 +6,7 @@
 #include "serenkai/gui/anchor.hpp"
 #include "serenkai/gui/button.hpp"
 #include "serenkai/gui/color.hpp"
+#include "serenkai/gui/column_layout.hpp"
 #include "serenkai/gui/image_widget.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
@@ -63,6 +64,13 @@ struct ImageWidgetData {
     glm::ivec2 offset{0, 0};
     std::optional<glm::ivec2> size;
     std::string image;
+};
+
+struct ColumnData {
+    Anchor anchor = Anchor::TopLeft;
+    glm::ivec2 offset{0, 0};
+    ChildAnchor child_anchor = ChildAnchor::Left;
+    int spacing = 0;
 };
 
 } // namespace serenkai
@@ -138,6 +146,10 @@ WidgetParser::WidgetParser(const WidgetParserConfig& config)
     register_factory("image",
                      [this](std::string_view name, const glz::generic& json) {
                          return parse_image(name, json);
+                     });
+    register_factory("column",
+                     [this](std::string_view name, const glz::generic& json) {
+                         return parse_column(name, json);
                      });
 }
 
@@ -358,6 +370,30 @@ WidgetParser::parse_image(std::string_view name,
 
     handle_children(image.get(), json);
     return image;
+}
+
+std::unique_ptr<Widget>
+WidgetParser::parse_column(std::string_view name,
+                           const glz::generic& json) const {
+    auto column = std::make_unique<ColumnLayout>(name, nullptr);
+    ColumnData data{};
+
+    auto ec = glz::read<glz::opts{.error_on_unknown_keys = false,
+                                  .error_on_missing_keys = true}>(data, json);
+    if (ec) {
+        spdlog::error("Failed to read {}, {}", name, glz::format_error(ec));
+        print_debug_json(json);
+        return nullptr;
+    }
+
+    column->set_spacing(data.spacing);
+    column->set_child_anchor(data.child_anchor);
+    column->set_anchor(data.anchor);
+    column->set_offset(data.offset);
+
+    handle_children(column.get(), json);
+    column->layout();
+    return column;
 }
 
 } // namespace serenkai
