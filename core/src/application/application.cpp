@@ -7,6 +7,7 @@
 #include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/resource/asset_manager.hpp"
+#include "serenkai/resource/directory_source.hpp"
 #include "serenkai/resource/font_manager.hpp"
 #include "serenkai/resource/image_loader.hpp"
 #include "serenkai/resource/texture_manager.hpp"
@@ -50,6 +51,10 @@ Application::Application() {
 #endif
 
     m_asset_manager = std::make_unique<AssetManager>();
+
+    auto source = std::make_shared<DirectorySource>("./assets");
+    m_asset_manager->merge_source(source);
+
     m_font_manager = std::make_unique<FontManager>(m_asset_manager.get());
 
     int linked = SDL_GetVersion();

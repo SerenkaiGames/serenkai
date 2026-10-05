@@ -58,20 +58,10 @@ class ScriptEngine {
 public:
     ScriptEngine(AssetManager* asset_manager);
 
-    /// @brief Runs a Lua script from a string.
-    /// @param L Script thread instead of root lua states
-    /// @return True on success, false on error (error is logged).
-    bool run_string(lua_State* L, const std::string& script,
-                    const std::string& chunk_name = "chunk");
-
-    /// @brief Runs a Lua script from a file.
-    /// @param L Script thread instead of root lua states
-    /// @return True on success, false on error (error is logged).
-    bool run_file(lua_State* L, const std::string& path);
-
     /// @brief Initialize and load a script into a new Lua thread.
     bool load(std::string_view loc);
 
+    /// @brief unload script and release resources.
     bool unload(std::string_view loc);
 
     template <typename... RetTypes, typename... Args>
@@ -96,5 +86,16 @@ private:
     /// nullopt.
     std::optional<luabridge::LuaRef> get_global(std::string_view loc,
                                                 std::string_view global);
+
+    /// @brief Runs a Lua script from a string.
+    /// @param L Script thread instead of root lua states
+    /// @return True on success, false on error (error is logged).
+    bool run_string(lua_State* L, const std::string& script,
+                    const std::string& chunk_name = "chunk");
+
+    /// @brief Runs a Lua script from a file.
+    /// @param L Script thread instead of root lua states
+    /// @return True on success, false on error (error is logged).
+    bool run_file(lua_State* L, const std::string& path);
 };
 } // namespace serenkai

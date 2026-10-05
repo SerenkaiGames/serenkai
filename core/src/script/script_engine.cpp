@@ -100,9 +100,16 @@ bool ScriptEngine::run_file(lua_State* L, const std::string& path) {
 }
 
 bool ScriptEngine::load(std::string_view loc) {
+
+    if (!m_asset_manager) {
+        spdlog::error("Failed to load script {}, assets manager is nullptr",
+                      loc);
+        return false;
+    }
+
     auto res = ResourceLocation::parse(loc);
     if (!res) {
-        spdlog::error("Invaild loc {}", loc);
+        spdlog::error("Invalid loc {}", loc);
         return false;
     }
     if (m_states.find(*res) != m_states.end()) {
@@ -113,24 +120,25 @@ bool ScriptEngine::load(std::string_view loc) {
     auto state = lua_newthread(m_root_state.get());
     luaL_sandboxthread(state);
 
-    auto id = lua_ref(state, -1);
+    auto id = lua_ref(m_root_state.get(), -1);
     lua_pop(m_root_state.get(), 1);
 
-    m_states.try_emplace(*res, state);
-    m_thread_refs.try_emplace(*res, id);
-
     auto path = m_asset_manager->get(loc);
-    if (!path) {
-        spdlog::error("Can't find loc {} assets", loc);
+    if (path && run_file(state, *path)) {
+        m_states.try_emplace(*res, state);
+        m_thread_refs.try_emplace(*res, id);
+        return true;
+    } else {
+        spdlog::error("Failed to load script {}", loc);
+        lua_unref(m_root_state.get(), id);
         return false;
     }
-    return run_file(state, *path);
 }
 
 bool ScriptEngine::unload(std::string_view loc) {
     auto res = ResourceLocation::parse(loc);
     if (!res) {
-        spdlog::error("Invaild loc {}", loc);
+        spdlog::error("Invalid loc {}", loc);
         return false;
     }
     auto l_it = m_states.find(*res);
@@ -155,7 +163,7 @@ ScriptEngine::get_global(std::string_view loc, std::string_view global) {
     auto res = ResourceLocation::parse(loc);
 
     if (!res) {
-        spdlog::error("Invaild loc {}", loc);
+        spdlog::error("Invalid loc {}", loc);
         return std::nullopt;
     }
 
@@ -164,8 +172,13 @@ ScriptEngine::get_global(std::string_view loc, std::string_view global) {
         spdlog::warn("Can't find script {} in states map", loc);
         return std::nullopt;
     }
-
-    return luabridge::getGlobal(it->second, std::string(global).c_str());
+    auto var = luabridge::getGlobal(it->second, std::string(global).c_str());
+    if (var.isNil()) {
+        spdlog::error("Failed to get global var {}: {}, the var is nil", loc,
+                      global);
+        return std::nullopt;
+    }
+    return var;
 }
 
 } // namespace serenkai
