@@ -39,24 +39,28 @@ TEST_CASE("ResourceLocation parsing and formatting", "[resource]") {
     SECTION("Valid explicit namespace and path") {
         auto loc = ResourceLocation::parse("mygame:textures/player.png");
         REQUIRE(loc.has_value());
-        CHECK(loc->ns == "mygame");
-        CHECK(loc->path == "textures/player.png");
+        CHECK(loc->ns() == "mygame");
+        CHECK(loc->path() == "textures/player.png");
+        CHECK(loc->str() == "mygame:textures/player.png");
         CHECK(loc->to_string() == "mygame:textures/player.png");
+        CHECK(loc->valid());
     }
 
     SECTION("Default namespace when colon is omitted") {
         auto loc = ResourceLocation::parse("textures/player.png");
         REQUIRE(loc.has_value());
-        CHECK(loc->ns == ResourceLocation::DEFAULT_NAMESPACE);
-        CHECK(loc->path == "textures/player.png");
+        CHECK(loc->ns() == ResourceLocation::DEFAULT_NAMESPACE);
+        CHECK(loc->path() == "textures/player.png");
+        CHECK(loc->str() == "serenkai:textures/player.png");
         CHECK(loc->to_string() == "serenkai:textures/player.png");
+        CHECK(loc->valid());
     }
 
     SECTION("Valid characters in path and namespace") {
         auto loc = ResourceLocation::parse("mod01:ui/hud_v2.0-beta.json");
         REQUIRE(loc.has_value());
-        CHECK(loc->ns == "mod01");
-        CHECK(loc->path == "ui/hud_v2.0-beta.json");
+        CHECK(loc->ns() == "mod01");
+        CHECK(loc->path() == "ui/hud_v2.0-beta.json");
     }
 
     SECTION("Invalid locations are rejected") {
@@ -77,7 +81,40 @@ TEST_CASE("ResourceLocation parsing and formatting", "[resource]") {
         CHECK_FALSE(ResourceLocation::parse("invalid$ns:test.png").has_value());
     }
 
-    SECTION("Equality and hash support") {
+    SECTION("Capacity limit enforcement") {
+        std::string long_path(ResourceLocation::CAPACITY + 1, 'a');
+        CHECK_FALSE(
+            ResourceLocation::parse("serenkai:" + long_path).has_value());
+
+        // Max path that fits exactly within CAPACITY
+        const std::size_t max_path_len =
+            ResourceLocation::CAPACITY -
+            ResourceLocation::DEFAULT_NAMESPACE.size() - 1;
+        std::string fit_path(max_path_len, 'a');
+        auto fit_loc = ResourceLocation::parse("serenkai:" + fit_path);
+        REQUIRE(fit_loc.has_value());
+        CHECK(fit_loc->valid());
+
+        // One character beyond CAPACITY should fail
+        std::string exceed_path(max_path_len + 1, 'a');
+        CHECK_FALSE(
+            ResourceLocation::parse("serenkai:" + exceed_path).has_value());
+    }
+
+    SECTION("User-defined literal _rl and constexpr parsing") {
+        constexpr auto loc_lit = "serenkai:textures/player.png"_rl;
+        static_assert(loc_lit.valid());
+        static_assert(loc_lit.ns() == "serenkai");
+        static_assert(loc_lit.path() == "textures/player.png");
+        static_assert(loc_lit.str() == "serenkai:textures/player.png");
+
+        CHECK(loc_lit.valid());
+        CHECK(loc_lit.str() == "serenkai:textures/player.png");
+        CHECK(loc_lit.to_string() == "serenkai:textures/player.png");
+        CHECK(loc_lit != "serenkai:textures/other.png"_rl);
+    }
+
+    SECTION("Equality, inequality, and hash support") {
         auto loc1 = ResourceLocation::parse("serenkai:texture.png");
         auto loc2 = ResourceLocation::parse("serenkai:texture.png");
         auto loc3 = ResourceLocation::parse("other:texture.png");
@@ -87,7 +124,9 @@ TEST_CASE("ResourceLocation parsing and formatting", "[resource]") {
         REQUIRE(loc3.has_value());
 
         CHECK(*loc1 == *loc2);
+        CHECK_FALSE(*loc1 != *loc2);
         CHECK_FALSE(*loc1 == *loc3);
+        CHECK(*loc1 != *loc3);
 
         std::unordered_set<ResourceLocation> set;
         set.insert(*loc1);
@@ -119,7 +158,10 @@ TEST_CASE("AssetManager source merging and asset lookup", "[resource]") {
     CHECK(source1->get_asset_files().empty());
 
     CHECK(manager.get("game:textures/a.png") == "/virtual/path/a.png");
+    CHECK(manager.get(loc_a) == "/virtual/path/a.png");
+    CHECK(manager.get("game:textures/a.png"_rl) == "/virtual/path/a.png");
     CHECK(manager.get("game:textures/b.png") == std::nullopt);
+    CHECK(manager.get(loc_b) == std::nullopt);
     CHECK(manager.get("nonexistent:path") == std::nullopt);
     CHECK(manager.get("") == std::nullopt);
 
@@ -127,8 +169,10 @@ TEST_CASE("AssetManager source merging and asset lookup", "[resource]") {
     manager.merge_source(source2);
     // The non-conflicting asset is imported.
     CHECK(manager.get("game:textures/b.png") == "/virtual/path/b.png");
+    CHECK(manager.get(loc_b) == "/virtual/path/b.png");
     // Original asset remains unchanged.
     CHECK(manager.get("game:textures/a.png") == "/virtual/path/a.png");
+    CHECK(manager.get(loc_a) == "/virtual/path/a.png");
     // Conflicting entry is retained in source2.
     CHECK(source2->get_asset_files().size() == 1);
     CHECK(source2->get_asset_files().contains(loc_conflict));

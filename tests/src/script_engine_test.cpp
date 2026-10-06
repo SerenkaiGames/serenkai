@@ -54,8 +54,8 @@ public:
             return;
         }
 
-        auto file_name =
-            std::string(loc->ns) + "_" + std::to_string(m_counter++) + ".luau";
+        auto file_name = std::string(loc->ns()) + "_" +
+                         std::to_string(m_counter++) + ".luau";
         auto file_path = m_temp_dir / file_name;
         {
             std::ofstream out(file_path);
@@ -184,6 +184,12 @@ TEST_CASE("ScriptEngine function call invocation", "[script]") {
 
     SECTION("Call function with arguments and single return value") {
         auto res = engine.call<int>("test:math.luau", "add", 15, 27);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 42);
+    }
+
+    SECTION("Call function using ResourceLocation overload and _rl literal") {
+        auto res = engine.call<int>("test:math.luau"_rl, "add", 15, 27);
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == 42);
     }

@@ -60,13 +60,29 @@ public:
 
     /// @brief Initialize and load a script into a new Lua thread.
     bool load(std::string_view loc);
+    /// @brief Overload that accepts a ResourceLocation directly.
+    bool load(const ResourceLocation& loc);
 
     /// @brief unload script and release resources.
     bool unload(std::string_view loc);
+    /// @brief Overload that accepts a ResourceLocation directly.
+    bool unload(const ResourceLocation& loc);
 
     template <typename... RetTypes, typename... Args>
     std::optional<std::tuple<RetTypes...>>
     call(std::string_view loc, std::string_view func, Args&&... args) {
+        auto fun = get_global(loc, func);
+        if (!fun) {
+            return std::nullopt;
+        }
+
+        return lua_detail::call_function<RetTypes...>(
+            *fun, std::forward<Args>(args)...);
+    }
+
+    template <typename... RetTypes, typename... Args>
+    std::optional<std::tuple<RetTypes...>>
+    call(const ResourceLocation& loc, std::string_view func, Args&&... args) {
         auto fun = get_global(loc, func);
         if (!fun) {
             return std::nullopt;
@@ -86,6 +102,10 @@ private:
     /// @brief Get a global variable; if the name is incorrect, it will be
     /// nullopt.
     std::optional<luabridge::LuaRef> get_global(std::string_view loc,
+                                                std::string_view global);
+    /// @brief Overload that takes ResourceLocation parameters, providing faster
+    /// access without constructing a ResourceLocation.
+    std::optional<luabridge::LuaRef> get_global(const ResourceLocation& loc,
                                                 std::string_view global);
 
     /// @brief Runs a Lua script from a string.

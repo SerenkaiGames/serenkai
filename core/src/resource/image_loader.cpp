@@ -8,6 +8,7 @@
 #include <string_view>
 
 namespace serenkai {
+
 ImageLoader::ImageLoader(AssetManager* asset_manager)
     : m_asset_manager(asset_manager) {}
 
@@ -30,12 +31,34 @@ ImageWrapper ImageLoader::load(std::string_view loc) {
         spdlog::error("Failed to load image {}", loc);
         return image;
     }
+
+    return load_internal(*path);
+}
+
+ImageWrapper ImageLoader::load(const ResourceLocation& loc) {
+    ImageWrapper image{init_image_wrapper, cleanup_image_wrapper};
+    if (!m_asset_manager) {
+        SE_ASSERT(false);
+        return image;
+    }
+
+    auto path = m_asset_manager->get(loc);
+    if (!path) {
+        spdlog::error("Failed to load image {}", loc.str());
+        return image;
+    }
+
+    return load_internal(*path);
+}
+
+ImageWrapper ImageLoader::load_internal(const std::string& path) {
+    ImageWrapper image{init_image_wrapper, cleanup_image_wrapper};
     int width = 0, height = 0, channels = 0;
     unsigned char* data =
-        stbi_load(path->c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
     if (!data) {
-        spdlog::error("Failed to load image {}", loc);
+        spdlog::error("Failed to load image {}", path);
         return image;
     }
 
@@ -45,4 +68,5 @@ ImageWrapper ImageLoader::load(std::string_view loc) {
 
     return image;
 }
+
 } // namespace serenkai

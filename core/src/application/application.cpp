@@ -13,6 +13,7 @@
 #include "serenkai/resource/texture_manager.hpp"
 #include "serenkai/scenes/scene.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
+#include "serenkai/script/script_constants.hpp"
 #include "serenkai/script/script_engine.hpp"
 
 #include <SDL3/SDL_error.h>
@@ -93,7 +94,7 @@ Application::Application() {
     m_gui_context->handle_window_resize_event(
         WindowResizeEvent{window_size.x, window_size.y});
 
-    m_script_engine->load("serenkai:scripts/main.luau");
+    m_script_engine->load(MAIN_SCRIPT_LOC);
 }
 
 Application::~Application() {}
@@ -129,7 +130,7 @@ void Application::step(float dt) {
 
 void Application::update(float dt) {
     // m_scene_manager->update(dt);
-    m_script_engine->call<>("serenkai:scripts/main.luau", "on_update", dt);
+    m_script_engine->call<>(MAIN_SCRIPT_LOC, "on_update", dt);
 }
 void Application::render() {
     m_renderer->clear();

@@ -26,7 +26,7 @@ Font* FontManager::get(std::string_view font, size_t pixel_size) {
         return it->second.get();
     }
 
-    auto path = m_asset_manager->get(font);
+    auto path = m_asset_manager->get(*loc);
     if (!path) {
         return nullptr;
     }
