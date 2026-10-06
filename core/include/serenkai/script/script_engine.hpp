@@ -81,6 +81,7 @@ private:
     LuaState m_root_state;
     std::unordered_map<ResourceLocation, int> m_thread_refs;
     std::unordered_map<ResourceLocation, lua_State*> m_states;
+    std::unordered_map<ResourceLocation, luabridge::LuaRef> m_module_cache;
 
     /// @brief Get a global variable; if the name is incorrect, it will be
     /// nullopt.
@@ -97,5 +98,8 @@ private:
     /// @param L Script thread instead of root lua states
     /// @return True on success, false on error (error is logged).
     bool run_file(lua_State* L, const std::string& path);
+
+    /// @brief Load a module and cache the result.
+    luabridge::LuaRef require(const std::string& module_name);
 };
 } // namespace serenkai
