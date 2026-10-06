@@ -82,14 +82,12 @@ TEST_CASE("WidgetParser label construction and property parsing",
 
     SECTION("Parse single label with custom properties") {
         write_file(temp_dir / "ui" / "label_custom.json", R"({
-            "root": {
-                "title_label": {
-                    "type": "label",
-                    "text": "Serenkai Title",
-                    "anchor": "Center",
-                    "offset": [20, -10],
-                    "color": "Yellow"
-                }
+            "title_label": {
+                "type": "label",
+                "text": "Serenkai Title",
+                "anchor": "Center",
+                "offset": [20, -10],
+                "color": "Yellow"
             }
         })");
 
@@ -108,10 +106,8 @@ TEST_CASE("WidgetParser label construction and property parsing",
 
     SECTION("Parse label with default properties") {
         write_file(temp_dir / "ui" / "label_default.json", R"({
-            "root": {
-                "default_label": {
-                    "type": "label"
-                }
+            "default_label": {
+                "type": "label"
             }
         })");
 
@@ -140,15 +136,13 @@ TEST_CASE("WidgetParser rect construction and property parsing",
 
     SECTION("Parse single rect with explicit size and custom properties") {
         write_file(temp_dir / "ui" / "rect_custom.json", R"({
-            "root": {
-                "panel_rect": {
-                    "type": "rect",
-                    "size": [320, 240],
-                    "color": "Blue",
-                    "alpha": 0.8,
-                    "anchor": "Center",
-                    "offset": [10, -5]
-                }
+            "panel_rect": {
+                "type": "rect",
+                "size": [320, 240],
+                "color": "Blue",
+                "alpha": 0.8,
+                "anchor": "Center",
+                "offset": [10, -5]
             }
         })");
 
@@ -169,12 +163,10 @@ TEST_CASE("WidgetParser rect construction and property parsing",
 
     SECTION("Parse rect with fill_parent") {
         write_file(temp_dir / "ui" / "rect_fill.json", R"({
-            "root": {
-                "background_rect": {
-                    "type": "rect",
-                    "fill_parent": true,
-                    "color": "Black"
-                }
+            "background_rect": {
+                "type": "rect",
+                "fill_parent": true,
+                "color": "Black"
             }
         })");
 
@@ -192,19 +184,17 @@ TEST_CASE("WidgetParser rect construction and property parsing",
 
     SECTION("Parse rect with children") {
         write_file(temp_dir / "ui" / "rect_tree.json", R"({
-            "root": {
-                "parent_rect": {
-                    "type": "rect",
-                    "size": [400, 300],
-                    "children": [
-                        {
-                            "child_rect": {
-                                "type": "rect",
-                                "fill_parent": true
-                            }
+            "parent_rect": {
+                "type": "rect",
+                "size": [400, 300],
+                "children": [
+                    {
+                        "child_rect": {
+                            "type": "rect",
+                            "fill_parent": true
                         }
-                    ]
-                }
+                    }
+                ]
             }
         })");
 
@@ -230,27 +220,25 @@ TEST_CASE("WidgetParser hierarchical widget tree construction",
 
     write_file(temp_dir / "assets.json", R"({"ns": "test"})");
     write_file(temp_dir / "ui" / "tree.json", R"({
-        "root": {
-            "parent_label": {
-                "type": "label",
-                "text": "Parent",
-                "children": [
-                    {
-                        "child_a": {
-                            "type": "label",
-                            "text": "Child A",
-                            "anchor": "BottomRight"
-                        }
-                    },
-                    {
-                        "child_b": {
-                            "type": "label",
-                            "text": "Child B",
-                            "color": "Green"
-                        }
+        "parent_label": {
+            "type": "label",
+            "text": "Parent",
+            "children": [
+                {
+                    "child_a": {
+                        "type": "label",
+                        "text": "Child A",
+                        "anchor": "BottomRight"
                     }
-                ]
-            }
+                },
+                {
+                    "child_b": {
+                        "type": "label",
+                        "text": "Child B",
+                        "color": "Green"
+                    }
+                }
+            ]
         }
     })");
 
@@ -296,23 +284,19 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
         CHECK(widget == nullptr);
     }
 
-    SECTION("Missing root field returns nullptr") {
-        write_file(temp_dir / "ui" / "no_root.json", R"({
-            "not_root": {
-                "title": { "type": "label" }
-            }
-        })");
+    SECTION("Non-object JSON root returns nullptr") {
+        write_file(temp_dir / "ui" / "array_root.json", R"([
+            { "title": { "type": "label" } }
+        ])");
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/no_root.json");
+        auto widget = ctx.parser.parse("test:ui/array_root.json");
         CHECK(widget == nullptr);
     }
 
     SECTION("Multiple root widgets return nullptr") {
         write_file(temp_dir / "ui" / "multi_root.json", R"({
-            "root": {
-                "widget1": { "type": "label" },
-                "widget2": { "type": "label" }
-            }
+            "widget1": { "type": "label" },
+            "widget2": { "type": "label" }
         })");
         TestParserContext ctx(temp_dir);
         auto widget = ctx.parser.parse("test:ui/multi_root.json");
@@ -321,10 +305,8 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
 
     SECTION("Missing widget type field returns nullptr") {
         write_file(temp_dir / "ui" / "no_type.json", R"({
-            "root": {
-                "widget1": {
-                    "text": "No Type"
-                }
+            "widget1": {
+                "text": "No Type"
             }
         })");
         TestParserContext ctx(temp_dir);
@@ -334,10 +316,8 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
 
     SECTION("Unknown widget type returns nullptr") {
         write_file(temp_dir / "ui" / "unknown_type.json", R"({
-            "root": {
-                "widget1": {
-                    "type": "unregistered_widget_type"
-                }
+            "widget1": {
+                "type": "unregistered_widget_type"
             }
         })");
         TestParserContext ctx(temp_dir);
@@ -347,12 +327,10 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
 
     SECTION("Children field is not an array gracefully retains parent") {
         write_file(temp_dir / "ui" / "invalid_children.json", R"({
-            "root": {
-                "widget1": {
-                    "type": "label",
-                    "text": "Parent Only",
-                    "children": "not an array"
-                }
+            "widget1": {
+                "type": "label",
+                "text": "Parent Only",
+                "children": "not an array"
             }
         })");
         TestParserContext ctx(temp_dir);
@@ -363,11 +341,9 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
 
     SECTION("Rect missing both size and fill_parent returns nullptr") {
         write_file(temp_dir / "ui" / "rect_no_size.json", R"({
-            "root": {
-                "invalid_rect": {
-                    "type": "rect",
-                    "color": "Red"
-                }
+            "invalid_rect": {
+                "type": "rect",
+                "color": "Red"
             }
         })");
         TestParserContext ctx(temp_dir);
@@ -387,21 +363,19 @@ TEST_CASE("WidgetParser button construction, property parsing, and callbacks",
 
     SECTION("Parse button with anchor, offset, children, and callback") {
         write_file(temp_dir / "ui" / "button.json", R"({
-            "root": {
-                "submit_button": {
-                    "type": "button",
-                    "anchor": "Center",
-                    "offset": [10, -5],
-                    "callback": "on_submit",
-                    "children": [
-                        {
-                            "btn_bg": {
-                                "type": "rect",
-                                "size": [100, 40]
-                            }
+            "submit_button": {
+                "type": "button",
+                "anchor": "Center",
+                "offset": [10, -5],
+                "callback": "on_submit",
+                "children": [
+                    {
+                        "btn_bg": {
+                            "type": "rect",
+                            "size": [100, 40]
                         }
-                    ]
-                }
+                    }
+                ]
             }
         })");
 
@@ -441,10 +415,8 @@ TEST_CASE("WidgetParser button construction, property parsing, and callbacks",
 
     SECTION("Button without callback still parses successfully") {
         write_file(temp_dir / "ui" / "btn_no_cb.json", R"({
-            "root": {
-                "plain_btn": {
-                    "type": "button"
-                }
+            "plain_btn": {
+                "type": "button"
             }
         })");
 
@@ -468,14 +440,12 @@ TEST_CASE("WidgetParser image construction and property parsing",
 
     SECTION("Parse image with explicit size and custom anchor/offset") {
         write_file(temp_dir / "ui" / "image_explicit.json", R"({
-            "root": {
-                "avatar": {
-                    "type": "image",
-                    "image": "test:textures/avatar.png",
-                    "size": [64, 48],
-                    "anchor": "Center",
-                    "offset": [15, -10]
-                }
+            "avatar": {
+                "type": "image",
+                "image": "test:textures/avatar.png",
+                "size": [64, 48],
+                "anchor": "Center",
+                "offset": [15, -10]
             }
         })");
 
@@ -494,20 +464,18 @@ TEST_CASE("WidgetParser image construction and property parsing",
 
     SECTION("Parse image with children") {
         write_file(temp_dir / "ui" / "image_tree.json", R"({
-            "root": {
-                "banner": {
-                    "type": "image",
-                    "image": "test:textures/banner.png",
-                    "size": [300, 100],
-                    "children": [
-                        {
-                            "title": {
-                                "type": "label",
-                                "text": "Header"
-                            }
+            "banner": {
+                "type": "image",
+                "image": "test:textures/banner.png",
+                "size": [300, 100],
+                "children": [
+                    {
+                        "title": {
+                            "type": "label",
+                            "text": "Header"
                         }
-                    ]
-                }
+                    }
+                ]
             }
         })");
 
@@ -522,11 +490,9 @@ TEST_CASE("WidgetParser image construction and property parsing",
 
     SECTION("Image missing required image field returns nullptr") {
         write_file(temp_dir / "ui" / "image_no_src.json", R"({
-            "root": {
-                "bad_image": {
-                    "type": "image",
-                    "size": [32, 32]
-                }
+            "bad_image": {
+                "type": "image",
+                "size": [32, 32]
             }
         })");
 
@@ -563,11 +529,9 @@ TEST_CASE("WidgetParser image construction and property parsing",
         REQUIRE(write_res != 0);
 
         write_file(temp_dir / "ui" / "image_auto_size.json", R"({
-            "root": {
-                "measured_image": {
-                    "type": "image",
-                    "image": "test:icon12x8.png"
-                }
+            "measured_image": {
+                "type": "image",
+                "image": "test:icon12x8.png"
             }
         })");
 
@@ -594,10 +558,8 @@ TEST_CASE("WidgetParser column construction and property parsing",
 
     SECTION("Parse column with default properties") {
         write_file(temp_dir / "ui" / "col_default.json", R"({
-            "root": {
-                "menu_col": {
-                    "type": "column"
-                }
+            "menu_col": {
+                "type": "column"
             }
         })");
 
@@ -617,14 +579,12 @@ TEST_CASE("WidgetParser column construction and property parsing",
 
     SECTION("Parse column with custom properties") {
         write_file(temp_dir / "ui" / "col_custom.json", R"({
-            "root": {
-                "nav_col": {
-                    "type": "column",
-                    "spacing": 15,
-                    "child_anchor": "Center",
-                    "anchor": "Center",
-                    "offset": [10, -20]
-                }
+            "nav_col": {
+                "type": "column",
+                "spacing": 15,
+                "child_anchor": "Center",
+                "anchor": "Center",
+                "offset": [10, -20]
             }
         })");
 
@@ -643,26 +603,24 @@ TEST_CASE("WidgetParser column construction and property parsing",
 
     SECTION("Parse column with children and verify layout") {
         write_file(temp_dir / "ui" / "col_tree.json", R"({
-            "root": {
-                "box_col": {
-                    "type": "column",
-                    "spacing": 10,
-                    "child_anchor": "Right",
-                    "children": [
-                        {
-                            "item1": {
-                                "type": "rect",
-                                "size": [100, 40]
-                            }
-                        },
-                        {
-                            "item2": {
-                                "type": "rect",
-                                "size": [50, 30]
-                            }
+            "box_col": {
+                "type": "column",
+                "spacing": 10,
+                "child_anchor": "Right",
+                "children": [
+                    {
+                        "item1": {
+                            "type": "rect",
+                            "size": [100, 40]
                         }
-                    ]
-                }
+                    },
+                    {
+                        "item2": {
+                            "type": "rect",
+                            "size": [50, 30]
+                        }
+                    }
+                ]
             }
         })");
 
