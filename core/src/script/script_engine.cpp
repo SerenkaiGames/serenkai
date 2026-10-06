@@ -20,8 +20,6 @@ void init_lua(lua_State*& L) {
     }
 
     luaL_openlibs(L);
-    // Enable sandbox to prevent malicious code.
-    luaL_sandbox(L);
 }
 
 void cleanup_lua(lua_State*& L) { lua_close(L); }
@@ -50,6 +48,10 @@ ScriptEngine::ScriptEngine(AssetManager* asset_manager)
     : m_asset_manager(asset_manager), m_root_state(init_lua, cleanup_lua) {
 
     register_lua_log(m_root_state.get());
+    // Enable sandbox on root state after all built-in bindings are registered.
+    // After all global bindings are registered, enable the read-only sandbox on
+    // the root environment.
+    luaL_sandbox(m_root_state.get());
 }
 
 bool ScriptEngine::run_string(lua_State* L, const std::string& script,
