@@ -1,4 +1,3 @@
-#include "serenkai/gui/anchor.hpp"
 #include "serenkai/gui/color.hpp"
 #include "serenkai/gui/rect.hpp"
 #include "serenkai/gui/widget.hpp"

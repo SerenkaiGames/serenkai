@@ -1,0 +1,65 @@
+{
+    "title": {
+        "type": "rect",
+        "fill_parent": true,
+        "color": "White",
+        "children": [
+            {
+                "main_column": {
+                    "type": "column",
+                    "spacing": 5,
+                    "anchor": "Center",
+                    "child_anchor": "Center",
+                    "children": [
+                        {
+                            "start_game": {
+                                "type": "button",
+                                "callback": "on_change_game_scene",
+                                "children": [
+                                    {
+                                        "bg": {
+                                            "type": "rect",
+                                            "color": "Black",
+                                            "fill_parent": true
+                                        }
+                                    },
+                                    {
+                                        "fg": {
+                                            "type": "label",
+                                            "color": "White",
+                                            "text": "Start Game",
+                                            "pixel_size": 24
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "exit_game": {
+                                "type": "button",
+                                "callback": "on_exit_game",
+                                "children": [
+                                    {
+                                        "bg": {
+                                            "type": "rect",
+                                            "color": "Black",
+                                            "fill_parent": true
+                                        }
+                                    },
+                                    {
+                                        "fg": {
+                                            "type": "label",
+                                            "color": "White",
+                                            "text": "Exit Game",
+                                            "pixel_size": 24
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

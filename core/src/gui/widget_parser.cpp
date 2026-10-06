@@ -29,9 +29,6 @@
 #include <utility>
 
 namespace serenkai {
-struct Root {
-    glz::generic root;
-};
 
 struct LabelData {
     std::string text;
@@ -169,7 +166,7 @@ std::unique_ptr<Widget> WidgetParser::parse(std::string_view loc) {
     }
 
     std::string buffer{};
-    Root r{};
+    glz::generic r;
 
     auto ec = glz::read_file_json(r, *path, buffer);
 
@@ -179,7 +176,7 @@ std::unique_ptr<Widget> WidgetParser::parse(std::string_view loc) {
         return nullptr;
     }
 
-    return walk(r.root);
+    return walk(r);
 }
 
 std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {

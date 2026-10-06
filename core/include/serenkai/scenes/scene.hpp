@@ -51,7 +51,7 @@ public:
     }
 
     /// @brief Called once when entering the scene.
-    virtual void on_enter() {}
+    virtual void on_enter(GuiContext*) {}
 
     /// @brief Called once when leaving the scene, used to clean up resources.
     virtual void on_leave() {}

@@ -347,6 +347,7 @@ private:
 /// @brief Scene manager producing EventSpyScene instances for tests.
 class EventSpySceneManager : public SceneManager {
 public:
+    EventSpySceneManager() : SceneManager(nullptr) {}
     std::shared_ptr<EventSpyScene::Stats> stats =
         std::make_shared<EventSpyScene::Stats>();
 

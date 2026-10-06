@@ -70,13 +70,13 @@ Application::Application() {
     m_texture_manager = std::make_unique<TextureManager>(
         m_asset_manager.get(), m_renderer->get_sdl_renderer());
 
-    m_gui_context = std::make_unique<GuiContext>(
-        GuiConfig{m_renderer.get(), m_texture_manager.get()});
-
-    m_scene_manager = std::make_unique<SceneManager>();
-
     m_widget_parser = std::make_unique<WidgetParser>(WidgetParserConfig{
         m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get()});
+
+    m_gui_context = std::make_unique<GuiContext>(GuiConfig{
+        m_renderer.get(), m_texture_manager.get(), m_widget_parser.get()});
+
+    m_scene_manager = std::make_unique<SceneManager>(m_gui_context.get());
 
     m_widget_parser->register_callback("on_exit_game",
                                        [this]() { m_running = false; });
@@ -95,6 +95,7 @@ Application::Application() {
         WindowResizeEvent{window_size.x, window_size.y});
 
     m_script_engine->load(MAIN_SCRIPT_LOC);
+    m_scene_manager->request_push(SceneType::Title);
 }
 
 Application::~Application() {}
@@ -129,12 +130,12 @@ void Application::step(float dt) {
 }
 
 void Application::update(float dt) {
-    // m_scene_manager->update(dt);
+    m_scene_manager->update(dt);
     m_script_engine->call<>(MAIN_SCRIPT_LOC, "on_update", dt);
 }
 void Application::render() {
     m_renderer->clear();
-    // m_scene_manager->render(m_gui_context.get());
+    m_scene_manager->render(m_gui_context.get());
     m_renderer->present();
 }
 

@@ -39,7 +39,7 @@ public:
     MockScene& operator=(const MockScene&) = delete;
     MockScene& operator=(MockScene&&) = delete;
 
-    void on_enter() override {
+    void on_enter(GuiContext*) override {
         if (m_stats) {
             ++m_stats->enter_count;
         }
@@ -75,6 +75,7 @@ private:
 /// @brief Testable SceneManager that produces MockScene instances.
 class TestSceneManager : public SceneManager {
 public:
+    TestSceneManager() : SceneManager(nullptr) {}
     std::shared_ptr<MockScene::Stats> title_stats =
         std::make_shared<MockScene::Stats>();
     std::shared_ptr<MockScene::Stats> game_stats =
@@ -95,6 +96,7 @@ protected:
 /// @brief Exposes create_scene to test the default scene factory.
 class DefaultFactorySceneManager : public SceneManager {
 public:
+    DefaultFactorySceneManager() : SceneManager(nullptr) {}
     using SceneManager::create_scene;
 };
 

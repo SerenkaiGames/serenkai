@@ -11,11 +11,17 @@
 
 namespace serenkai {
 GuiContext::GuiContext(GuiConfig config)
-    : m_renderer(config.renderer), m_texture_manager(config.texture_manager) {}
+    : m_renderer(config.renderer), m_texture_manager(config.texture_manager),
+      m_widget_parser(config.widget_parser) {}
 
 Renderer* GuiContext::get_renderer() const {
-    SE_VERIFY(m_renderer);
+    SE_ASSERT(m_renderer);
     return m_renderer;
+}
+
+WidgetParser* GuiContext::get_widget_parser() const {
+    SE_ASSERT(m_widget_parser);
+    return m_widget_parser;
 }
 
 size_t GuiContext::ui_scale() const { return m_ui_scale; }
