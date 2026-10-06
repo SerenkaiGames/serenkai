@@ -12,6 +12,10 @@ public:
 
     void on_enter(GuiContext* context) override;
 
+protected:
+    bool handle_mouse_move_event(const MouseMoveEvent& e) override;
+    bool handle_key_event(const KeyEvent& e) override;
+
 private:
     std::unique_ptr<Widget> m_root_widget;
 };
