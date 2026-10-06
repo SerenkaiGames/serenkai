@@ -54,8 +54,8 @@ public:
             return;
         }
 
-        auto file_name =
-            std::string(loc->ns) + "_" + std::to_string(m_counter++) + ".luau";
+        auto file_name = std::string(loc->ns()) + "_" +
+                         std::to_string(m_counter++) + ".luau";
         auto file_path = m_temp_dir / file_name;
         {
             std::ofstream out(file_path);
