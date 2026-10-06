@@ -61,6 +61,9 @@ private:
     ///             value is a JSON object.
     std::unique_ptr<Widget> walk(const glz::generic& json) const;
 
+    std::unique_ptr<Widget> parse_widget(std::string_view name,
+                                         const glz::generic& json) const;
+
     std::unique_ptr<Widget> parse_label(std::string_view name,
                                         const glz::generic& json) const;
     std::unique_ptr<Widget> parse_rect(std::string_view name,

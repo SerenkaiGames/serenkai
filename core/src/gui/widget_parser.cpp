@@ -195,7 +195,13 @@ std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {
 
     auto& [name, value] = *obj.begin();
 
-    auto type = get<std::string>(value, "type");
+    return parse_widget(name, value);
+}
+
+std::unique_ptr<Widget>
+WidgetParser::parse_widget(std::string_view name,
+                           const glz::generic& json) const {
+    auto type = get<std::string>(json, "type");
     if (!type) {
         return nullptr;
     }
@@ -203,10 +209,10 @@ std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {
     auto it = m_factories.find(*type);
     if (it == m_factories.end()) {
         spdlog::error("Unknown widget type {}", *type);
-        print_debug_json(value);
+        print_debug_json(json);
         return nullptr;
     }
-    return it->second(name, value);
+    return it->second(name, json);
 }
 
 void WidgetParser::parse_children(Widget* widget,
@@ -232,9 +238,8 @@ void WidgetParser::parse_children(Widget* widget,
     auto& children = json["children"].get_object();
 
     for (auto& [key, value] : children) {
-        glz::generic child;
-        child[key] = value;
-        auto c = walk(child);
+
+        auto c = parse_widget(key, value);
         if (c) {
             widget->add_child(std::move(c));
         }

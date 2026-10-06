@@ -187,14 +187,12 @@ TEST_CASE("WidgetParser rect construction and property parsing",
             "parent_rect": {
                 "type": "rect",
                 "size": [400, 300],
-                "children": [
-                    {
-                        "child_rect": {
-                            "type": "rect",
-                            "fill_parent": true
-                        }
+                "children": {
+                    "child_rect": {
+                        "type": "rect",
+                        "fill_parent": true
                     }
-                ]
+                }
             }
         })");
 
@@ -223,22 +221,18 @@ TEST_CASE("WidgetParser hierarchical widget tree construction",
         "parent_label": {
             "type": "label",
             "text": "Parent",
-            "children": [
-                {
-                    "child_a": {
-                        "type": "label",
-                        "text": "Child A",
-                        "anchor": "BottomRight"
-                    }
+            "children": {
+                "child_a": {
+                    "type": "label",
+                    "text": "Child A",
+                    "anchor": "BottomRight"
                 },
-                {
-                    "child_b": {
-                        "type": "label",
-                        "text": "Child B",
-                        "color": "Green"
-                    }
+                "child_b": {
+                    "type": "label",
+                    "text": "Child B",
+                    "color": "Green"
                 }
-            ]
+            }
         }
     })");
 
@@ -325,12 +319,12 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
         CHECK(widget == nullptr);
     }
 
-    SECTION("Children field is not an array gracefully retains parent") {
+    SECTION("Children field is not an object gracefully retains parent") {
         write_file(temp_dir / "ui" / "invalid_children.json", R"({
             "widget1": {
                 "type": "label",
                 "text": "Parent Only",
-                "children": "not an array"
+                "children": "not an object"
             }
         })");
         TestParserContext ctx(temp_dir);
@@ -368,14 +362,12 @@ TEST_CASE("WidgetParser button construction, property parsing, and callbacks",
                 "anchor": "Center",
                 "offset": [10, -5],
                 "callback": "on_submit",
-                "children": [
-                    {
-                        "btn_bg": {
-                            "type": "rect",
-                            "size": [100, 40]
-                        }
+                "children": {
+                    "btn_bg": {
+                        "type": "rect",
+                        "size": [100, 40]
                     }
-                ]
+                }
             }
         })");
 
@@ -468,14 +460,12 @@ TEST_CASE("WidgetParser image construction and property parsing",
                 "type": "image",
                 "image": "test:textures/banner.png",
                 "size": [300, 100],
-                "children": [
-                    {
-                        "title": {
-                            "type": "label",
-                            "text": "Header"
-                        }
+                "children": {
+                    "title": {
+                        "type": "label",
+                        "text": "Header"
                     }
-                ]
+                }
             }
         })");
 
@@ -607,20 +597,16 @@ TEST_CASE("WidgetParser column construction and property parsing",
                 "type": "column",
                 "spacing": 10,
                 "child_anchor": "Right",
-                "children": [
-                    {
-                        "item1": {
-                            "type": "rect",
-                            "size": [100, 40]
-                        }
+                "children": {
+                    "item1": {
+                        "type": "rect",
+                        "size": [100, 40]
                     },
-                    {
-                        "item2": {
-                            "type": "rect",
-                            "size": [50, 30]
-                        }
+                    "item2": {
+                        "type": "rect",
+                        "size": [50, 30]
                     }
-                ]
+                }
             }
         })");
 
