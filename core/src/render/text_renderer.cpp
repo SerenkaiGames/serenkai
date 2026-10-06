@@ -108,6 +108,7 @@ SDL_Texture* TextRenderer::get_texture(Font& font, uint32_t glyph_id, int width,
     SDL_UpdateTexture(tex, nullptr, expanded.data(), width * 4);
 
     SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
+    // Enable linear filtering for the FreeType font.
     SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_LINEAR);
 
     m_tex_cache[key] = {Texture(tex), width, height};

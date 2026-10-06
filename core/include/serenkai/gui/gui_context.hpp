@@ -11,9 +11,13 @@
 namespace serenkai {
 class Renderer;
 class TextureManager;
+class WidgetParser;
+class FontManager;
 struct GuiConfig {
     Renderer* renderer{nullptr};
     TextureManager* texture_manager{nullptr};
+    WidgetParser* widget_parser{nullptr};
+    FontManager* font_manager{nullptr};
 };
 
 /// @brief The Gui Context is used to provide GUI-related classes
@@ -23,6 +27,7 @@ class GuiContext {
 public:
     GuiContext(GuiConfig config);
     Renderer* get_renderer() const;
+    WidgetParser* get_widget_parser() const;
 
     size_t ui_scale() const;
 
@@ -39,6 +44,9 @@ public:
 private:
     Renderer* m_renderer = nullptr;
     TextureManager* m_texture_manager = nullptr;
+    WidgetParser* m_widget_parser = nullptr;
+    FontManager* m_font_manager = nullptr;
+
     size_t m_ui_scale = 3;
     glm::ivec2 m_logical_window_size{0};
 };

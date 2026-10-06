@@ -18,7 +18,8 @@ public:
     SceneManager(SceneManager&&) = delete;
     SceneManager& operator=(const SceneManager&) = delete;
     SceneManager& operator=(SceneManager&&) = delete;
-    SceneManager();
+
+    SceneManager(GuiContext* gui_context);
     virtual ~SceneManager();
 
     void update(float dt);
@@ -45,7 +46,7 @@ private:
         Operation(OperationType op, std::optional<SceneType> s)
             : type(op), scene(s) {}
     };
-
+    GuiContext* m_gui_context = nullptr;
     std::vector<std::unique_ptr<Scene>> m_pending_delete_scene;
     std::optional<Operation> m_operation;
     std::stack<std::unique_ptr<Scene>> m_scenes;

@@ -23,6 +23,7 @@ public:
     explicit FontManager(AssetManager* asset_manager);
 
     Font* get(std::string_view font, size_t pixel_size = DEFAULT_PIXEL_SIZE);
+    Font* get_scaled(const Font& font, size_t scale);
 
 private:
     struct Key {

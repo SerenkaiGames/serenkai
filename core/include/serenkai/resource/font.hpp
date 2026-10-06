@@ -5,6 +5,7 @@
 #include <ft2build.h>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include FT_FREETYPE_H
 #include "serenkai/base/raii.hpp"
@@ -48,7 +49,8 @@ public:
     Font& operator=(const Font&) = delete;
     Font& operator=(Font&&) = delete;
 
-    Font(std::string path, size_t pixel_size, FT_Library lib);
+    Font(std::string path, size_t pixel_size, FT_Library lib,
+         std::string_view font_spec = "");
     ~Font();
 
     /// @brief Shape a UTF-8 text and return a glyph sequence
@@ -58,6 +60,10 @@ public:
     const GlyphBitmap& get_glyph_bitmap(uint32_t glyph_id);
 
     int measure_width(std::string_view utf8);
+
+    /// @brief Gets the font specification/location string used to load this
+    /// font.
+    const std::string& spec() const;
 
     // Metrics
     size_t pixel_size() const;
@@ -70,6 +76,7 @@ public:
     hb_font_t* hb_font() const;
 
 private:
+    std::string m_spec;
     FT_Face m_face = nullptr;
     hb_font_t* m_hb_font = nullptr;
     size_t m_pixel_size = 0;

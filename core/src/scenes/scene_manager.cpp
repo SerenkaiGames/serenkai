@@ -10,7 +10,7 @@
 
 namespace serenkai {
 
-SceneManager::SceneManager() {}
+SceneManager::SceneManager(GuiContext* context) : m_gui_context(context) {}
 SceneManager::~SceneManager() {}
 
 void SceneManager::update(float dt) {
@@ -87,7 +87,7 @@ void SceneManager::change(SceneType type) {
 }
 void SceneManager::push(SceneType type) {
     auto scene = create_scene(type);
-    scene->on_enter();
+    scene->on_enter(m_gui_context);
     m_scenes.push(std::move(scene));
 }
 void SceneManager::pop() {
