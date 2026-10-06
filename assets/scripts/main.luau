@@ -1,8 +1,8 @@
 --!nolint FunctionUnused
-local lifecycle = require("serenkai:scripts/lifecycle.luau")
+local Event = require("serenkai:scripts/event.luau")
 
 function on_update(dt: number)
-	lifecycle.emit("update", dt)
+	Event.emit("serenkai:events/update", dt)
 end
 
 print("Main luau initialization successful.")

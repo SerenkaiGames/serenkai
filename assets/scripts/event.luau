@@ -2,15 +2,15 @@ export type Listener = (...any) -> ()
 
 local listeners: { [string]: { Listener } } = {}
 
-local Lifecycle = {}
+local Event = {}
 
 --[[
-    Registration function for lifecycle events.
+    Registration function for events.
     Returns an unregister function.
-    Supported events for registration:
-    update: (number) -> () called once per frame
+    Supported engine events for registration:
+    serenkai:events/update: (number) -> () called once per frame
 ]]
-function Lifecycle.on(event: string, callback: Listener)
+function Event.on(event: string, callback: Listener)
 	local list = listeners[event]
 	if not list then
 		list = {}
@@ -27,7 +27,7 @@ function Lifecycle.on(event: string, callback: Listener)
 	end
 end
 
-function Lifecycle.emit(event: string, ...: any)
+function Event.emit(event: string, ...: any)
 	local list = listeners[event]
 
 	if not list then
@@ -47,6 +47,6 @@ function Lifecycle.emit(event: string, ...: any)
 	end
 end
 
-print("Lifecycle initialization successful.")
+print("Event initialization successful.")
 
-return Lifecycle
+return Event
