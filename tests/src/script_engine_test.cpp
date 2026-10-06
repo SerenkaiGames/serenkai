@@ -10,7 +10,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <utility>
 
 namespace fs = std::filesystem;
@@ -282,5 +281,94 @@ TEST_CASE("ScriptEngine logging bindings and standard libraries", "[script]") {
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == "HELLO");
         CHECK(std::get<1>(*res) == 20);
+    }
+}
+
+TEST_CASE("ScriptEngine module require and caching", "[script]") {
+    TestScriptEnv env;
+    env.register_script("test:math_lib.luau", R"(
+        local M = {}
+        function M.add(a: number, b: number): number
+            return a + b
+        end
+        M.version = "1.0.0"
+        return M
+    )");
+
+    env.register_script("test:counter.luau", R"(
+        local M = { count = 0 }
+        function M.increment(): number
+            M.count = M.count + 1
+            return M.count
+        end
+        return M
+    )");
+
+    env.register_script("test:consumer_a.luau", R"(
+        local math_lib = require("test:math_lib.luau")
+        local counter = require("test:counter.luau")
+
+        function calc(a: number, b: number): number
+            return math_lib.add(a, b)
+        end
+
+        function get_version(): string
+            return math_lib.version
+        end
+
+        function inc(): number
+            return counter.increment()
+        end
+    )");
+
+    env.register_script("test:consumer_b.luau", R"(
+        local counter = require("test:counter.luau")
+
+        function inc(): number
+            return counter.increment()
+        end
+    )");
+
+    env.register_script("test:invalid_require.luau", R"(
+        local bad = require("test:non_existent.luau")
+        function is_bad_nil(): boolean
+            return bad == nil
+        end
+    )");
+
+    ScriptEngine engine(&env.asset_manager());
+
+    SECTION("Require loads module and allows calling its functions") {
+        REQUIRE(engine.load("test:consumer_a.luau"));
+        auto res = engine.call<int>("test:consumer_a.luau", "calc", 10, 20);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 30);
+
+        auto ver =
+            engine.call<std::string>("test:consumer_a.luau", "get_version");
+        REQUIRE(ver.has_value());
+        CHECK(std::get<0>(*ver) == "1.0.0");
+    }
+
+    SECTION(
+        "Multiple scripts requiring the same module share cached instance") {
+        REQUIRE(engine.load("test:consumer_a.luau"));
+        REQUIRE(engine.load("test:consumer_b.luau"));
+
+        auto res_a = engine.call<int>("test:consumer_a.luau", "inc");
+        REQUIRE(res_a.has_value());
+        CHECK(std::get<0>(*res_a) == 1);
+
+        // consumer_b should access the same cached module table
+        auto res_b = engine.call<int>("test:consumer_b.luau", "inc");
+        REQUIRE(res_b.has_value());
+        CHECK(std::get<0>(*res_b) == 2);
+    }
+
+    SECTION("Require non-existent module returns nil") {
+        REQUIRE(engine.load("test:invalid_require.luau"));
+        auto res = engine.call<bool>("test:invalid_require.luau", "is_bad_nil");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
     }
 }
