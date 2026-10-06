@@ -8,3 +8,5 @@ declare log: {
 }
 
 declare print: (...any) -> ()
+
+declare require: (string) -> any

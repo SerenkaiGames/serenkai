@@ -127,7 +127,10 @@ void Application::step(float dt) {
     render();
 }
 
-void Application::update(float) {}
+void Application::update(float dt) {
+    // m_scene_manager->update(dt);
+    m_script_engine->call<>("serenkai:scripts/main.luau", "on_update", dt);
+}
 void Application::render() {
     m_renderer->clear();
     // m_scene_manager->render(m_gui_context.get());
