@@ -4,12 +4,13 @@
 #include <fmt/format.h>
 #include <glm/ext/vector_int2.hpp>
 #include <stdexcept>
+#include <string_view>
 
 namespace serenkai {
 
 Font::Font(std::string path, size_t pixel_size, FT_Library lib,
-           std::string font_spec)
-    : m_spec(std::move(font_spec)) {
+           std::string_view font_spec)
+    : m_spec(font_spec) {
     if (FT_New_Face(lib, path.c_str(), 0, &m_face) != 0) {
         throw std::runtime_error(fmt::format("Failed to load font {}", path));
     }

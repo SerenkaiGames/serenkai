@@ -31,8 +31,8 @@ Font* FontManager::get(std::string_view font, size_t pixel_size) {
     if (!path) {
         return nullptr;
     }
-    auto f = std::make_unique<Font>(*path, pixel_size, m_ft_lib_wrapper.get(),
-                                    std::string(font));
+    auto f =
+        std::make_unique<Font>(*path, pixel_size, m_ft_lib_wrapper.get(), font);
 
     auto [p, _] = m_fonts.try_emplace(Key{*loc, pixel_size}, std::move(f));
     return p->second.get();

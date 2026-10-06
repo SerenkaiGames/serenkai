@@ -5,6 +5,7 @@
 #include <ft2build.h>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include FT_FREETYPE_H
 #include "serenkai/base/raii.hpp"
@@ -49,7 +50,7 @@ public:
     Font& operator=(Font&&) = delete;
 
     Font(std::string path, size_t pixel_size, FT_Library lib,
-         std::string font_spec = "");
+         std::string_view font_spec = "");
     ~Font();
 
     /// @brief Shape a UTF-8 text and return a glyph sequence
