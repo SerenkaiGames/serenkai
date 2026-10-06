@@ -66,8 +66,8 @@ public:
 
     template <typename... RetTypes, typename... Args>
     std::optional<std::tuple<RetTypes...>>
-    call(std::string_view loc, std::string_view global, Args&&... args) {
-        auto fun = get_global(loc, global);
+    call(std::string_view loc, std::string_view func, Args&&... args) {
+        auto fun = get_global(loc, func);
         if (!fun) {
             return std::nullopt;
         }

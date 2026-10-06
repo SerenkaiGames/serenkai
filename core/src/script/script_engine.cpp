@@ -177,13 +177,10 @@ ScriptEngine::get_global(std::string_view loc, std::string_view global) {
 
     auto it = m_states.find(*res);
     if (it == m_states.end()) {
-        spdlog::warn("Can't find script {} in states map", loc);
         return std::nullopt;
     }
     auto var = luabridge::getGlobal(it->second, std::string(global).c_str());
     if (var.isNil()) {
-        spdlog::error("Failed to get global var {}: {}, the var is nil", loc,
-                      global);
         return std::nullopt;
     }
     return var;
