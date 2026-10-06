@@ -33,11 +33,16 @@ function Lifecycle.emit(event: string, ...: any)
 	if not list then
 		return
 	end
-
-	for _, callback in list do
-		local sucess, err = pcall(callback, ...)
-		if not sucess then
+	local l = table.clone(list)
+	for _, callback in l do
+		local success, err = pcall(callback, ...)
+		if not success then
 			log.error(`Error in event '{event}' listener: {err}`)
+
+			local idx = table.find(list, callback)
+			if idx then
+				table.remove(list, idx)
+			end
 		end
 	end
 end
