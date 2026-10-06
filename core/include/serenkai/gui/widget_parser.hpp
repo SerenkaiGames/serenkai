@@ -74,6 +74,6 @@ private:
     /// @brief Function that automatically handles the children field
     ///
     /// @param json JSON object containing the children field
-    void handle_children(Widget* widget, const glz::generic& json) const;
+    void parse_children(Widget* widget, const glz::generic& json) const;
 };
 } // namespace serenkai
