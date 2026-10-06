@@ -153,6 +153,18 @@ TEST_CASE("ImageLoader loads valid RGBA image", "[resource][image_loader]") {
     CHECK(data[14] == 255);
     CHECK(data[15] == 255);
 
+    SECTION("ImageLoader load with ResourceLocation overload") {
+        auto img_rl = loader.load(loc);
+        REQUIRE(img_rl->data != nullptr);
+        CHECK(img_rl->width == 2);
+        CHECK(img_rl->height == 2);
+        CHECK(img_rl->channels == 4);
+
+        auto img_lit = loader.load("test:textures/valid.png"_rl);
+        REQUIRE(img_lit->data != nullptr);
+        CHECK(img_lit->width == 2);
+    }
+
     SECTION("ImageWrapper move semantics") {
         ImageWrapper moved = std::move(img);
         CHECK(static_cast<bool>(moved));

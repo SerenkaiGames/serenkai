@@ -188,6 +188,12 @@ TEST_CASE("ScriptEngine function call invocation", "[script]") {
         CHECK(std::get<0>(*res) == 42);
     }
 
+    SECTION("Call function using ResourceLocation overload and _rl literal") {
+        auto res = engine.call<int>("test:math.luau"_rl, "add", 15, 27);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 42);
+    }
+
     SECTION("Call function with string argument and string return value") {
         auto res =
             engine.call<std::string>("test:math.luau", "greet", "serenkai");
