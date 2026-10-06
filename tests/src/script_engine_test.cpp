@@ -1,8 +1,10 @@
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/asset_source.hpp"
+#include "serenkai/resource/directory_source.hpp"
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/script_engine.hpp"
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>
 #include <filesystem>
@@ -67,6 +69,27 @@ public:
     }
 
     AssetManager& asset_manager() { return m_asset_manager; }
+
+    /// @brief Merges the project assets directory into the asset manager.
+    void merge_project_assets() {
+        fs::path asset_dir;
+#ifdef SERENKAI_TEST_ASSET_DIR
+        if (fs::exists(SERENKAI_TEST_ASSET_DIR)) {
+            asset_dir = SERENKAI_TEST_ASSET_DIR;
+        }
+#endif
+        if (asset_dir.empty()) {
+            if (fs::exists("assets")) {
+                asset_dir = "assets";
+            } else if (fs::exists("../../assets")) {
+                asset_dir = "../../assets";
+            }
+        }
+        if (!asset_dir.empty()) {
+            m_asset_manager.merge_source(
+                std::make_shared<DirectorySource>(asset_dir));
+        }
+    }
 
 private:
     fs::path m_temp_dir;
@@ -370,5 +393,209 @@ TEST_CASE("ScriptEngine module require and caching", "[script]") {
         auto res = engine.call<bool>("test:invalid_require.luau", "is_bad_nil");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
+    }
+}
+
+TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
+    TestScriptEnv env;
+    env.merge_project_assets();
+
+    ScriptEngine engine(&env.asset_manager());
+
+    SECTION("Event listener registration and emission") {
+        env.register_script("test:event_test.luau", R"(
+            local Event = require("serenkai:scripts/event.luau")
+
+            local received_value = 0
+            local received_text = ""
+
+            Event.on("test:custom_event", function(val: number, text: string)
+                received_value = val
+                received_text = text
+            end)
+
+            function trigger(val: number, text: string)
+                Event.emit("test:custom_event", val, text)
+            end
+
+            function get_result(): (number, string)
+                return received_value, received_text
+            end
+        )");
+
+        REQUIRE(engine.load("test:event_test.luau"));
+        auto res =
+            engine.call<>("test:event_test.luau", "trigger", 42, "hello");
+        REQUIRE(res.has_value());
+
+        auto out =
+            engine.call<int, std::string>("test:event_test.luau", "get_result");
+        REQUIRE(out.has_value());
+        CHECK(std::get<0>(*out) == 42);
+        CHECK(std::get<1>(*out) == "hello");
+    }
+
+    SECTION("Event listener unregistration stops receiving events") {
+        env.register_script("test:unregister_test.luau", R"(
+            local Event = require("serenkai:scripts/event.luau")
+
+            local count = 0
+            local unregister = Event.on("test:ping", function()
+                count = count + 1
+            end)
+
+            function emit_ping()
+                Event.emit("test:ping")
+            end
+
+            function unregister_listener()
+                unregister()
+            end
+
+            function get_count(): number
+                return count
+            end
+        )");
+
+        REQUIRE(engine.load("test:unregister_test.luau"));
+        CHECK(engine.call<>("test:unregister_test.luau", "emit_ping")
+                  .has_value());
+        auto c1 = engine.call<int>("test:unregister_test.luau", "get_count");
+        REQUIRE(c1.has_value());
+        CHECK(std::get<0>(*c1) == 1);
+
+        CHECK(engine.call<>("test:unregister_test.luau", "unregister_listener")
+                  .has_value());
+
+        CHECK(engine.call<>("test:unregister_test.luau", "emit_ping")
+                  .has_value());
+        auto c2 = engine.call<int>("test:unregister_test.luau", "get_count");
+        REQUIRE(c2.has_value());
+        CHECK(std::get<0>(*c2) == 1);
+    }
+
+    SECTION("Multiple listeners receive emitted event") {
+        env.register_script("test:multi_listener.luau", R"(
+            local Event = require("serenkai:scripts/event.luau")
+
+            local a_called = false
+            local b_called = false
+
+            Event.on("test:multi", function()
+                a_called = true
+            end)
+
+            Event.on("test:multi", function()
+                b_called = true
+            end)
+
+            function trigger()
+                Event.emit("test:multi")
+            end
+
+            function get_status(): (boolean, boolean)
+                return a_called, b_called
+            end
+        )");
+
+        REQUIRE(engine.load("test:multi_listener.luau"));
+        CHECK(engine.call<>("test:multi_listener.luau", "trigger").has_value());
+        auto status =
+            engine.call<bool, bool>("test:multi_listener.luau", "get_status");
+        REQUIRE(status.has_value());
+        CHECK(std::get<0>(*status) == true);
+        CHECK(std::get<1>(*status) == true);
+    }
+
+    SECTION("Failing listener is pruned and does not block others") {
+        env.register_script("test:failing_listener.luau", R"(
+            local Event = require("serenkai:scripts/event.luau")
+
+            local normal_count = 0
+            local failing_invoked = 0
+
+            Event.on("test:error_event", function()
+                failing_invoked = failing_invoked + 1
+                error("simulated listener error")
+            end)
+
+            Event.on("test:error_event", function()
+                normal_count = normal_count + 1
+            end)
+
+            function trigger()
+                Event.emit("test:error_event")
+            end
+
+            function get_counts(): (number, number)
+                return failing_invoked, normal_count
+            end
+        )");
+
+        REQUIRE(engine.load("test:failing_listener.luau"));
+
+        // First trigger: failing listener throws error and normal listener runs
+        CHECK(
+            engine.call<>("test:failing_listener.luau", "trigger").has_value());
+        auto counts1 =
+            engine.call<int, int>("test:failing_listener.luau", "get_counts");
+        REQUIRE(counts1.has_value());
+        CHECK(std::get<0>(*counts1) == 1);
+        CHECK(std::get<1>(*counts1) == 1);
+
+        // Second trigger: failing listener should have been pruned, normal
+        // listener still runs
+        CHECK(
+            engine.call<>("test:failing_listener.luau", "trigger").has_value());
+        auto counts2 =
+            engine.call<int, int>("test:failing_listener.luau", "get_counts");
+        REQUIRE(counts2.has_value());
+        CHECK(std::get<0>(*counts2) == 1);
+        CHECK(std::get<1>(*counts2) == 2);
+    }
+
+    SECTION("Emitting event with no listeners is safe") {
+        env.register_script("test:empty_emit.luau", R"(
+            local Event = require("serenkai:scripts/event.luau")
+
+            function trigger_empty(): boolean
+                Event.emit("test:unregistered_event", 1, 2, 3)
+                return true
+            end
+        )");
+
+        REQUIRE(engine.load("test:empty_emit.luau"));
+        auto res = engine.call<bool>("test:empty_emit.luau", "trigger_empty");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
+    }
+
+    SECTION("main.luau on_update dispatches serenkai:events/update") {
+        env.register_script("test:update_listener.luau", R"(
+            local Event = require("serenkai:scripts/event.luau")
+
+            local last_dt = 0.0
+
+            Event.on("serenkai:events/update", function(dt: number)
+                last_dt = dt
+            end)
+
+            function get_dt(): number
+                return last_dt
+            end
+        )");
+
+        REQUIRE(engine.load("test:update_listener.luau"));
+        REQUIRE(engine.load("serenkai:scripts/main.luau"));
+
+        // Trigger on_update through main.luau
+        auto call_res =
+            engine.call<>("serenkai:scripts/main.luau", "on_update", 0.016f);
+        REQUIRE(call_res.has_value());
+
+        auto dt_res =
+            engine.call<double>("test:update_listener.luau", "get_dt");
+        REQUIRE(dt_res.has_value());
+        CHECK(std::get<0>(*dt_res) == Catch::Approx(0.016));
     }
 }

@@ -5,4 +5,4 @@ function on_update(dt: number)
 	Event.emit("serenkai:events/update", dt)
 end
 
-print("Main luau initialization successful.")
+log.info("Main luau initialization successful.")

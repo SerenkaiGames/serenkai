@@ -47,6 +47,6 @@ function Event.emit(event: string, ...: any)
 	end
 end
 
-print("Event initialization successful.")
+log.info("Event initialization successful.")
 
 return Event
