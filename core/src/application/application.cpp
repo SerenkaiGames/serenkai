@@ -7,11 +7,13 @@
 #include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/resource/asset_manager.hpp"
+#include "serenkai/resource/directory_source.hpp"
 #include "serenkai/resource/font_manager.hpp"
 #include "serenkai/resource/image_loader.hpp"
 #include "serenkai/resource/texture_manager.hpp"
 #include "serenkai/scenes/scene.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
+#include "serenkai/script/script_engine.hpp"
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_init.h>
@@ -49,6 +51,10 @@ Application::Application() {
 #endif
 
     m_asset_manager = std::make_unique<AssetManager>();
+
+    auto source = std::make_shared<DirectorySource>("./assets");
+    m_asset_manager->merge_source(source);
+
     m_font_manager = std::make_unique<FontManager>(m_asset_manager.get());
 
     int linked = SDL_GetVersion();
@@ -81,10 +87,13 @@ Application::Application() {
     m_widget_parser->register_callback("on_change_game_scene", [this]() {
         m_scene_manager->request_change(SceneType::Game);
     });
+    m_script_engine = std::make_unique<ScriptEngine>(m_asset_manager.get());
 
     auto window_size = m_window_manager->get_window_size();
     m_gui_context->handle_window_resize_event(
         WindowResizeEvent{window_size.x, window_size.y});
+
+    m_script_engine->load("serenkai:scripts/main.luau");
 }
 
 Application::~Application() {}

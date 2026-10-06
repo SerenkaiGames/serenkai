@@ -1,9 +1,9 @@
 #include "serenkai/script/bindings/bind_log.hpp"
 
 // clang-format off
-    #include <lua.h>
-    #include <lualib.h>
-    #include <luabridge3/LuaBridge/LuaBridge.h>
+#include <lua.h>
+#include <lualib.h>
+#include <luabridge3/LuaBridge/LuaBridge.h>
 // clang-format on
 
 #include <spdlog/spdlog.h>
