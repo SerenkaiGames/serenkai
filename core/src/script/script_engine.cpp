@@ -48,6 +48,12 @@ ScriptEngine::ScriptEngine(AssetManager* asset_manager)
     : m_asset_manager(asset_manager), m_root_state(init_lua, cleanup_lua) {
 
     register_lua_log(m_root_state.get());
+
+    luabridge::getGlobalNamespace(m_root_state.get())
+        .addFunction("require", [this](const std::string& module_name) {
+            return require(module_name);
+        });
+
     // Enable sandbox on root state after all built-in bindings are registered.
     // After all global bindings are registered, enable the read-only sandbox on
     // the root environment.
@@ -181,6 +187,62 @@ ScriptEngine::get_global(std::string_view loc, std::string_view global) {
         return std::nullopt;
     }
     return var;
+}
+
+luabridge::LuaRef ScriptEngine::require(const std::string& module_name) {
+
+    auto nil = luabridge::LuaRef(m_root_state.get());
+
+    auto res = ResourceLocation::parse(module_name);
+    if (!res) {
+        spdlog::error("Invalid module name {}", module_name);
+        return nil;
+    }
+
+    auto it = m_module_cache.find(*res);
+    if (it != m_module_cache.end()) {
+        return it->second;
+    }
+
+    if (!m_asset_manager) {
+        spdlog::error("Failed to require module {}: Asset manager is null",
+                      module_name);
+        return nil;
+    }
+
+    auto path = m_asset_manager->get(module_name);
+    if (!path) {
+        spdlog::error("Failed to find module {}", module_name);
+
+        return nil;
+    }
+
+    // Load and execute in a separate temporary sandbox thread to avoid
+    // reentrancy conflicts with the caller's coroutine.
+    auto module_thread = lua_newthread(m_root_state.get());
+    luaL_sandboxthread(module_thread);
+
+    if (!run_file(module_thread, *path)) {
+        spdlog::error("Failed to load module: {}", module_name);
+        lua_pop(m_root_state.get(), 1);
+        return nil;
+    }
+    // Move the module return value from module_thread to the top of the
+    // m_root_state stack.
+    // Attach the result to the root state to avoid dangling pointers.
+    luabridge::LuaRef result(m_root_state.get());
+    if (lua_gettop(module_thread) > 0) {
+        lua_xmove(module_thread, m_root_state.get(), 1);
+        result = luabridge::LuaRef::fromStack(m_root_state.get());
+    } else {
+        result = luabridge::LuaRef(m_root_state.get(), true);
+    }
+
+    lua_pop(m_root_state.get(), 1);
+
+    m_module_cache.try_emplace(*res, result);
+
+    return result;
 }
 
 } // namespace serenkai
