@@ -29,7 +29,7 @@ constexpr std::size_t fnv1a(std::string_view sv) noexcept {
 }
 constexpr std::size_t hash_of(std::string_view ns,
                               std::string_view path) noexcept {
-    return combine32(fnv1a(ns), fnv1a(path));
+    return combine32(hash_to_32(fnv1a(ns)), hash_to_32(fnv1a(path)));
 }
 
 } // namespace res_detail
@@ -55,9 +55,10 @@ struct ResourceLocation {
 
     constexpr ResourceLocation() noexcept = default;
 
-    constexpr ResourceLocation(std::string_view full) noexcept {
-        if (!validate(full))
+    explicit constexpr ResourceLocation(std::string_view full) noexcept {
+        if (!validate(full)) {
             return;
+        }
 
         std::string_view ns = DEFAULT_NAMESPACE;
         std::string_view path = full;
@@ -122,13 +123,7 @@ struct ResourceLocation {
             return false;
         }
 
-        for (std::size_t i = 0; i < len; ++i) {
-            if (buf[i] != o.buf[i]) {
-                return false;
-            }
-        }
-
-        return true;
+        return str() == o.str();
     }
 
     constexpr bool operator!=(const ResourceLocation& o) const noexcept {

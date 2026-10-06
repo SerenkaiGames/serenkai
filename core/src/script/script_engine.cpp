@@ -175,7 +175,7 @@ ScriptEngine::get_global(std::string_view loc, std::string_view global) {
         return std::nullopt;
     }
 
-    return get_global(loc, global);
+    return get_global(*res, global);
 }
 
 std::optional<luabridge::LuaRef>
