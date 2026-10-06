@@ -60,9 +60,13 @@ public:
 
     /// @brief Initialize and load a script into a new Lua thread.
     bool load(std::string_view loc);
+    /// @brief Overload that accepts a ResourceLocation directly.
+    bool load(const ResourceLocation& loc);
 
     /// @brief unload script and release resources.
     bool unload(std::string_view loc);
+    /// @brief Overload that accepts a ResourceLocation directly.
+    bool unload(const ResourceLocation& loc);
 
     template <typename... RetTypes, typename... Args>
     std::optional<std::tuple<RetTypes...>>

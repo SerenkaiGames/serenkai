@@ -109,19 +109,23 @@ bool ScriptEngine::run_file(lua_State* L, const std::string& path) {
 
 bool ScriptEngine::load(std::string_view loc) {
 
-    if (!m_asset_manager) {
-        spdlog::error("Failed to load script {}, assets manager is nullptr",
-                      loc);
-        return false;
-    }
-
     auto res = ResourceLocation::parse(loc);
     if (!res) {
         spdlog::error("Invalid loc {}", loc);
         return false;
     }
-    if (m_states.find(*res) != m_states.end()) {
-        spdlog::warn("Script {} already loaded, do nothing", loc);
+    return load(*res);
+}
+
+bool ScriptEngine::load(const ResourceLocation& loc) {
+    if (!m_asset_manager) {
+        spdlog::error("Failed to load script {}, assets manager is nullptr",
+                      loc.str());
+        return false;
+    }
+
+    if (m_states.find(loc) != m_states.end()) {
+        spdlog::warn("Script {} already loaded, do nothing", loc.str());
         return false;
     }
 
@@ -133,11 +137,11 @@ bool ScriptEngine::load(std::string_view loc) {
 
     auto path = m_asset_manager->get(loc);
     if (path && run_file(state, *path)) {
-        m_states.try_emplace(*res, state);
-        m_thread_refs.try_emplace(*res, id);
+        m_states.try_emplace(loc, state);
+        m_thread_refs.try_emplace(loc, id);
         return true;
     } else {
-        spdlog::error("Failed to load script {}", loc);
+        spdlog::error("Failed to load script {}", loc.str());
         lua_unref(m_root_state.get(), id);
         return false;
     }
@@ -149,10 +153,14 @@ bool ScriptEngine::unload(std::string_view loc) {
         spdlog::error("Invalid loc {}", loc);
         return false;
     }
-    auto l_it = m_states.find(*res);
-    auto id_it = m_thread_refs.find(*res);
+    return unload(*res);
+}
+
+bool ScriptEngine::unload(const ResourceLocation& loc) {
+    auto l_it = m_states.find(loc);
+    auto id_it = m_thread_refs.find(loc);
     if (l_it == m_states.end() || id_it == m_thread_refs.end()) {
-        spdlog::warn("Can't find script {} in states map", loc);
+        spdlog::warn("Can't find script {} in states map", loc.str());
         return false;
     }
     auto id = id_it->second;
