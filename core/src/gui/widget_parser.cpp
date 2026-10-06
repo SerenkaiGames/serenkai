@@ -195,7 +195,13 @@ std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {
 
     auto& [name, value] = *obj.begin();
 
-    auto type = get<std::string>(value, "type");
+    return parse_widget(name, value);
+}
+
+std::unique_ptr<Widget>
+WidgetParser::parse_widget(std::string_view name,
+                           const glz::generic& json) const {
+    auto type = get<std::string>(json, "type");
     if (!type) {
         return nullptr;
     }
@@ -203,14 +209,14 @@ std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {
     auto it = m_factories.find(*type);
     if (it == m_factories.end()) {
         spdlog::error("Unknown widget type {}", *type);
-        print_debug_json(value);
+        print_debug_json(json);
         return nullptr;
     }
-    return it->second(name, value);
+    return it->second(name, json);
 }
 
-void WidgetParser::handle_children(Widget* widget,
-                                   const glz::generic& json) const {
+void WidgetParser::parse_children(Widget* widget,
+                                  const glz::generic& json) const {
     if (!widget) {
         return;
     }
@@ -223,16 +229,17 @@ void WidgetParser::handle_children(Widget* widget,
         return;
     }
 
-    if (!json["children"].is_array()) {
-        spdlog::error("Widget json error, children is not an array");
+    if (!json["children"].is_object()) {
+        spdlog::error("Widget json error, children is not an object");
         print_debug_json(json);
         return;
     }
 
-    auto& children = json["children"].get_array();
+    auto& children = json["children"].get_object();
 
-    for (auto& child : children) {
-        auto c = walk(child);
+    for (auto& [key, value] : children) {
+
+        auto c = parse_widget(key, value);
         if (c) {
             widget->add_child(std::move(c));
         }
@@ -260,7 +267,7 @@ WidgetParser::parse_label(std::string_view name,
     label->set_anchor(data.anchor);
     label->set_offset(data.offset);
 
-    handle_children(label.get(), json);
+    parse_children(label.get(), json);
 
     return label;
 }
@@ -300,7 +307,7 @@ WidgetParser::parse_rect(std::string_view name,
         rect->set_size(*data.size);
     }
 
-    handle_children(rect.get(), json);
+    parse_children(rect.get(), json);
 
     return rect;
 }
@@ -330,7 +337,7 @@ WidgetParser::parse_button(std::string_view name,
         }
     }
 
-    handle_children(button.get(), json);
+    parse_children(button.get(), json);
     return button;
 }
 
@@ -365,7 +372,7 @@ WidgetParser::parse_image(std::string_view name,
         image->set_size(size);
     }
 
-    handle_children(image.get(), json);
+    parse_children(image.get(), json);
     return image;
 }
 
@@ -387,7 +394,7 @@ WidgetParser::parse_column(std::string_view name,
     column->set_anchor(data.anchor);
     column->set_offset(data.offset);
 
-    handle_children(column.get(), json);
+    parse_children(column.get(), json);
     column->layout();
     return column;
 }
