@@ -5,6 +5,7 @@
 #include "serenkai/resource/resource_location.hpp"
 
 #include <memory>
+#include <string>
 #include <utility>
 namespace serenkai {
 FontManager::FontManager(AssetManager* asset_manager)
@@ -30,9 +31,18 @@ Font* FontManager::get(std::string_view font, size_t pixel_size) {
     if (!path) {
         return nullptr;
     }
-    auto f = std::make_unique<Font>(*path, pixel_size, m_ft_lib_wrapper.get());
+    auto f = std::make_unique<Font>(*path, pixel_size, m_ft_lib_wrapper.get(),
+                                    std::string(font));
 
     auto [p, _] = m_fonts.try_emplace(Key{*loc, pixel_size}, std::move(f));
     return p->second.get();
 }
+
+Font* FontManager::get_scaled(const Font& font, size_t scale) {
+    if (font.spec().empty() || scale == 0) {
+        return nullptr;
+    }
+    return get(font.spec(), font.pixel_size() * scale);
+}
+
 } // namespace serenkai

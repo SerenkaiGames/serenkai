@@ -7,7 +7,9 @@
 
 namespace serenkai {
 
-Font::Font(std::string path, size_t pixel_size, FT_Library lib) {
+Font::Font(std::string path, size_t pixel_size, FT_Library lib,
+           std::string font_spec)
+    : m_spec(std::move(font_spec)) {
     if (FT_New_Face(lib, path.c_str(), 0, &m_face) != 0) {
         throw std::runtime_error(fmt::format("Failed to load font {}", path));
     }
@@ -107,6 +109,8 @@ int Font::measure_width(std::string_view utf8) {
     // 26.6 → pixel
     return (total_26_6 + 32) / 64;
 }
+
+const std::string& Font::spec() const { return m_spec; }
 
 size_t Font::pixel_size() const { return m_pixel_size; }
 

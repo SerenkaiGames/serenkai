@@ -73,8 +73,9 @@ Application::Application() {
     m_widget_parser = std::make_unique<WidgetParser>(WidgetParserConfig{
         m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get()});
 
-    m_gui_context = std::make_unique<GuiContext>(GuiConfig{
-        m_renderer.get(), m_texture_manager.get(), m_widget_parser.get()});
+    m_gui_context = std::make_unique<GuiContext>(
+        GuiConfig{m_renderer.get(), m_texture_manager.get(),
+                  m_widget_parser.get(), m_font_manager.get()});
 
     m_scene_manager = std::make_unique<SceneManager>(m_gui_context.get());
 

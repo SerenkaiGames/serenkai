@@ -4,6 +4,7 @@
 #include "serenkai/base/glm_fmt.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/render/renderer.hpp"
+#include "serenkai/resource/font_manager.hpp"
 #include "serenkai/resource/texture_manager.hpp"
 
 #include <algorithm>
@@ -12,7 +13,8 @@
 namespace serenkai {
 GuiContext::GuiContext(GuiConfig config)
     : m_renderer(config.renderer), m_texture_manager(config.texture_manager),
-      m_widget_parser(config.widget_parser) {}
+      m_widget_parser(config.widget_parser),
+      m_font_manager(config.font_manager) {}
 
 Renderer* GuiContext::get_renderer() const {
     SE_ASSERT(m_renderer);
@@ -64,9 +66,26 @@ bool GuiContext::handle_window_resize_event(const WindowResizeEvent& e) {
 
 void GuiContext::render_label(const Label& label) {
 
+    if (!label.font()) {
+        return;
+    }
+
     auto pos = label.pos();
-    m_renderer->draw_text(*label.font(), label.text(), to_physical_coord(pos),
-                          label.color(), ui_scale());
+    Font* font_to_render = label.font();
+    float scale = static_cast<float>(ui_scale());
+
+    // If a FontManager is available, get the font for the physical screen
+    // resolution, and set the draw scale to 1.0f. No stretching
+    if (m_font_manager) {
+        if (auto* scaled_font =
+                m_font_manager->get_scaled(*label.font(), ui_scale())) {
+            font_to_render = scaled_font;
+            scale = 1.0f;
+        }
+    }
+
+    m_renderer->draw_text(*font_to_render, label.text(), to_physical_coord(pos),
+                          label.color(), scale);
 }
 
 void GuiContext::render_rect(const Rect& rect) {
