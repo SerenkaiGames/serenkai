@@ -175,7 +175,12 @@ ScriptEngine::get_global(std::string_view loc, std::string_view global) {
         return std::nullopt;
     }
 
-    auto it = m_states.find(*res);
+    return get_global(loc, global);
+}
+
+std::optional<luabridge::LuaRef>
+ScriptEngine::get_global(const ResourceLocation& loc, std::string_view global) {
+    auto it = m_states.find(loc);
     if (it == m_states.end()) {
         return std::nullopt;
     }

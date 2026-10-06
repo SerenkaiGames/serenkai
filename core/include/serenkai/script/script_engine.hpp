@@ -76,6 +76,18 @@ public:
             *fun, std::forward<Args>(args)...);
     }
 
+    template <typename... RetTypes, typename... Args>
+    std::optional<std::tuple<RetTypes...>>
+    call(const ResourceLocation& loc, std::string_view func, Args&&... args) {
+        auto fun = get_global(loc, func);
+        if (!fun) {
+            return std::nullopt;
+        }
+
+        return lua_detail::call_function<RetTypes...>(
+            *fun, std::forward<Args>(args)...);
+    }
+
 private:
     AssetManager* m_asset_manager = nullptr;
     LuaState m_root_state;
@@ -86,6 +98,10 @@ private:
     /// @brief Get a global variable; if the name is incorrect, it will be
     /// nullopt.
     std::optional<luabridge::LuaRef> get_global(std::string_view loc,
+                                                std::string_view global);
+    /// @brief Overload that takes ResourceLocation parameters, providing faster
+    /// access without constructing a ResourceLocation.
+    std::optional<luabridge::LuaRef> get_global(const ResourceLocation& loc,
                                                 std::string_view global);
 
     /// @brief Runs a Lua script from a string.

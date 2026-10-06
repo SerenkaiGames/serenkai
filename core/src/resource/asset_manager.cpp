@@ -13,13 +13,19 @@ std::optional<std::string> AssetManager::get(std::string_view loc) const {
     if (!resource) {
         return std::nullopt;
     }
-    auto it = m_files.find(*resource);
+    return get(*resource);
+}
+
+std::optional<std::string>
+AssetManager::get(const ResourceLocation& loc) const {
+    auto it = m_files.find(loc);
     if (it == m_files.end()) {
         return std::nullopt;
     }
 
     return it->second;
 }
+
 void AssetManager::merge_source(std::shared_ptr<AssetSource> source) {
 
     auto& assets = source->get_asset_files();

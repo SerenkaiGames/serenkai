@@ -1,5 +1,6 @@
 #pragma once
 #include "serenkai/base/raii.hpp"
+#include "serenkai/resource/resource_location.hpp"
 
 #include <string_view>
 namespace serenkai {
@@ -28,9 +29,12 @@ public:
 
     /// @brief Load an image into bytes, always as 4-channel RGBA.
     ImageWrapper load(std::string_view loc);
+    ImageWrapper load(const ResourceLocation& loc);
 
 private:
     AssetManager* m_asset_manager = nullptr;
+
+    ImageWrapper load_internal(const std::string& path);
 };
 
 } // namespace serenkai

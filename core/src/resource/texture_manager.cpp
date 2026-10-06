@@ -36,7 +36,7 @@ SDL_Texture* TextureManager::get(std::string_view loc) {
         SE_ASSERT(false);
         return nullptr;
     }
-    auto image = m_image_loader->load(loc);
+    auto image = m_image_loader->load(*resource);
 
     if (!image->data) {
         m_textures.try_emplace(*resource, nullptr);
