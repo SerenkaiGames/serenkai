@@ -43,6 +43,7 @@ constexpr std::size_t hash_of(std::string_view ns,
 /// @note If no namespace is specified, the default is serenkai
 /// @note Only uppercase letters, lowercase letters, digits, and the characters
 /// '.', '_', ':', '/', '-' are allowed.
+/// @note Maximum total length is CAPACITY (128 characters).
 struct ResourceLocation {
     // Maximum string length.
     static constexpr std::size_t CAPACITY = 128;
@@ -56,21 +57,9 @@ struct ResourceLocation {
     constexpr ResourceLocation() noexcept = default;
 
     explicit constexpr ResourceLocation(std::string_view full) noexcept {
-        if (!validate(full)) {
-            return;
-        }
-
-        std::string_view ns = DEFAULT_NAMESPACE;
-        std::string_view path = full;
-
-        if (auto it = full.find(':'); it != std::string_view::npos) {
-            ns = full.substr(0, it);
-            path = full.substr(it + 1);
-        }
-
-        const std::size_t total =
-            ns.size() + 1 + path.size(); // ns + ':' + path
-        if (total > CAPACITY) {
+        std::string_view ns;
+        std::string_view path;
+        if (!validate(full, ns, path)) {
             return;
         }
 
@@ -131,41 +120,48 @@ struct ResourceLocation {
     }
 
 private:
-    static constexpr bool validate(std::string_view s) noexcept {
-        if (s.empty())
+    static constexpr bool validate(std::string_view s, std::string_view& out_ns,
+                                   std::string_view& out_path) noexcept {
+        if (s.empty()) {
             return false;
-        if (s.find("..") != std::string_view::npos)
+        }
+        if (s.find("..") != std::string_view::npos) {
             return false;
-        if (s.front() == '/' || s.front() == ':' || s.back() == ':')
+        }
+        if (s.front() == '/' || s.front() == ':' || s.back() == ':') {
             return false;
+        }
 
-        std::string_view ns_v, path_v;
         if (auto it = s.find(':'); it != std::string_view::npos) {
             if (s.find(':', it + 1) != std::string_view::npos) {
                 return false; // Multiple ':' illegal.
             }
-            ns_v = s.substr(0, it);
-            path_v = s.substr(it + 1);
-            if (ns_v.empty() || path_v.empty()) {
+            out_ns = s.substr(0, it);
+            out_path = s.substr(it + 1);
+            if (out_ns.empty() || out_path.empty()) {
                 return false;
             }
-
         } else {
-            ns_v = DEFAULT_NAMESPACE;
-            path_v = s;
+            out_ns = DEFAULT_NAMESPACE;
+            out_path = s;
         }
 
-        if (path_v.front() == '/') {
+        if (out_path.front() == '/') {
             return false;
         }
 
-        for (char c : ns_v) {
+        const std::size_t total = out_ns.size() + 1 + out_path.size();
+        if (total > CAPACITY) {
+            return false;
+        }
+
+        for (char c : out_ns) {
             if (!res_detail::is_valid_ns(c)) {
                 return false;
             }
         }
 
-        for (char c : path_v) {
+        for (char c : out_path) {
             if (!res_detail::is_valid_path(c)) {
                 return false;
             }
