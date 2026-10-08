@@ -15,6 +15,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 include(cmake/Warnings.cmake)
 
 add_subdirectory(third_party/stb)
+add_subdirectory(third_party/tmxlite)
 add_subdirectory(core)
 add_subdirectory(app)
 include(CTest)

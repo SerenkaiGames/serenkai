@@ -105,6 +105,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     unofficial::luau::Luau.VM
     unofficial::luau::Luau.Compiler
     CLI11::CLI11
+    tmxlite::tmxlite
 )
 
 if (WIN32)

@@ -4,6 +4,6 @@ add_library(stb STATIC
     stb_image_write.cpp
 )
 
-target_include_directories(stb PUBLIC
+target_include_directories(stb SYSTEM PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
