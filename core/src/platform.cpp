@@ -7,9 +7,9 @@
 #include <spdlog/spdlog.h>
 
 namespace serenkai {
-int start_game() {
+int start_game(int argc, char** argv) {
     try {
-        Application app;
+        Application app{argc, argv};
         app.run();
     } catch (const std::exception& e) {
         spdlog::error("Application error: {}", e.what());

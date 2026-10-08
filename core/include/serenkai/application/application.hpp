@@ -26,6 +26,10 @@ namespace serenkai {
 /// @note May throw exceptions.
 class Application {
 public:
+    struct Argument {
+        std::vector<std::string> assets;
+    };
+
     struct DeltaTime {
         uint64_t last_tick_ns = 0;
         uint64_t current_tick_ns = 0;
@@ -37,7 +41,7 @@ public:
         }
     };
 
-    Application();
+    Application(int argc, char** argv);
     ~Application();
 
     bool is_running() const;
@@ -64,6 +68,8 @@ private:
     SDL_Event m_event{};
 
     DeltaTime m_delta_time_ns;
+
+    Argument handle_argument(int argc, char** argv);
 
     void render();
     void update(float dt);
