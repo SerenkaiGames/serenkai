@@ -1,5 +1,6 @@
 #include "serenkai/application/application.hpp"
 
+#include "CLI/CLI.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
 #include "serenkai/application/window_manager.hpp"
@@ -121,7 +122,8 @@ Application::~Application() {}
 Application::Argument Application::handle_argument(int argc, char** argv) {
     CLI::App app{"Serenkai"};
     Argument arg;
-    app.add_option("-a, --add", arg.assets, "Add assets directory");
+    app.add_option("-a, --add", arg.assets, "Add assets directory")
+        ->check(CLI::ExistingDirectory);
 
     try {
         app.parse(argc, argv);
