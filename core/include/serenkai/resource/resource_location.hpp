@@ -3,6 +3,7 @@
 #include "serenkai/base/math.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -19,8 +20,8 @@ constexpr bool is_valid_path(char c) noexcept {
     return is_valid_ns(c) || c == '.' || c == ':' || c == '/';
 }
 
-constexpr std::size_t fnv1a(std::string_view sv) noexcept {
-    std::size_t h = 0xcbf29ce484222325ULL;
+constexpr std::uint64_t fnv1a(std::string_view sv) noexcept {
+    std::uint64_t h = 0xcbf29ce484222325ULL;
     for (char c : sv) {
         h ^= static_cast<unsigned char>(c);
         h *= 0x100000001b3ULL;
@@ -29,7 +30,8 @@ constexpr std::size_t fnv1a(std::string_view sv) noexcept {
 }
 constexpr std::size_t hash_of(std::string_view ns,
                               std::string_view path) noexcept {
-    return combine32(hash_to_32(fnv1a(ns)), hash_to_32(fnv1a(path)));
+    return static_cast<std::size_t>(
+        combine32(hash_to_32(fnv1a(ns)), hash_to_32(fnv1a(path))));
 }
 
 } // namespace res_detail
