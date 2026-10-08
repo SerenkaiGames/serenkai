@@ -65,11 +65,26 @@ TEST_CASE("Application command line arguments", "[application]") {
     SECTION("Application accepts extra asset directory via --add") {
         char arg0[] = "serenkai_tests";
         char arg1[] = "--add";
-        char arg2[] = "./test_assets";
+        char arg2[] = SERENKAI_TEST_ASSET_DIR;
         char* argv[] = {arg0, arg1, arg2};
         int argc = 3;
 
         Application app{argc, argv};
         CHECK(app.is_running());
+    }
+
+    SECTION("Application rejects non-existent directory via --add") {
+        char arg0[] = "serenkai_tests";
+        char arg1[] = "--add";
+        char arg2[] = "./non_existent_dir_12345";
+        char* argv[] = {arg0, arg1, arg2};
+        int argc = 3;
+
+        try {
+            Application app{argc, argv};
+            FAIL("Expected ExitException for non-existent directory");
+        } catch (const Application::ExitException& e) {
+            CHECK(e.code != 0);
+        }
     }
 }
