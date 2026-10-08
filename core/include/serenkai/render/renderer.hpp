@@ -60,5 +60,8 @@ private:
     SDL_Renderer* m_sdl_renderer{nullptr};
     SDL_Color m_clear_color = {0, 0, 0, SDL_ALPHA_OPAQUE};
     std::unique_ptr<TextRenderer> m_text_renderer;
+
+    void print_renderer_info() const;
+    std::optional<std::string> query_gpu_name(std::string_view name) const;
 };
 } // namespace serenkai
