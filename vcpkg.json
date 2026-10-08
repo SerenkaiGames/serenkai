@@ -1,14 +1,15 @@
 {
-    "dependencies": [
-        "sdl3",
-        "glm",
-        "spdlog",
-        "catch2",
-        "glaze",
-        "freetype",
-        "harfbuzz",
-        "magic-enum",
-        "luabridge3",
-        "luau"
-    ]
+  "dependencies": [
+    "catch2",
+    "freetype",
+    "glaze",
+    "glm",
+    "harfbuzz",
+    "luabridge3",
+    "luau",
+    "magic-enum",
+    "sdl3",
+    "spdlog",
+    "cli11"
+  ]
 }

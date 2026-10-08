@@ -8,6 +8,7 @@ find_package(Freetype REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
 find_package(magic_enum CONFIG REQUIRED)
 find_package(unofficial-luau CONFIG REQUIRED)
+find_package(CLI11 CONFIG REQUIRED)
 
 find_path(LUABRIDGE3_INCLUDE_DIRS "luabridge3/LuaBridge/Any.h")
 
@@ -103,6 +104,7 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     stb
     unofficial::luau::Luau.VM
     unofficial::luau::Luau.Compiler
+    CLI11::CLI11
 )
 
 if (WIN32)
