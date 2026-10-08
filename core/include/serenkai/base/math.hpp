@@ -1,5 +1,4 @@
 #pragma once
-#include <cstddef>
 #include <cstdint>
 namespace serenkai {
 
@@ -19,11 +18,12 @@ constexpr std::uint32_t fmix32(std::uint32_t h) noexcept {
     return h;
 }
 
-constexpr std::uint32_t hash_to_32(std::size_t h) noexcept {
-    std::uint32_t x = static_cast<std::uint32_t>(h);
-    if constexpr (sizeof(std::size_t) > 4) {
-        x ^= static_cast<std::uint32_t>(h >> 32);
-    }
-    return x;
+constexpr std::uint32_t hash_to_32(std::uint64_t h) noexcept {
+    h ^= h >> 33;
+    h *= 0xff51afd7ed558ccdULL;
+    h ^= h >> 33;
+    h *= 0xc4ceb9fe1a85ec53ULL;
+    h ^= h >> 33;
+    return static_cast<std::uint32_t>(h);
 }
 } // namespace serenkai

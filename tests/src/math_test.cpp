@@ -42,18 +42,21 @@ TEST_CASE("fmix32 avalanche and mapping", "[math]") {
     }
 }
 
-TEST_CASE("hash_to_32 size folding", "[math]") {
-    SECTION("32-bit values preserve lower bits") {
-        std::size_t val = 0x12345678u;
-        CHECK(hash_to_32(val) == 0x12345678u);
+TEST_CASE("hash_to_32 mixing and determinism", "[math]") {
+    SECTION("Deterministic output for fixed inputs") {
+        uint64_t val = 0x123456789abcdef0ULL;
+        CHECK(hash_to_32(val) == hash_to_32(val));
     }
 
-    if constexpr (sizeof(std::size_t) > 4) {
-        SECTION("64-bit values fold upper and lower halves") {
-            std::size_t upper = 0xaaaaaaaau;
-            std::size_t lower = 0x55555555u;
-            std::size_t combined = (upper << 32) | lower;
-            CHECK(hash_to_32(combined) == (0xaaaaaaaau ^ 0x55555555u));
-        }
+    SECTION("Different 64-bit inputs produce distinct outputs") {
+        CHECK(hash_to_32(0) != hash_to_32(1));
+        CHECK(hash_to_32(0x1234567800000000ULL) !=
+              hash_to_32(0x0000000012345678ULL));
+    }
+
+    SECTION("Avalanche behavior on single-bit flip") {
+        uint64_t val1 = 0x123456789abcdef0ULL;
+        uint64_t val2 = val1 ^ 1ULL;
+        CHECK(hash_to_32(val1) != hash_to_32(val2));
     }
 }

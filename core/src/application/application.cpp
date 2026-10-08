@@ -1,5 +1,6 @@
 #include "serenkai/application/application.hpp"
 
+#include "CLI/CLI.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
 #include "serenkai/application/window_manager.hpp"
@@ -16,16 +17,24 @@
 #include "serenkai/script/script_constants.hpp"
 #include "serenkai/script/script_engine.hpp"
 
+#include <CLI/CLI.hpp>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_version.h>
+#include <array>
 #include <fmt/format.h>
 #include <glm/ext/vector_float2.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <variant>
+
+namespace {
+constexpr std::array<std::string_view, 1> DEFAULT_ASSETS = {"./assets"};
+}
 
 namespace serenkai {
 
@@ -45,16 +54,25 @@ void cleanup_sdl() {
 
 } // namespace
 
-Application::Application() {
+Application::Application(int argc, char** argv) {
 
 #ifndef NDEBUG
     spdlog::set_level(spdlog::level::debug);
 #endif
 
+    const auto arg = handle_argument(argc, argv);
+
     m_asset_manager = std::make_unique<AssetManager>();
 
-    auto source = std::make_shared<DirectorySource>("./assets");
-    m_asset_manager->merge_source(source);
+    for (auto path : DEFAULT_ASSETS) {
+        auto source = std::make_shared<DirectorySource>(path);
+        m_asset_manager->merge_source(source);
+    }
+
+    for (auto& path : arg.assets) {
+        auto source = std::make_shared<DirectorySource>(path);
+        m_asset_manager->merge_source(source);
+    }
 
     m_font_manager = std::make_unique<FontManager>(m_asset_manager.get());
 
@@ -100,6 +118,22 @@ Application::Application() {
 }
 
 Application::~Application() {}
+
+Application::Argument Application::handle_argument(int argc, char** argv) {
+    CLI::App app{"Serenkai"};
+    Argument arg;
+    app.add_option("-a, --add", arg.assets, "Add assets directory")
+        ->check(CLI::ExistingDirectory);
+
+    try {
+        app.parse(argc, argv);
+    } catch (const CLI::ParseError& e) {
+
+        throw ExitException{app.exit(e)};
+    }
+
+    return arg;
+}
 
 bool Application::is_running() const { return m_running; }
 

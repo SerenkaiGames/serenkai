@@ -19,8 +19,12 @@ TEST_CASE("Application lifecycle and event handling", "[application]") {
 
     SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "dummy");
 
+    char arg0[] = "serenkai_tests";
+    char* argv[] = {arg0};
+    int argc = 1;
+
     SECTION("Application initializes in running state") {
-        Application app;
+        Application app{argc, argv};
         REQUIRE(app.is_running());
 
         app.step(0.016);
@@ -28,7 +32,7 @@ TEST_CASE("Application lifecycle and event handling", "[application]") {
     }
 
     SECTION("Application quits on SDL_EVENT_QUIT event") {
-        Application app;
+        Application app{argc, argv};
         REQUIRE(app.is_running());
 
         SDL_Event quit_event{};
@@ -38,5 +42,49 @@ TEST_CASE("Application lifecycle and event handling", "[application]") {
         app.step(0.016);
 
         CHECK_FALSE(app.is_running());
+    }
+}
+
+TEST_CASE("Application command line arguments", "[application]") {
+    SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "dummy");
+
+    SECTION("Application handles --help by throwing ExitException") {
+        char arg0[] = "serenkai_tests";
+        char arg1[] = "--help";
+        char* argv[] = {arg0, arg1};
+        int argc = 2;
+
+        try {
+            Application app{argc, argv};
+            FAIL("Expected ExitException");
+        } catch (const Application::ExitException& e) {
+            CHECK(e.code == 0);
+        }
+    }
+
+    SECTION("Application accepts extra asset directory via --add") {
+        char arg0[] = "serenkai_tests";
+        char arg1[] = "--add";
+        char arg2[] = SERENKAI_TEST_ASSET_DIR;
+        char* argv[] = {arg0, arg1, arg2};
+        int argc = 3;
+
+        Application app{argc, argv};
+        CHECK(app.is_running());
+    }
+
+    SECTION("Application rejects non-existent directory via --add") {
+        char arg0[] = "serenkai_tests";
+        char arg1[] = "--add";
+        char arg2[] = "./non_existent_dir_12345";
+        char* argv[] = {arg0, arg1, arg2};
+        int argc = 3;
+
+        try {
+            Application app{argc, argv};
+            FAIL("Expected ExitException for non-existent directory");
+        } catch (const Application::ExitException& e) {
+            CHECK(e.code != 0);
+        }
     }
 }

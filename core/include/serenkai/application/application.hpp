@@ -26,6 +26,10 @@ namespace serenkai {
 /// @note May throw exceptions.
 class Application {
 public:
+    struct Argument {
+        std::vector<std::string> assets;
+    };
+
     struct DeltaTime {
         uint64_t last_tick_ns = 0;
         uint64_t current_tick_ns = 0;
@@ -37,7 +41,15 @@ public:
         }
     };
 
-    Application();
+    struct ExitException : public std::exception {
+        int code;
+        explicit ExitException(int exit_code) : code(exit_code) {}
+        const char* what() const noexcept override {
+            return "Application requested exit";
+        }
+    };
+
+    Application(int argc, char** argv);
     ~Application();
 
     bool is_running() const;
@@ -64,6 +76,8 @@ private:
     SDL_Event m_event{};
 
     DeltaTime m_delta_time_ns;
+
+    Argument handle_argument(int argc, char** argv);
 
     void render();
     void update(float dt);
