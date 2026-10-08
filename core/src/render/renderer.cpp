@@ -199,6 +199,9 @@ Renderer::~Renderer() {
 }
 
 void Renderer::print_renderer_info() const {
+
+    spdlog::info("Video driver: {}", SDL_GetCurrentVideoDriver());
+
     const char* renderer_name = SDL_GetRendererName(m_sdl_renderer);
     spdlog::info("Render backend: {}",
                  renderer_name ? renderer_name : "unknown");
