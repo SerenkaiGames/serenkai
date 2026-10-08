@@ -4,6 +4,7 @@
 #include "serenkai/render/text_renderer.hpp"
 
 #include <SDL3/SDL_error.h>
+#include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_vulkan.h>
 #include <fmt/format.h>
@@ -15,7 +16,8 @@
 
 #ifdef _WIN32
 #include <d3d11.h>
-#include <dxgi.h>
+#include <d3d12.h>
+#include <dxgi1_4.h>
 #endif
 
 #ifdef __APPLE__
@@ -24,13 +26,9 @@
 #endif
 
 namespace {
-// NOLINTNEXTLINE
-using PFN_vkVoidFunction = void (*)(void);
-// NOLINTNEXTLINE
-using PFN_vkGetInstanceProcAddr = PFN_vkVoidFunction (*)(VkInstance,
-                                                         const char*);
-// NOLINTNEXTLINE
-using PFN_vkGetPhysicalDeviceProperties = void (*)(VkPhysicalDevice, void*);
+using VkVoidFunction = void (*)(void);
+using VkGetInstanceProcAddr = VkVoidFunction (*)(VkInstance, const char*);
+using VkGetPhysicalDeviceProperties = void (*)(VkPhysicalDevice, void*);
 
 struct MinimalVkProperties {
     uint32_t api_version;
@@ -68,8 +66,8 @@ Renderer::query_gpu_name(std::string_view name) const {
         auto gl_get_string = reinterpret_cast<const char* (*)(unsigned int)>(
             SDL_GL_GetProcAddress("glGetString"));
         if (gl_get_string) {
-            constexpr unsigned int GL_RENDERER = 0x1F01; // NOLINT
-            if (const char* gpu_name = gl_get_string(GL_RENDERER)) {
+            constexpr unsigned int gl_renderer = 0x1F01;
+            if (const char* gpu_name = gl_get_string(gl_renderer)) {
                 return std::string(gpu_name);
             }
         }
@@ -84,11 +82,11 @@ Renderer::query_gpu_name(std::string_view name) const {
             renderer_props, SDL_PROP_RENDERER_VULKAN_PHYSICAL_DEVICE_POINTER,
             nullptr));
         if (instance && phys_dev) {
-            auto get_proc_addr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(
+            auto get_proc_addr = reinterpret_cast<VkGetInstanceProcAddr>(
                 SDL_Vulkan_GetVkGetInstanceProcAddr());
             if (get_proc_addr) {
                 auto vk_get_props =
-                    reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(
+                    reinterpret_cast<VkGetPhysicalDeviceProperties>(
                         get_proc_addr(instance,
                                       "vkGetPhysicalDeviceProperties"));
                 if (vk_get_props) {
@@ -114,7 +112,7 @@ Renderer::query_gpu_name(std::string_view name) const {
                 if (SUCCEEDED(dxgi_dev->GetAdapter(&adapter))) {
                     DXGI_ADAPTER_DESC desc{};
                     if (SUCCEEDED(adapter->GetDesc(&desc))) {
-                        char name_buf[128];
+                        char name_buf[128]{};
                         wcstombs(name_buf, desc.Description, sizeof(name_buf));
                         adapter->Release();
                         dxgi_dev->Release();
@@ -123,6 +121,44 @@ Renderer::query_gpu_name(std::string_view name) const {
                     adapter->Release();
                 }
                 dxgi_dev->Release();
+            }
+        }
+    }
+#endif
+
+#ifdef _WIN32
+    // Direct3D 12 backend (Windows)
+    if (name == "direct3d12" && renderer_props) {
+        auto* d3d12_dev = static_cast<ID3D12Device*>(SDL_GetPointerProperty(
+            renderer_props, SDL_PROP_RENDERER_D3D12_DEVICE_POINTER, nullptr));
+        if (d3d12_dev) {
+            LUID luid = d3d12_dev->GetAdapterLuid();
+            auto create_factory =
+                reinterpret_cast<HRESULT(WINAPI*)(REFIID, void**)>(
+                    GetProcAddress(GetModuleHandleA("dxgi.dll"),
+                                   "CreateDXGIFactory1"));
+            if (create_factory) {
+                IDXGIFactory4* factory = nullptr;
+                if (SUCCEEDED(
+                        create_factory(__uuidof(IDXGIFactory4),
+                                       reinterpret_cast<void**>(&factory)))) {
+                    IDXGIAdapter* adapter = nullptr;
+                    if (SUCCEEDED(factory->EnumAdapterByLuid(
+                            luid, __uuidof(IDXGIAdapter),
+                            reinterpret_cast<void**>(&adapter)))) {
+                        DXGI_ADAPTER_DESC desc{};
+                        if (SUCCEEDED(adapter->GetDesc(&desc))) {
+                            char name_buf[128]{};
+                            wcstombs(name_buf, desc.Description,
+                                     sizeof(name_buf));
+                            adapter->Release();
+                            factory->Release();
+                            return std::string(name_buf);
+                        }
+                        adapter->Release();
+                    }
+                    factory->Release();
+                }
             }
         }
     }
@@ -144,6 +180,7 @@ Renderer::query_gpu_name(std::string_view name) const {
 }
 
 Renderer::Renderer(const RendererConfig& config) : m_config(config) {
+    SDL_SetHint(SDL_HINT_RENDER_GPU_LOW_POWER, "0");
     m_sdl_renderer = SDL_CreateRenderer(config.window, nullptr);
     if (!m_sdl_renderer) {
         throw std::runtime_error(fmt::format(

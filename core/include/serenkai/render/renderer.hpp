@@ -61,7 +61,12 @@ private:
     SDL_Color m_clear_color = {0, 0, 0, SDL_ALPHA_OPAQUE};
     std::unique_ptr<TextRenderer> m_text_renderer;
 
+    /// @brief Print renderer and GPU information to log.
     void print_renderer_info() const;
+
+    /// @brief Query the GPU device name for the active renderer backend.
+    /// @param name Renderer backend name.
+    /// @return GPU device name string if available, std::nullopt otherwise.
     std::optional<std::string> query_gpu_name(std::string_view name) const;
 };
 } // namespace serenkai
