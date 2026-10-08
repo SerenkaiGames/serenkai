@@ -11,6 +11,10 @@ int start_game(int argc, char** argv) {
     try {
         Application app{argc, argv};
         app.run();
+
+    } catch (const Application::ExitException& e) {
+
+        return e.code;
     } catch (const std::exception& e) {
         spdlog::error("Application error: {}", e.what());
         return 1;

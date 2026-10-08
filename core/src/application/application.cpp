@@ -1,6 +1,5 @@
 #include "serenkai/application/application.hpp"
 
-#include "CLI/CLI.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
 #include "serenkai/application/window_manager.hpp"
@@ -127,8 +126,8 @@ Application::Argument Application::handle_argument(int argc, char** argv) {
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError& e) {
-        app.exit(e);
-        throw std::runtime_error("Invalid arguments");
+
+        throw ExitException{app.exit(e)};
     }
 
     return arg;

@@ -41,6 +41,14 @@ public:
         }
     };
 
+    struct ExitException : public std::exception {
+        int code;
+        explicit ExitException(int exit_code) : code(exit_code) {}
+        const char* what() const noexcept override {
+            return "Application requested exit";
+        }
+    };
+
     Application(int argc, char** argv);
     ~Application();
 
