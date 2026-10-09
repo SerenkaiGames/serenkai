@@ -108,7 +108,7 @@ struct TileLayer {
     }
 };
 
-struct LayerObject {
+struct MapObject {
     std::string name;
     std::string type;
     glm::vec2 pos{0};
@@ -125,7 +125,7 @@ struct ObjectGroup {
     };
     std::string name;
     DrawOrder order = ObjectGroup::DrawOrder::Index;
-    std::vector<LayerObject> objects;
+    std::vector<MapObject> objects;
     std::vector<MapProperty> properties;
     bool visible{true};
 };

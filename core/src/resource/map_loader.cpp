@@ -149,7 +149,7 @@ void load_object_group(MapData& data, const tmx::ObjectGroup& group) {
             continue;
         }
 
-        LayerObject obj{};
+        MapObject obj{};
         obj.name = object.getName();
         obj.type = object.getType();
         obj.pos = to_vec(object.getPosition());
