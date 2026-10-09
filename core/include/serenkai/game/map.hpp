@@ -25,11 +25,12 @@ public:
     /// @brief Total map dimensions in pixels (map_size * tile_size).
     glm::ivec2 pixel_size() const;
 
-    /// @brief Check whether the tile is on the edge.
+    /// @brief Within range (including interior and edges).
     bool is_in_bounds(glm::ivec2 tile_pos) const;
 
     glm::ivec2 world_to_tile(glm::vec2 world_pos) const;
 
+    /// @brief Get the world coordinates of the tile (top-left corner).
     glm::vec2 tile_to_world(glm::ivec2 tile_pos) const;
 
     const MapData& data() const;
@@ -49,32 +50,50 @@ public:
 
     std::vector<MapObject> find_objects_by_type(std::string_view type) const;
 
-    bool add_object(std::string_view group_name, const MapObject& object);
+    bool add_object(std::string_view group_name,
+                    const MapObject& object); // todo
 
     bool remove_object(std::string_view group_name,
-                       std::string_view object_name);
+                       std::string_view object_name); // todo
 
     /// @brief The player's initial position when entering the map; may be null.
-    std::optional<glm::vec2> get_spawn_point(std::string_view name) const;
+    std::optional<glm::vec2>
+    get_spawn_point(std::string_view name) const; // todo
 
     bool has_layer(std::string_view name) const;
 
     void set_layer_visible(std::string_view name, bool visible);
 
-    bool is_solid(glm::ivec2 tile_pos) const;
+    bool is_solid(glm::ivec2 tile_pos) const; // todo
 
-    bool check_collision(const glm::vec4& aabb) const;
+    bool check_collision(const glm::vec4& aabb) const; // todo
 
-    bool is_dirty() const;
+    bool is_tile_dirty() const;
+    bool is_object_dirty() const;
 
-    void mark_dirty(bool dirty = true);
+    void mark_tile_dirty(bool dirty = true);
+    void mark_object_dirty(bool dirty = true);
 
     void update(float dt);
 
     void render() const; // todo
 
 private:
+    using ObjectRef = std::pair<std::size_t, std::size_t>;
+    using ObjectIndex = std::unordered_map<std::string, std::vector<ObjectRef>>;
+
     MapData m_data;
     bool m_dirty = false;
+
+    bool m_tile_dirty = false;
+    bool m_object_dirty = false;
+
+    std::unordered_map<std::string, std::size_t> m_layer_index;
+
+    ObjectIndex m_by_name;
+    ObjectIndex m_by_type;
+
+    void build_layer_index();
+    void build_object_index();
 };
 } // namespace serenkai
