@@ -83,6 +83,10 @@ add_library(
     include/serenkai/script/bindings/bind_log.hpp
     src/script/bindings/bind_log.cpp
     include/serenkai/script/script_constants.hpp
+    include/serenkai/game/map_data.hpp
+    include/serenkai/game/map.hpp
+    include/serenkai/resource/map_loader.hpp
+    src/resource/map_loader.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
