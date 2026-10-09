@@ -19,12 +19,12 @@ public:
     MapManager& operator=(MapManager&&) = delete;
 
     explicit MapManager(AssetManager* asset_manager);
-    ~MapManager();
+    ~MapManager() = default;
 
     bool switch_map(std::string_view loc,
                     std::string_view spawn_point_name = "");
 
-    void unload_current_map();
+    void unload_current_map(); // todo
 
     std::shared_ptr<Map> current_map() const;
 

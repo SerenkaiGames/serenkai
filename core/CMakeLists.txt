@@ -89,6 +89,7 @@ add_library(
     src/resource/map_loader.cpp
     include/serenkai/game/map_manager.hpp
     src/game/map.cpp
+    src/game/map_manager.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
