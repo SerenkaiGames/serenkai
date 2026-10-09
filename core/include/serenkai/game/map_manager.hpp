@@ -33,7 +33,6 @@ public:
     void update(float dt);
 
 private:
-    AssetManager* m_asset_manager = nullptr;
     MapLoader m_loader;
 
     std::unordered_map<ResourceLocation, std::shared_ptr<Map>> m_map_cache;

@@ -6,7 +6,10 @@
 #include <variant>
 
 namespace serenkai {
-Map::Map(MapData data) : m_data(std::move(data)) { build_layer_index(); }
+Map::Map(MapData data) : m_data(std::move(data)) {
+    build_layer_index();
+    build_object_index();
+}
 
 void Map::build_layer_index() {
     m_layer_index.clear();
@@ -73,7 +76,7 @@ const MapData& Map::data() const { return m_data; }
 std::optional<Tile> Map::get_tile(std::string_view layer_name,
                                   glm::ivec2 tile_pos) const {
 
-    auto it = m_layer_index.find(std::string(layer_name));
+    auto it = m_layer_index.find(layer_name);
     if (it == m_layer_index.end()) {
         return std::nullopt;
     }
@@ -93,7 +96,7 @@ std::optional<Tile> Map::get_tile(std::string_view layer_name,
 std::vector<MapObject> Map::find_object(std::string_view name) const {
     std::vector<MapObject> result;
 
-    auto it = m_by_name.find(std::string(name));
+    auto it = m_by_name.find(name);
     if (it == m_by_name.end()) {
         return result;
     }
@@ -110,7 +113,7 @@ std::vector<MapObject> Map::find_object(std::string_view name) const {
 std::vector<MapObject> Map::find_objects_by_type(std::string_view type) const {
     std::vector<MapObject> result;
 
-    auto it = m_by_type.find(std::string(type));
+    auto it = m_by_type.find(type);
     if (it == m_by_type.end()) {
         return result;
     }
@@ -125,15 +128,12 @@ std::vector<MapObject> Map::find_objects_by_type(std::string_view type) const {
 }
 
 bool Map::has_layer(std::string_view name) const {
-    auto it = m_layer_index.find(std::string(name));
-    if (it == m_layer_index.end()) {
-        return false;
-    }
-    return true;
+    auto it = m_layer_index.find(name);
+    return it != m_layer_index.end();
 }
 
 void Map::set_layer_visible(std::string_view name, bool visible) {
-    auto it = m_layer_index.find(std::string(name));
+    auto it = m_layer_index.find(name);
     if (it == m_layer_index.end()) {
         return;
     }

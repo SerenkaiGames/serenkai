@@ -1,6 +1,7 @@
 #pragma once
 
 #include "map_data.hpp"
+#include "serenkai/base/string_hash.hpp"
 
 #include <optional>
 namespace serenkai {
@@ -80,15 +81,16 @@ public:
 
 private:
     using ObjectRef = std::pair<std::size_t, std::size_t>;
-    using ObjectIndex = std::unordered_map<std::string, std::vector<ObjectRef>>;
+    using ObjectIndex = std::unordered_map<std::string, std::vector<ObjectRef>,
+                                           StringHash, StringEqual>;
 
     MapData m_data;
-    bool m_dirty = false;
 
     bool m_tile_dirty = false;
     bool m_object_dirty = false;
 
-    std::unordered_map<std::string, std::size_t> m_layer_index;
+    std::unordered_map<std::string, std::size_t, StringHash, StringEqual>
+        m_layer_index;
 
     ObjectIndex m_by_name;
     ObjectIndex m_by_type;

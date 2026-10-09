@@ -9,8 +9,7 @@
 #include <utility>
 
 namespace serenkai {
-MapManager::MapManager(AssetManager* asset_manager)
-    : m_asset_manager(asset_manager), m_loader(asset_manager) {}
+MapManager::MapManager(AssetManager* asset_manager) : m_loader(asset_manager) {}
 
 bool MapManager::switch_map(std::string_view loc, std::string_view) {
     auto res = ResourceLocation::parse(loc);
