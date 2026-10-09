@@ -111,7 +111,7 @@ void load_tile_layer(MapData& data, const tmx::TileLayer& layer,
 
         auto idx = find_tileset_index(tilesets, gid);
         if (idx < 0) {
-            spdlog::error("Failed to find tile gid {} tileset index", gid);
+            spdlog::error("Failed to find tileset index for tile gid {}", gid);
             // find failed; insert an empty tile.
             t.tiles.emplace_back();
             continue;
@@ -143,8 +143,8 @@ void load_object_group(MapData& data, const tmx::ObjectGroup& group) {
 
     for (auto& object : group.getObjects()) {
         if (object.getShape() != tmx::Object::Shape::Rectangle) {
-            spdlog::info("Don't support object {} shape, the game is only "
-                         "support rectangle",
+            spdlog::info("Unsupported shape for object '{}'; only rectangles "
+                         "are supported",
                          object.getName());
             continue;
         }
@@ -187,24 +187,26 @@ std::optional<MapData> MapLoader::load(std::string_view loc) const {
 
     auto path = m_asset_manager->get(loc);
     if (!path) {
-        spdlog::error("Failed to get {} asset path", loc);
+        spdlog::error("Failed to resolve asset path for '{}'", loc);
         return std::nullopt;
     }
 
     tmx::Map map;
 
     if (!map.load(*path)) {
-        spdlog::error("Failed to load {}", loc);
+        spdlog::error("Failed to load map '{}'", loc);
         return std::nullopt;
     }
 
     if (map.getOrientation() != tmx::Orientation::Orthogonal) {
-        spdlog::error("Map {} is not orthogonal, can't load", loc);
+        spdlog::error(
+            "Map '{}' is not orthogonal; only orthogonal maps are supported",
+            loc);
         return std::nullopt;
     }
 
     if (map.isInfinite()) {
-        spdlog::error("Don't support infinite map {}", loc);
+        spdlog::error("Infinite map '{}' is not supported", loc);
         return std::nullopt;
     }
 
