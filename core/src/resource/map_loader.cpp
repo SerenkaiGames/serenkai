@@ -40,45 +40,87 @@ std::ptrdiff_t find_tileset_index(const std::vector<tmx::Tileset>& tilesets,
     return (it - 1) - tilesets.begin();
 }
 
-void convert_properties(const std::vector<tmx::Property>& dist,
-                        std::vector<LayerProperty>& out) {
-    for (auto& p : dist) {
-        LayerProperty mp;
-        mp.name = p.getName();
-        mp.type = static_cast<int>(p.getType());
-        mp.value = p.getStringValue();
-        out.push_back(std::move(mp));
+void convert_properties(const std::vector<tmx::Property>& src,
+                        std::vector<MapProperty>& out) {
+    out.reserve(out.size() + src.size());
+    for (auto& p : src) {
+        MapProperty prop;
+        prop.name = p.getName();
+        switch (p.getType()) {
+        case tmx::Property::Type::Boolean:
+            prop.value = p.getBoolValue();
+            break;
+        case tmx::Property::Type::Float:
+            prop.value = p.getFloatValue();
+            break;
+        case tmx::Property::Type::Int:
+            prop.value = p.getIntValue();
+            break;
+        case tmx::Property::Type::String:
+            prop.value = p.getStringValue();
+            break;
+        case tmx::Property::Type::Colour: {
+            const auto& c = p.getColourValue();
+            prop.value = glm::vec4(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f,
+                                   c.a / 255.0f);
+            break;
+        }
+        case tmx::Property::Type::File:
+            prop.value = p.getFileValue();
+            break;
+        case tmx::Property::Type::Object:
+            prop.value = p.getObjectValue();
+            break;
+        default:
+            break;
+        }
+
+        out.push_back(std::move(prop));
     }
 }
 
 void load_tile_layer(MapData& data, const tmx::TileLayer& layer,
                      const std::vector<tmx::Tileset>& tilesets) {
     TileLayer t{};
+    t.name = layer.getName();
     t.size = to_ivec2(layer.getSize());
-    t.visable = layer.getVisible();
-    for (auto& tile : layer.getTiles()) {
+    t.visible = layer.getVisible();
+    const auto& raw_tiles = layer.getTiles();
+    t.tiles.reserve(raw_tiles.size());
+
+    for (auto& tile : raw_tiles) {
         std::uint32_t gid = tile.ID & 0x1FFFFFFF;
+        if (gid == 0) {
+            // Insert empty tiles directly.
+            t.tiles.emplace_back();
+            continue;
+        }
+
         std::uint8_t flags = tile.flipFlags;
         Tile::FlipFlag f = Tile::FlipFlag::None;
+
         if (flags & tmx::TileLayer::FlipFlag::Horizontal) {
-            f = Tile::FlipFlag::Horizontal;
+            f |= Tile::FlipFlag::Horizontal;
         }
         if (flags & tmx::TileLayer::FlipFlag::Vertical) {
-            f = Tile::FlipFlag::Vertical;
+            f |= Tile::FlipFlag::Vertical;
         }
         if (flags & tmx::TileLayer::FlipFlag::Diagonal) {
-            f = Tile::FlipFlag::Diagonal;
+            f |= Tile::FlipFlag::Diagonal;
         }
 
         auto idx = find_tileset_index(tilesets, gid);
         if (idx < 0) {
             spdlog::error("Failed to find tile gid {} tileset index", gid);
+            // find failed; insert an empty tile.
+            t.tiles.emplace_back();
             continue;
         }
+        auto tileset_idx = static_cast<std::uint16_t>(idx);
+        auto local_id =
+            static_cast<std::uint16_t>(gid - tilesets[idx].getFirstGID());
 
-        uint32_t local_id = gid - tilesets[idx].getFirstGID();
-
-        t.tiles.emplace_back(gid, f, idx, local_id);
+        t.tiles.emplace_back(gid, f, tileset_idx, local_id);
     }
     convert_properties(layer.getProperties(), t.properties);
     data.layers.emplace_back(std::move(t));
@@ -86,7 +128,8 @@ void load_tile_layer(MapData& data, const tmx::TileLayer& layer,
 
 void load_object_group(MapData& data, const tmx::ObjectGroup& group) {
     ObjectGroup g{};
-    g.visable = group.getVisible();
+    g.name = group.getName();
+    g.visible = group.getVisible();
     switch (group.getDrawOrder()) {
     case tmx::ObjectGroup::DrawOrder::Index:
         g.order = ObjectGroup::DrawOrder::Index;
@@ -110,11 +153,13 @@ void load_object_group(MapData& data, const tmx::ObjectGroup& group) {
         obj.name = object.getName();
         obj.type = object.getType();
         obj.pos = to_vec(object.getPosition());
-        obj.visable = object.visible();
+        obj.visible = object.visible();
         obj.rotation = object.getRotation();
         auto& aabb = object.getAABB();
         obj.aabb = {aabb.left, aabb.top, aabb.width, aabb.height};
         convert_properties(object.getProperties(), obj.properties);
+
+        g.objects.emplace_back(std::move(obj));
     }
 
     data.layers.emplace_back(std::move(g));
@@ -122,7 +167,8 @@ void load_object_group(MapData& data, const tmx::ObjectGroup& group) {
 
 void load_image_layer(MapData& data, const tmx::ImageLayer& layer) {
     ImageLayer image{};
-    image.visable = layer.getVisible();
+    image.name = layer.getName();
+    image.visible = layer.getVisible();
     image.path = layer.getImagePath();
     image.size = to_ivec2(layer.getImageSize());
     data.layers.emplace_back(std::move(image));

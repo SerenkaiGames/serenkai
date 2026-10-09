@@ -12,11 +12,11 @@
 namespace serenkai {
 
 struct Tile {
-    enum class FlipFlag {
-        Horizontal,
-        Vertical,
-        Diagonal,
-        None,
+    enum class FlipFlag : std::uint8_t {
+        None = 0,
+        Horizontal = 1 << 0,
+        Vertical = 1 << 1,
+        Diagonal = 1 << 2,
     };
 
     // Global gid with the flag bits removed.
@@ -24,29 +24,96 @@ struct Tile {
     // Flip information.
     FlipFlag flag{Tile::FlipFlag::None};
     // Tileset index
-    uint16_t tileset{0};
-    uint16_t local_id{0};
+    std::uint16_t tileset{0};
+    std::uint16_t local_id{0};
+
+    constexpr bool is_empty() const noexcept { return gid == 0; }
+
+    /// @brief Check if a specific flip flag is set.
+    constexpr bool has_flip(FlipFlag f) const noexcept {
+        return (static_cast<std::uint8_t>(flag) &
+                static_cast<std::uint8_t>(f)) != 0;
+    }
+
+    /// @brief Convenient helpers for renderer
+    constexpr bool flip_horizontal() const noexcept {
+        return has_flip(FlipFlag::Horizontal);
+    }
+    constexpr bool flip_vertical() const noexcept {
+        return has_flip(FlipFlag::Vertical);
+    }
+    constexpr bool flip_diagonal() const noexcept {
+        return has_flip(FlipFlag::Diagonal);
+    }
 };
 
-struct LayerProperty {
+constexpr Tile::FlipFlag operator|(Tile::FlipFlag a,
+                                   Tile::FlipFlag b) noexcept {
+    return static_cast<Tile::FlipFlag>(static_cast<std::uint8_t>(a) |
+                                       static_cast<std::uint8_t>(b));
+}
+
+constexpr Tile::FlipFlag operator&(Tile::FlipFlag a,
+                                   Tile::FlipFlag b) noexcept {
+    return static_cast<Tile::FlipFlag>(static_cast<std::uint8_t>(a) &
+                                       static_cast<std::uint8_t>(b));
+}
+
+constexpr Tile::FlipFlag& operator|=(Tile::FlipFlag& a,
+                                     Tile::FlipFlag b) noexcept {
+    a = a | b;
+    return a;
+}
+
+using MapPropertyValue =
+    std::variant<std::monostate, bool, int, float, std::string, glm::vec4>;
+
+struct MapProperty {
     std::string name;
-    std::string value;
-    int type = 0;
+    MapPropertyValue value;
+
+    template <typename T> bool is() const {
+        return std::holds_alternative<T>(value);
+    }
+
+    template <typename T> const T* get_if() const {
+        return std::get_if<T>(&value);
+    }
+
+    template <typename T> T get_or(const T& default_value) const {
+        if (const auto* val = get_if<T>()) {
+            return *val;
+        }
+        return default_value;
+    }
 };
 
 struct TileLayer {
+    std::string name;
     std::vector<Tile> tiles;
     glm::ivec2 size{0};
-    bool visable{true};
-    std::vector<LayerProperty> properties;
+    bool visible{true};
+    std::vector<MapProperty> properties;
+
+    /// @brief Get tile at 2D coordinate (x, y), or nullptr if out of bounds.
+    const Tile* get_tile(int x, int y) const noexcept {
+        if (x < 0 || x >= size.x || y < 0 || y >= size.y) {
+            return nullptr;
+        }
+        return &tiles[static_cast<std::size_t>(y * size.x + x)];
+    }
+
+    const Tile* get_tile(glm::ivec2 pos) const noexcept {
+        return get_tile(pos.x, pos.y);
+    }
 };
 
 struct LayerObject {
     std::string name;
     std::string type;
     glm::vec2 pos{0};
-    bool visable{true};
-    std::vector<LayerProperty> properties;
+    bool visible{true};
+    std::vector<MapProperty> properties;
     float rotation{0.0f};
     glm::vec4 aabb{0};
 };
@@ -56,16 +123,18 @@ struct ObjectGroup {
         Index,  // draw in the order in which they appear
         TopDown // draw sorted by their Y position
     };
+    std::string name;
     DrawOrder order = ObjectGroup::DrawOrder::Index;
     std::vector<LayerObject> objects;
-    std::vector<LayerProperty> properties;
-    bool visable{true};
+    std::vector<MapProperty> properties;
+    bool visible{true};
 };
 
 struct ImageLayer {
+    std::string name;
     std::string path;
     glm::ivec2 size;
-    bool visable{true};
+    bool visible{true};
 };
 
 struct Tileset {
@@ -78,7 +147,12 @@ struct Tileset {
     std::uint32_t tile_count{0};
     std::uint32_t column_count{0};
 
-    glm::vec4 get_rect(std::uint16_t local_id) {
+    glm::vec4 get_rect(std::uint16_t local_id) const {
+
+        if (!column_count) {
+            return glm::vec4{0.0f};
+        }
+
         const auto column = local_id % column_count;
         const auto row = local_id / column_count;
 
