@@ -1,17 +1,12 @@
 #pragma once
 #include "serenkai/base/raii.hpp"
+#include "serenkai/script/lua_header.hpp"
 
 #include <functional>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <string_view>
 #include <utility>
-
-// clang-format off
-#include <lua.h>
-#include <lualib.h>
-#include <luabridge3/LuaBridge/LuaBridge.h>
-// clang-format on
 
 namespace serenkai {
 using LuaState = RaiiWrapper<lua_State*, std::function<void(lua_State*&)>,
