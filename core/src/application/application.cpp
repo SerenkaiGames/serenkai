@@ -16,6 +16,7 @@
 #include "serenkai/resource/texture_manager.hpp"
 #include "serenkai/scenes/scene.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
+#include "serenkai/script/script.hpp"
 #include "serenkai/script/script_constants.hpp"
 #include "serenkai/script/script_engine.hpp"
 
@@ -32,6 +33,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 
 namespace {
@@ -125,7 +127,11 @@ Application::Application(int argc, char** argv) {
     m_gui_context->handle_window_resize_event(
         WindowResizeEvent{window_size.x, window_size.y});
 
-    m_script_engine->load(MAIN_SCRIPT_LOC);
+    auto main = m_script_engine->create(MAIN_SCRIPT_LOC);
+    if (main) {
+        m_main_script = std::make_unique<Script>(std::move(*main));
+    }
+
     m_scene_manager->request_push(SceneType::Title);
 }
 
@@ -178,7 +184,10 @@ void Application::step(float dt) {
 
 void Application::update(float dt) {
     m_scene_manager->update(dt);
-    m_script_engine->call<>(MAIN_SCRIPT_LOC, "on_update", dt);
+
+    if (m_main_script) {
+        m_main_script->call<>("on_update", dt);
+    }
 }
 void Application::render() {
     m_renderer->clear();

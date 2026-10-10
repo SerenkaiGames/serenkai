@@ -12,6 +12,7 @@
 #include "serenkai/resource/font_manager.hpp"
 #include "serenkai/resource/texture_manager.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
+#include "serenkai/script/script.hpp"
 #include "serenkai/script/script_engine.hpp"
 
 #include <cstdint>
@@ -72,7 +73,7 @@ private:
     std::unique_ptr<GuiContext> m_gui_context;
     std::unique_ptr<WidgetParser> m_widget_parser;
     std::unique_ptr<ScriptEngine> m_script_engine;
-
+    std::unique_ptr<Script> m_main_script;
     AppContext m_app_ctx;
     RenderContext m_render_ctx;
 

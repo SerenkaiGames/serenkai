@@ -97,6 +97,9 @@ add_library(
     include/serenkai/render/render_context.hpp
     include/serenkai/game/camera.hpp
     src/game/camera.cpp
+    src/script/script.cpp
+    include/serenkai/script/script.hpp
+    include/serenkai/script/lua_compile_options.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
