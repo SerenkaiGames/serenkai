@@ -11,6 +11,7 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <string_view>
+#include <utility>
 
 struct lua_CompileOptions;
 
@@ -74,6 +75,14 @@ public:
 
         return lua_detail::call_function<RetTypes...>(
             *fun, std::forward<Args>(args)...);
+    }
+
+    /// @brief Add a global variable to the script environment.
+    ///
+    /// @warning If an object pointer is passed in, ensure the object remains
+    /// alive until the script is destructed.
+    template <typename T> bool add_global(std::string_view name, T&& t) {
+        return luabridge::setGlobal(m_state.get(), std::forward<T>(t), name);
     }
 
 private:
