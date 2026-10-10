@@ -302,7 +302,7 @@ public:
         : m_stats(std::move(stats)) {}
 
     void update(float) override {}
-    void render(GuiContext*) override {}
+    void render(RenderContext*) override {}
 
 protected:
     bool handle_key_event(const KeyEvent&) override {

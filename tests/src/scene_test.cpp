@@ -39,7 +39,7 @@ public:
     MockScene& operator=(const MockScene&) = delete;
     MockScene& operator=(MockScene&&) = delete;
 
-    void on_enter(GuiContext*) override {
+    void on_enter(AppContext*) override {
         if (m_stats) {
             ++m_stats->enter_count;
         }
@@ -58,7 +58,7 @@ public:
         }
     }
 
-    void render(GuiContext*) override {
+    void render(RenderContext*) override {
         if (m_stats) {
             ++m_stats->render_count;
         }
@@ -219,4 +219,53 @@ TEST_CASE("SceneManager default factory creates concrete scenes", "[scene]") {
     auto game_scene = manager.create_scene(SceneType::Game);
     REQUIRE(game_scene != nullptr);
     CHECK(dynamic_cast<GameScene*>(game_scene.get()) != nullptr);
+}
+
+TEST_CASE("SceneManager render propagation to active scene", "[scene]") {
+    TestSceneManager manager;
+    RenderContext render_ctx{};
+
+    SECTION("Render on empty manager is safe no-op") {
+        manager.render(&render_ctx);
+        manager.render(nullptr);
+        CHECK(manager.empty());
+    }
+
+    SECTION("Render forwards to current scene") {
+        manager.request_push(SceneType::Title);
+        manager.update(0.016F);
+
+        CHECK(manager.title_stats->render_count == 0);
+        manager.render(&render_ctx);
+        CHECK(manager.title_stats->render_count == 1);
+        manager.render(nullptr);
+        CHECK(manager.title_stats->render_count == 2);
+    }
+}
+
+TEST_CASE("GameScene lifecycle and safety", "[scene]") {
+    GameScene scene;
+
+    SECTION("on_enter throws on null AppContext") {
+        CHECK_THROWS_AS(scene.on_enter(nullptr), std::runtime_error);
+    }
+
+    SECTION("update and render without on_enter do not crash") {
+        scene.update(0.016F);
+        scene.render(nullptr);
+        RenderContext ctx{};
+        scene.render(&ctx);
+    }
+}
+
+TEST_CASE("TitleScene lifecycle and safety", "[scene]") {
+    TitleScene scene;
+
+    SECTION("on_enter throws on null AppContext") {
+        CHECK_THROWS_AS(scene.on_enter(nullptr), std::runtime_error);
+    }
+
+    SECTION("render with null RenderContext does not crash") {
+        scene.render(nullptr);
+    }
 }
