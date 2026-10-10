@@ -67,6 +67,10 @@ constexpr Tile::FlipFlag& operator|=(Tile::FlipFlag& a,
     return a;
 }
 
+constexpr Tile::FlipFlag operator~(Tile::FlipFlag a) noexcept {
+    return static_cast<Tile::FlipFlag>(~static_cast<std::uint8_t>(a));
+}
+
 using MapPropertyValue =
     std::variant<std::monostate, bool, int, float, std::string, glm::vec4>;
 
