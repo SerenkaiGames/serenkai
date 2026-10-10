@@ -93,6 +93,10 @@ add_library(
     include/serenkai/base/string_hash.hpp
     include/serenkai/render/map_renderer.hpp
     src/render/map_renderer.cpp
+    include/serenkai/application/app_context.hpp
+    include/serenkai/render/render_context.hpp
+    include/serenkai/game/camera.hpp
+    src/game/camera.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

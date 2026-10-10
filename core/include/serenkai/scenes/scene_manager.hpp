@@ -1,5 +1,7 @@
 #pragma once
 
+#include "serenkai/application/app_context.hpp"
+#include "serenkai/render/render_context.hpp"
 #include "serenkai/scenes/scene.hpp"
 
 #include <memory>
@@ -7,7 +9,7 @@
 #include <stack>
 #include <vector>
 namespace serenkai {
-class GuiContext;
+
 /// @brief Class for managing Scene
 ///
 /// Used to manage and switch the current Scene, ensuring that the Scene enters
@@ -19,11 +21,11 @@ public:
     SceneManager& operator=(const SceneManager&) = delete;
     SceneManager& operator=(SceneManager&&) = delete;
 
-    SceneManager(GuiContext* gui_context);
+    SceneManager(AppContext* ctx);
     virtual ~SceneManager();
 
     void update(float dt);
-    void render(GuiContext* context);
+    void render(RenderContext* ctx);
 
     bool handle_event(const Event& e);
 
@@ -46,7 +48,7 @@ private:
         Operation(OperationType op, std::optional<SceneType> s)
             : type(op), scene(s) {}
     };
-    GuiContext* m_gui_context = nullptr;
+    AppContext* m_ctx = nullptr;
     std::vector<std::unique_ptr<Scene>> m_pending_delete_scene;
     std::optional<Operation> m_operation;
     std::stack<std::unique_ptr<Scene>> m_scenes;

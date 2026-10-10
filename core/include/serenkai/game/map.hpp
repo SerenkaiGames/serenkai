@@ -77,8 +77,6 @@ public:
 
     void update(float dt);
 
-    void render() const; // todo
-
 private:
     using ObjectRef = std::pair<std::size_t, std::size_t>;
     using ObjectIndex = std::unordered_map<std::string, std::vector<ObjectRef>,

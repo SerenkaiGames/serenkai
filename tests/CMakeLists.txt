@@ -26,6 +26,7 @@ add_executable(serenkai_tests
     src/map_test.cpp
     src/map_manager_test.cpp
     src/map_renderer_test.cpp
+    src/camera_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core
