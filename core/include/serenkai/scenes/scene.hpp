@@ -1,11 +1,11 @@
 #pragma once
 
+#include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
+#include "serenkai/render/render_context.hpp"
 
 #include <variant>
 namespace serenkai {
-
-class GuiContext;
 
 enum class SceneType { Title, Game };
 
@@ -27,7 +27,7 @@ public:
     virtual void update(float dt) = 0;
 
     /// @brief Render function, called after update
-    virtual void render(GuiContext* context) = 0;
+    virtual void render(RenderContext* ctx) = 0;
 
     /// @brief Receive event and pass down
     virtual bool handle_event(const Event& e) {
@@ -51,7 +51,7 @@ public:
     }
 
     /// @brief Called once when entering the scene.
-    virtual void on_enter(GuiContext*) {}
+    virtual void on_enter(AppContext*) {}
 
     /// @brief Called once when leaving the scene, used to clean up resources.
     virtual void on_leave() {}

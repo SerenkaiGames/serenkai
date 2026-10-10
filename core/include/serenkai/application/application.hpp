@@ -1,10 +1,12 @@
 #pragma once
 
+#include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/base/raii.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/gui/widget_parser.hpp"
+#include "serenkai/render/render_context.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/font_manager.hpp"
@@ -71,6 +73,9 @@ private:
     std::unique_ptr<SceneManager> m_scene_manager;
     std::unique_ptr<WidgetParser> m_widget_parser;
     std::unique_ptr<ScriptEngine> m_script_engine;
+
+    AppContext m_app_ctx;
+    RenderContext m_render_ctx;
 
     bool m_running = true;
     SDL_Event m_event{};

@@ -1,6 +1,7 @@
 #include "serenkai/render/renderer.hpp"
 
 #include "serenkai/gui/color.hpp"
+#include "serenkai/render/map_renderer.hpp"
 #include "serenkai/render/text_renderer.hpp"
 
 #include <SDL3/SDL_error.h>
@@ -190,7 +191,9 @@ Renderer::Renderer(const RendererConfig& config) : m_config(config) {
     print_renderer_info();
 
     SDL_SetRenderVSync(m_sdl_renderer, static_cast<int>(config.v_sync));
+
     m_text_renderer = std::make_unique<TextRenderer>(m_sdl_renderer);
+    m_map_renderer = std::make_unique<MapRenderer>(m_sdl_renderer);
 }
 Renderer::~Renderer() {
     if (m_sdl_renderer) {
@@ -252,6 +255,13 @@ void Renderer::draw_image(SDL_Texture* texture, glm::ivec2 pos, glm::ivec2 size,
                   static_cast<float>(size.x) * scale,
                   static_cast<float>(size.y) * scale};
     SDL_RenderTexture(m_sdl_renderer, texture, nullptr, &dst);
+}
+
+void Renderer::draw_map(Map* map, TextureManager* texture_manager,
+                        glm::vec2 camera, float zoom) {
+    if (m_map_renderer) {
+        m_map_renderer->render(map, texture_manager, camera, zoom);
+    }
 }
 
 } // namespace serenkai

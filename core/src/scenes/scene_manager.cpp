@@ -1,7 +1,7 @@
 #include "serenkai/scenes/scene_manager.hpp"
 
 #include "serenkai/base/unreachable.hpp"
-#include "serenkai/gui/gui_context.hpp"
+#include "serenkai/render/render_context.hpp"
 #include "serenkai/scenes/game_scene.hpp"
 #include "serenkai/scenes/title_scene.hpp"
 
@@ -10,7 +10,7 @@
 
 namespace serenkai {
 
-SceneManager::SceneManager(GuiContext* context) : m_gui_context(context) {}
+SceneManager::SceneManager(AppContext* ctx) : m_ctx(ctx) {}
 SceneManager::~SceneManager() {}
 
 void SceneManager::update(float dt) {
@@ -21,12 +21,12 @@ void SceneManager::update(float dt) {
         m_scenes.top()->update(dt);
     }
 }
-void SceneManager::render(GuiContext* context) {
+void SceneManager::render(RenderContext* ctx) {
 
     if (m_scenes.empty()) {
         return;
     }
-    m_scenes.top()->render(context);
+    m_scenes.top()->render(ctx);
 }
 
 bool SceneManager::handle_event(const Event& e) {
@@ -87,7 +87,7 @@ void SceneManager::change(SceneType type) {
 }
 void SceneManager::push(SceneType type) {
     auto scene = create_scene(type);
-    scene->on_enter(m_gui_context);
+    scene->on_enter(m_ctx);
     m_scenes.push(std::move(scene));
 }
 void SceneManager::pop() {

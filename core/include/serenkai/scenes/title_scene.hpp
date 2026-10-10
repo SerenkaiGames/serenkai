@@ -1,4 +1,5 @@
 #pragma once
+#include "serenkai/application/app_context.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/scenes/scene.hpp"
 
@@ -8,9 +9,9 @@ class TitleScene : public Scene {
 public:
     void update(float dt) override;
 
-    void render(GuiContext* context) override;
+    void render(RenderContext* ctx) override;
 
-    void on_enter(GuiContext* context) override;
+    void on_enter(AppContext* ctx) override;
 
 protected:
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;

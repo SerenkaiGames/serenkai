@@ -1,11 +1,13 @@
 #include "serenkai/application/application.hpp"
 
 #include "CLI/CLI.hpp"
+#include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/gui/widget_parser.hpp"
+#include "serenkai/render/render_context.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/directory_source.hpp"
@@ -95,7 +97,18 @@ Application::Application(int argc, char** argv) {
         GuiConfig{m_renderer.get(), m_texture_manager.get(),
                   m_widget_parser.get(), m_font_manager.get()});
 
-    m_scene_manager = std::make_unique<SceneManager>(m_gui_context.get());
+    m_script_engine = std::make_unique<ScriptEngine>(m_asset_manager.get());
+
+    m_app_ctx = AppContext{
+        m_asset_manager.get(), m_texture_manager.get(), m_font_manager.get(),
+        m_renderer.get(),      m_window_manager.get(),  m_script_engine.get(),
+        m_gui_context.get(),
+    };
+
+    m_render_ctx = RenderContext{m_renderer.get(), m_texture_manager.get(),
+                                 m_gui_context.get()};
+
+    m_scene_manager = std::make_unique<SceneManager>(&m_app_ctx);
 
     m_widget_parser->register_callback("on_exit_game",
                                        [this]() { m_running = false; });
@@ -107,7 +120,6 @@ Application::Application(int argc, char** argv) {
     m_widget_parser->register_callback("on_change_game_scene", [this]() {
         m_scene_manager->request_change(SceneType::Game);
     });
-    m_script_engine = std::make_unique<ScriptEngine>(m_asset_manager.get());
 
     auto window_size = m_window_manager->get_window_size();
     m_gui_context->handle_window_resize_event(
@@ -170,7 +182,7 @@ void Application::update(float dt) {
 }
 void Application::render() {
     m_renderer->clear();
-    m_scene_manager->render(m_gui_context.get());
+    m_scene_manager->render(&m_render_ctx);
     m_renderer->present();
 }
 
