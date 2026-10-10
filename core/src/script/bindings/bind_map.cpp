@@ -77,7 +77,7 @@ void register_lua_map(lua_State* L) {
         .addFunction("switch_map", &MapManager::switch_map)
         .addFunction("current_map", &MapManager::current_map)
         .addFunction("has_map", &MapManager::has_map)
-        .addFunction("unload_current_map", &MapManager::unload_current_map)
+        //.addFunction("unload_current_map", &MapManager::unload_current_map)
         .endClass()
         .beginClass<Map>("Map")
         .addFunction("map_size", &Map::map_size)
@@ -88,6 +88,8 @@ void register_lua_map(lua_State* L) {
         .addFunction("tile_to_world", &Map::tile_to_world)
         .addFunction("has_layer", &Map::has_layer)
         .addFunction("set_layer_visible", &Map::set_layer_visible)
+        .addFunction("find_object", &Map::find_object)
+        .addFunction("find_objects_by_type", &Map::find_objects_by_type)
         .endClass();
 }
 } // namespace serenkai
