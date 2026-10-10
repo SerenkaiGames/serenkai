@@ -1,7 +1,8 @@
 #pragma once
 
-#include "serenkai/base/raii.hpp"
 #include "serenkai/resource/resource_location.hpp"
+#include "serenkai/script/script.hpp"
+
 // clang-format off
 #include <lua.h>
 #include <lualib.h>
@@ -12,45 +13,13 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <utility>
+
 struct lua_State;
 
 namespace serenkai {
 
-namespace lua_detail {
-/// @brief Calls a Lua callable object and returns the results as a std::tuple.
-/// @tparam RetTypes Types of the return values in order.
-/// @tparam Args Argument types forwarded to the Lua function.
-/// @param func The Lua callable object (function or object with __call
-/// metamethod).
-/// @param args Arguments to pass to the Lua function.
-/// @return std::optional<std::tuple<RetTypes...>> containing the return values,
-/// or std::nullopt on failure.
-template <typename... RetTypes, typename... Args>
-std::optional<std::tuple<RetTypes...>>
-call_function(const luabridge::LuaRef& func, Args&&... args) {
-    using ReturnTuple = std::tuple<RetTypes...>;
-
-    if (!func.isCallable()) {
-        spdlog::error("Lua object is not callable");
-        return std::nullopt;
-    }
-
-    auto result = func.call<ReturnTuple>(std::forward<Args>(args)...);
-
-    if (!result) {
-        spdlog::error("Lua function call failed: {}", result.message());
-        return std::nullopt;
-    }
-
-    return *result;
-}
-
-} // namespace lua_detail
-
 class AssetManager;
-using LuaState =
-    RaiiWrapper<lua_State*, void (*)(lua_State*&), void (*)(lua_State*&)>;
+
 /// @brief Lua scripting engine
 ///
 /// Automatically manages the lifecycle of lua_State.
@@ -58,55 +27,18 @@ class ScriptEngine {
 public:
     ScriptEngine(AssetManager* asset_manager);
 
-    /// @brief Initialize and load a script into a new Lua thread.
-    bool load(std::string_view loc);
-    /// @brief Overload that accepts a ResourceLocation directly.
-    bool load(const ResourceLocation& loc);
-
-    /// @brief unload script and release resources.
-    bool unload(std::string_view loc);
-    /// @brief Overload that accepts a ResourceLocation directly.
-    bool unload(const ResourceLocation& loc);
-
-    template <typename... RetTypes, typename... Args>
-    std::optional<std::tuple<RetTypes...>>
-    call(std::string_view loc, std::string_view func, Args&&... args) {
-        auto fun = get_global(loc, func);
-        if (!fun) {
-            return std::nullopt;
-        }
-
-        return lua_detail::call_function<RetTypes...>(
-            *fun, std::forward<Args>(args)...);
-    }
-
-    template <typename... RetTypes, typename... Args>
-    std::optional<std::tuple<RetTypes...>>
-    call(const ResourceLocation& loc, std::string_view func, Args&&... args) {
-        auto fun = get_global(loc, func);
-        if (!fun) {
-            return std::nullopt;
-        }
-
-        return lua_detail::call_function<RetTypes...>(
-            *fun, std::forward<Args>(args)...);
-    }
+    /// @brief Create a script.
+    ///
+    /// @return Returns the script class; it must be used while the script
+    /// engine exists.
+    std::optional<Script> create(std::string_view loc);
+    std::optional<Script> create(const ResourceLocation& loc);
 
 private:
     AssetManager* m_asset_manager = nullptr;
-    LuaState m_root_state;
-    std::unordered_map<ResourceLocation, int> m_thread_refs;
-    std::unordered_map<ResourceLocation, lua_State*> m_states;
-    std::unordered_map<ResourceLocation, luabridge::LuaRef> m_module_cache;
+    LuaState m_root;
 
-    /// @brief Get a global variable; if the name is incorrect, it will be
-    /// nullopt.
-    std::optional<luabridge::LuaRef> get_global(std::string_view loc,
-                                                std::string_view global);
-    /// @brief Overload that takes ResourceLocation parameters, providing faster
-    /// access without constructing a ResourceLocation.
-    std::optional<luabridge::LuaRef> get_global(const ResourceLocation& loc,
-                                                std::string_view global);
+    std::unordered_map<ResourceLocation, luabridge::LuaRef> m_module_cache;
 
     /// @brief Runs a Lua script from a string.
     /// @param L Script thread instead of root lua states

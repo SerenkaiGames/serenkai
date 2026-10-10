@@ -3,8 +3,11 @@
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
+#include "serenkai/script/script.hpp"
 
+#include <exception>
 #include <fstream>
+#include <ios>
 #include <lua.h>
 #include <luacode.h>
 #include <lualib.h>
@@ -12,6 +15,7 @@
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <string>
+#include <utility>
 namespace {
 void init_lua(lua_State*& L) {
     L = luaL_newstate();
@@ -24,32 +28,15 @@ void init_lua(lua_State*& L) {
 
 void cleanup_lua(lua_State*& L) { lua_close(L); }
 
-lua_CompileOptions get_lua_options() {
-    lua_CompileOptions options{};
-
-#ifdef NDEBUG
-    // Release
-    options.optimizationLevel = 2;
-    options.debugLevel = 0;
-#else
-    // Debug
-    options.optimizationLevel = 1;
-    options.debugLevel = 2;
-#endif
-    options.typeInfoLevel = 1;
-
-    return options;
-}
-
 } // namespace
 
 namespace serenkai {
 ScriptEngine::ScriptEngine(AssetManager* asset_manager)
-    : m_asset_manager(asset_manager), m_root_state(init_lua, cleanup_lua) {
+    : m_asset_manager(asset_manager), m_root(init_lua, cleanup_lua) {
 
-    register_lua_log(m_root_state.get());
+    register_lua_log(m_root.get());
 
-    luabridge::getGlobalNamespace(m_root_state.get())
+    luabridge::getGlobalNamespace(m_root.get())
         .addFunction("require", [this](const std::string& module_name) {
             return require(module_name);
         });
@@ -57,14 +44,14 @@ ScriptEngine::ScriptEngine(AssetManager* asset_manager)
     // Enable sandbox on root state after all built-in bindings are registered.
     // After all global bindings are registered, enable the read-only sandbox on
     // the root environment.
-    luaL_sandbox(m_root_state.get());
+    luaL_sandbox(m_root.get());
 }
 
 bool ScriptEngine::run_string(lua_State* L, const std::string& script,
                               const std::string& chunk_name) {
     size_t bytecode_size = 0;
 
-    auto options = get_lua_options();
+    auto options = Script::get_lua_options();
 
     char* bytecode =
         luau_compile(script.data(), script.size(), &options, &bytecode_size);
@@ -107,101 +94,57 @@ bool ScriptEngine::run_file(lua_State* L, const std::string& path) {
     return run_string(L, oss.str(), path);
 }
 
-bool ScriptEngine::load(std::string_view loc) {
+std::optional<Script> ScriptEngine::create(std::string_view loc) {
 
     auto res = ResourceLocation::parse(loc);
     if (!res) {
         spdlog::error("Invalid loc {}", loc);
-        return false;
+        return std::nullopt;
     }
-    return load(*res);
+    return create(*res);
 }
 
-bool ScriptEngine::load(const ResourceLocation& loc) {
+std::optional<Script> ScriptEngine::create(const ResourceLocation& loc) {
     if (!m_asset_manager) {
         spdlog::error("Failed to load script {}, assets manager is nullptr",
                       loc.str());
-        return false;
+        return std::nullopt;
     }
 
-    if (m_states.find(loc) != m_states.end()) {
-        spdlog::warn("Script {} already loaded, do nothing", loc.str());
-        return false;
-    }
-
-    auto state = lua_newthread(m_root_state.get());
+    auto state = lua_newthread(m_root.get());
     luaL_sandboxthread(state);
 
-    auto id = lua_ref(m_root_state.get(), -1);
-    lua_pop(m_root_state.get(), 1);
+    auto id = lua_ref(m_root.get(), -1);
+    lua_pop(m_root.get(), 1);
 
     auto path = m_asset_manager->get(loc);
-    if (path && run_file(state, *path)) {
-        m_states.try_emplace(loc, state);
-        m_thread_refs.try_emplace(loc, id);
-        return true;
-    } else {
-        spdlog::error("Failed to load script {}", loc.str());
-        lua_unref(m_root_state.get(), id);
-        return false;
-    }
-}
 
-bool ScriptEngine::unload(std::string_view loc) {
-    auto res = ResourceLocation::parse(loc);
-    if (!res) {
-        spdlog::error("Invalid loc {}", loc);
-        return false;
-    }
-    return unload(*res);
-}
+    try {
+        std::ifstream file(*path, std::ios::binary);
+        if (!file) {
+            spdlog::error("Cannot open script file: {}", *path);
+            return std::nullopt;
+        }
 
-bool ScriptEngine::unload(const ResourceLocation& loc) {
-    auto l_it = m_states.find(loc);
-    auto id_it = m_thread_refs.find(loc);
-    if (l_it == m_states.end() || id_it == m_thread_refs.end()) {
-        spdlog::warn("Can't find script {} in states map", loc.str());
-        return false;
-    }
-    auto id = id_it->second;
-    if (id != LUA_NOREF && id != LUA_REFNIL) {
-        lua_unref(m_root_state.get(), id);
-        id = LUA_NOREF;
-    }
+        std::ostringstream oss;
+        oss << file.rdbuf();
+        LuaState l{[state](lua_State*& L) { L = state; },
+                   [id, this](lua_State*&) {
+                       if (id != LUA_NOREF && id != LUA_REFNIL) {
+                           lua_unref(m_root.get(), id);
+                       }
+                   }};
+        return Script{std::move(l), oss.str(), loc.str()};
 
-    m_states.erase(l_it);
-    m_thread_refs.erase(id_it);
-    return true;
-}
-
-std::optional<luabridge::LuaRef>
-ScriptEngine::get_global(std::string_view loc, std::string_view global) {
-    auto res = ResourceLocation::parse(loc);
-
-    if (!res) {
-        spdlog::error("Invalid loc {}", loc);
+    } catch (const std::exception& e) {
+        spdlog::error("Failed to load {} script, {}", loc.str(), e.what());
         return std::nullopt;
     }
-
-    return get_global(*res, global);
-}
-
-std::optional<luabridge::LuaRef>
-ScriptEngine::get_global(const ResourceLocation& loc, std::string_view global) {
-    auto it = m_states.find(loc);
-    if (it == m_states.end()) {
-        return std::nullopt;
-    }
-    auto var = luabridge::getGlobal(it->second, std::string(global).c_str());
-    if (var.isNil()) {
-        return std::nullopt;
-    }
-    return var;
 }
 
 luabridge::LuaRef ScriptEngine::require(const std::string& module_name) {
 
-    auto nil = luabridge::LuaRef(m_root_state.get());
+    auto nil = luabridge::LuaRef(m_root.get());
 
     auto res = ResourceLocation::parse(module_name);
     if (!res) {
@@ -229,26 +172,26 @@ luabridge::LuaRef ScriptEngine::require(const std::string& module_name) {
 
     // Load and execute in a separate temporary sandbox thread to avoid
     // reentrancy conflicts with the caller's coroutine.
-    auto module_thread = lua_newthread(m_root_state.get());
+    auto module_thread = lua_newthread(m_root.get());
     luaL_sandboxthread(module_thread);
 
     if (!run_file(module_thread, *path)) {
         spdlog::error("Failed to load module: {}", module_name);
-        lua_pop(m_root_state.get(), 1);
+        lua_pop(m_root.get(), 1);
         return nil;
     }
     // Move the module return value from module_thread to the top of the
     // m_root_state stack.
     // Attach the result to the root state to avoid dangling pointers.
-    luabridge::LuaRef result(m_root_state.get());
+    luabridge::LuaRef result(m_root.get());
     if (lua_gettop(module_thread) > 0) {
-        lua_xmove(module_thread, m_root_state.get(), 1);
-        result = luabridge::LuaRef::fromStack(m_root_state.get());
+        lua_xmove(module_thread, m_root.get(), 1);
+        result = luabridge::LuaRef::fromStack(m_root.get());
     } else {
-        result = luabridge::LuaRef(m_root_state.get(), true);
+        result = luabridge::LuaRef(m_root.get(), true);
     }
 
-    lua_pop(m_root_state.get(), 1);
+    lua_pop(m_root.get(), 1);
 
     m_module_cache.try_emplace(*res, result);
 
