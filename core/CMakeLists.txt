@@ -91,6 +91,8 @@ add_library(
     src/game/map.cpp
     src/game/map_manager.cpp
     include/serenkai/base/string_hash.hpp
+    include/serenkai/render/map_renderer.hpp
+    src/render/map_renderer.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

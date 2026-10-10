@@ -129,6 +129,10 @@ TEST_CASE("TextureManager loads, caches, and clears textures",
         // Second call should return the exact same cached pointer
         SDL_Texture* tex2 = texture_manager.get("test:textures/white4x4.png");
         CHECK(tex2 == tex1);
+
+        // ResourceLocation overload returns the same cached pointer
+        SDL_Texture* tex_loc = texture_manager.get(loc);
+        CHECK(tex_loc == tex1);
     }
 
     SECTION("Clear invalidates cache and allows reload") {

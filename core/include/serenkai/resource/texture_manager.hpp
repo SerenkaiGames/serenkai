@@ -27,6 +27,7 @@ public:
     ~TextureManager();
 
     SDL_Texture* get(std::string_view loc);
+    SDL_Texture* get(const ResourceLocation& loc);
 
     glm::ivec2 measure_size(std::string_view loc);
 

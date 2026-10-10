@@ -28,7 +28,11 @@ SDL_Texture* TextureManager::get(std::string_view loc) {
         return nullptr;
     }
 
-    auto it = m_textures.find(*resource);
+    return get(*resource);
+}
+
+SDL_Texture* TextureManager::get(const ResourceLocation& loc) {
+    auto it = m_textures.find(loc);
     if (it != m_textures.end()) {
         return it->second.get();
     }
@@ -36,10 +40,10 @@ SDL_Texture* TextureManager::get(std::string_view loc) {
         SE_ASSERT(false);
         return nullptr;
     }
-    auto image = m_image_loader->load(*resource);
+    auto image = m_image_loader->load(loc);
 
     if (!image->data) {
-        m_textures.try_emplace(*resource, nullptr);
+        m_textures.try_emplace(loc, nullptr);
         return nullptr;
     }
 
@@ -51,23 +55,23 @@ SDL_Texture* TextureManager::get(std::string_view loc) {
     RaiiGuard surface_guard{[]() {},
                             [surface]() { SDL_DestroySurface(surface); }};
     if (!surface) {
-        spdlog::error("Failed to create SDL surface {} {}", loc,
+        spdlog::error("Failed to create SDL surface {} {}", loc.str(),
                       SDL_GetError());
-        m_textures.try_emplace(*resource, nullptr);
+        m_textures.try_emplace(loc, nullptr);
         return nullptr;
     }
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(m_renderer, surface);
 
     if (!texture) {
-        spdlog::error("Failed to create SDL texture {} {}", loc,
+        spdlog::error("Failed to create SDL texture {} {}", loc.str(),
                       SDL_GetError());
     } else {
         SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
     }
 
     // Also insert failed textures to prevent repeated loading.
-    m_textures.try_emplace(*resource, texture);
+    m_textures.try_emplace(loc, texture);
     return texture;
 }
 
