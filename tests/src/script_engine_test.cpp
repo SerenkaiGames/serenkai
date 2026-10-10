@@ -2,6 +2,7 @@
 #include "serenkai/resource/asset_source.hpp"
 #include "serenkai/resource/directory_source.hpp"
 #include "serenkai/resource/resource_location.hpp"
+#include "serenkai/script/script.hpp"
 #include "serenkai/script/script_engine.hpp"
 
 #include <catch2/catch_approx.hpp>
@@ -99,7 +100,7 @@ private:
 
 } // namespace
 
-TEST_CASE("ScriptEngine script loading and lifecycle", "[script]") {
+TEST_CASE("ScriptEngine script creation and lifecycle", "[script]") {
     TestScriptEnv env;
     env.register_script("test:valid.luau",
                         "function test_func() return 42 end");
@@ -110,50 +111,51 @@ TEST_CASE("ScriptEngine script loading and lifecycle", "[script]") {
 
     ScriptEngine engine(&env.asset_manager());
 
-    SECTION("Load valid script succeeds") {
-        CHECK(engine.load("test:valid.luau"));
+    SECTION("Create valid script succeeds") {
+        auto script = engine.create("test:valid.luau");
+        CHECK(script.has_value());
     }
 
-    SECTION("Duplicate load returns false") {
-        CHECK(engine.load("test:valid.luau"));
-        CHECK_FALSE(engine.load("test:valid.luau"));
+    SECTION("Multiple create calls return independent scripts") {
+        auto s1 = engine.create("test:valid.luau");
+        auto s2 = engine.create("test:valid.luau");
+        CHECK(s1.has_value());
+        CHECK(s2.has_value());
     }
 
-    SECTION("Load invalid resource location returns false") {
-        CHECK_FALSE(engine.load(""));
-        CHECK_FALSE(engine.load("invalid::loc"));
+    SECTION("Create with invalid resource location returns nullopt") {
+        CHECK_FALSE(engine.create("").has_value());
+        CHECK_FALSE(engine.create("invalid::loc").has_value());
     }
 
-    SECTION("Load non-existent asset returns false") {
-        CHECK_FALSE(engine.load("test:non_existent.luau"));
+    SECTION("Create non-existent asset returns nullopt") {
+        CHECK_FALSE(engine.create("test:non_existent.luau").has_value());
     }
 
-    SECTION("Load script with syntax error returns false") {
-        CHECK_FALSE(engine.load("test:syntax_err.luau"));
+    SECTION("Create script with syntax error returns nullopt") {
+        CHECK_FALSE(engine.create("test:syntax_err.luau").has_value());
     }
 
-    SECTION("Load script with runtime error on execution returns false") {
-        CHECK_FALSE(engine.load("test:runtime_err.luau"));
+    SECTION("Create script with runtime error on execution returns nullopt") {
+        CHECK_FALSE(engine.create("test:runtime_err.luau").has_value());
     }
 
-    SECTION("Load with null AssetManager returns false") {
+    SECTION("Create with null AssetManager returns nullopt") {
         ScriptEngine null_engine(nullptr);
-        CHECK_FALSE(null_engine.load("test:valid.luau"));
+        CHECK_FALSE(null_engine.create("test:valid.luau").has_value());
     }
 
-    SECTION("Unload loaded script succeeds and allows reload") {
-        CHECK(engine.load("test:valid.luau"));
-        CHECK(engine.unload("test:valid.luau"));
-        CHECK_FALSE(engine.unload("test:valid.luau"));
-        CHECK(engine.load("test:valid.luau"));
-    }
-
-    SECTION("Unload non-existent script returns false") {
-        CHECK_FALSE(engine.unload("test:not_loaded.luau"));
+    SECTION("Script destruction frees resources and recreating succeeds") {
+        {
+            auto script = engine.create("test:valid.luau");
+            CHECK(script.has_value());
+        }
+        auto script2 = engine.create("test:valid.luau");
+        CHECK(script2.has_value());
     }
 }
 
-TEST_CASE("ScriptEngine function call invocation", "[script]") {
+TEST_CASE("Script function call invocation", "[script]") {
     TestScriptEnv env;
     env.register_script("test:math.luau", R"(
         function add(a: number, b: number): number
@@ -180,61 +182,58 @@ TEST_CASE("ScriptEngine function call invocation", "[script]") {
     )");
 
     ScriptEngine engine(&env.asset_manager());
-    REQUIRE(engine.load("test:math.luau"));
+    auto script = engine.create("test:math.luau");
+    REQUIRE(script.has_value());
 
     SECTION("Call function with arguments and single return value") {
-        auto res = engine.call<int>("test:math.luau", "add", 15, 27);
+        auto res = script->call<int>("add", 15, 27);
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == 42);
     }
 
-    SECTION("Call function using ResourceLocation overload and _rl literal") {
-        auto res = engine.call<int>("test:math.luau"_rl, "add", 15, 27);
+    SECTION("Create script using ResourceLocation overload and _rl literal") {
+        auto res_script = engine.create("test:math.luau"_rl);
+        REQUIRE(res_script.has_value());
+        auto res = res_script->call<int>("add", 15, 27);
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == 42);
     }
 
     SECTION("Call function with string argument and string return value") {
-        auto res =
-            engine.call<std::string>("test:math.luau", "greet", "serenkai");
+        auto res = script->call<std::string>("greet", "serenkai");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == "hello serenkai");
     }
 
     SECTION("Call function with multiple return values") {
-        auto res = engine.call<int, std::string>("test:math.luau", "get_pair");
+        auto res = script->call<int, std::string>("get_pair");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == 100);
         CHECK(std::get<1>(*res) == "player");
     }
 
     SECTION("Call function with no return values") {
-        auto res = engine.call<>("test:math.luau", "no_return");
+        auto res = script->call<>("no_return");
         CHECK(res.has_value());
     }
 
     SECTION("Call non-existent function returns nullopt") {
-        auto res = engine.call<int>("test:math.luau", "non_existent");
+        auto res = script->call<int>("non_existent");
         CHECK_FALSE(res.has_value());
     }
 
     SECTION("Call non-callable global returns nullopt") {
-        auto res = engine.call<int>("test:math.luau", "not_a_func");
-        CHECK_FALSE(res.has_value());
-    }
-
-    SECTION("Call function in unloaded script returns nullopt") {
-        auto res = engine.call<int>("test:not_loaded.luau", "add", 1, 2);
+        auto res = script->call<int>("not_a_func");
         CHECK_FALSE(res.has_value());
     }
 
     SECTION("Call function that errors returns nullopt") {
-        auto res = engine.call<>("test:math.luau", "failing_func");
+        auto res = script->call<>("failing_func");
         CHECK_FALSE(res.has_value());
     }
 }
 
-TEST_CASE("ScriptEngine per-resource thread isolation", "[script]") {
+TEST_CASE("Script per-resource thread isolation", "[script]") {
     TestScriptEnv env;
     env.register_script("test:script_a.luau", R"(
         shared_val = "value_from_a"
@@ -250,12 +249,14 @@ TEST_CASE("ScriptEngine per-resource thread isolation", "[script]") {
     )");
 
     ScriptEngine engine(&env.asset_manager());
-    REQUIRE(engine.load("test:script_a.luau"));
-    REQUIRE(engine.load("test:script_b.luau"));
+    auto script_a = engine.create("test:script_a.luau");
+    auto script_b = engine.create("test:script_b.luau");
+    REQUIRE(script_a.has_value());
+    REQUIRE(script_b.has_value());
 
     SECTION("Globals in different script threads are isolated") {
-        auto res_a = engine.call<std::string>("test:script_a.luau", "get_val");
-        auto res_b = engine.call<std::string>("test:script_b.luau", "get_val");
+        auto res_a = script_a->call<std::string>("get_val");
+        auto res_b = script_b->call<std::string>("get_val");
 
         REQUIRE(res_a.has_value());
         REQUIRE(res_b.has_value());
@@ -263,19 +264,17 @@ TEST_CASE("ScriptEngine per-resource thread isolation", "[script]") {
         CHECK(std::get<0>(*res_b) == "value_from_b");
     }
 
-    SECTION("Calling function after unloading fails") {
-        CHECK(engine.unload("test:script_a.luau"));
-        auto res_a = engine.call<std::string>("test:script_a.luau", "get_val");
-        CHECK_FALSE(res_a.has_value());
+    SECTION("Destructing one script does not affect the other") {
+        script_a.reset();
 
         // script_b is still accessible
-        auto res_b = engine.call<std::string>("test:script_b.luau", "get_val");
+        auto res_b = script_b->call<std::string>("get_val");
         REQUIRE(res_b.has_value());
         CHECK(std::get<0>(*res_b) == "value_from_b");
     }
 }
 
-TEST_CASE("ScriptEngine logging bindings and standard libraries", "[script]") {
+TEST_CASE("Script logging bindings and standard libraries", "[script]") {
     TestScriptEnv env;
     env.register_script("test:logging.luau", R"(
         function test_logging()
@@ -296,24 +295,24 @@ TEST_CASE("ScriptEngine logging bindings and standard libraries", "[script]") {
     )");
 
     ScriptEngine engine(&env.asset_manager());
-    REQUIRE(engine.load("test:logging.luau"));
+    auto script = engine.create("test:logging.luau");
+    REQUIRE(script.has_value());
 
     SECTION("Logging functions execute without error") {
-        auto res = engine.call<bool>("test:logging.luau", "test_logging");
+        auto res = script->call<bool>("test_logging");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
     }
 
     SECTION("Standard library functions work in sandboxed thread") {
-        auto res =
-            engine.call<std::string, int>("test:logging.luau", "test_stdlib");
+        auto res = script->call<std::string, int>("test_stdlib");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == "HELLO");
         CHECK(std::get<1>(*res) == 20);
     }
 }
 
-TEST_CASE("ScriptEngine module require and caching", "[script]") {
+TEST_CASE("Script module require and caching", "[script]") {
     TestScriptEnv env;
     env.register_script("test:math_lib.luau", R"(
         local M = {}
@@ -368,35 +367,38 @@ TEST_CASE("ScriptEngine module require and caching", "[script]") {
     ScriptEngine engine(&env.asset_manager());
 
     SECTION("Require loads module and allows calling its functions") {
-        REQUIRE(engine.load("test:consumer_a.luau"));
-        auto res = engine.call<int>("test:consumer_a.luau", "calc", 10, 20);
+        auto script = engine.create("test:consumer_a.luau");
+        REQUIRE(script.has_value());
+        auto res = script->call<int>("calc", 10, 20);
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == 30);
 
-        auto ver =
-            engine.call<std::string>("test:consumer_a.luau", "get_version");
+        auto ver = script->call<std::string>("get_version");
         REQUIRE(ver.has_value());
         CHECK(std::get<0>(*ver) == "1.0.0");
     }
 
     SECTION(
         "Multiple scripts requiring the same module share cached instance") {
-        REQUIRE(engine.load("test:consumer_a.luau"));
-        REQUIRE(engine.load("test:consumer_b.luau"));
+        auto script_a = engine.create("test:consumer_a.luau");
+        auto script_b = engine.create("test:consumer_b.luau");
+        REQUIRE(script_a.has_value());
+        REQUIRE(script_b.has_value());
 
-        auto res_a = engine.call<int>("test:consumer_a.luau", "inc");
+        auto res_a = script_a->call<int>("inc");
         REQUIRE(res_a.has_value());
         CHECK(std::get<0>(*res_a) == 1);
 
         // consumer_b should access the same cached module table
-        auto res_b = engine.call<int>("test:consumer_b.luau", "inc");
+        auto res_b = script_b->call<int>("inc");
         REQUIRE(res_b.has_value());
         CHECK(std::get<0>(*res_b) == 2);
     }
 
     SECTION("Require non-existent module returns nil") {
-        REQUIRE(engine.load("test:invalid_require.luau"));
-        auto res = engine.call<bool>("test:invalid_require.luau", "is_bad_nil");
+        auto script = engine.create("test:invalid_require.luau");
+        REQUIRE(script.has_value());
+        auto res = script->call<bool>("is_bad_nil");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
     }
@@ -429,13 +431,12 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
             end
         )");
 
-        REQUIRE(engine.load("test:event_test.luau"));
-        auto res =
-            engine.call<>("test:event_test.luau", "trigger", 42, "hello");
+        auto script = engine.create("test:event_test.luau");
+        REQUIRE(script.has_value());
+        auto res = script->call<>("trigger", 42, "hello");
         REQUIRE(res.has_value());
 
-        auto out =
-            engine.call<int, std::string>("test:event_test.luau", "get_result");
+        auto out = script->call<int, std::string>("get_result");
         REQUIRE(out.has_value());
         CHECK(std::get<0>(*out) == 42);
         CHECK(std::get<1>(*out) == "hello");
@@ -463,19 +464,17 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
             end
         )");
 
-        REQUIRE(engine.load("test:unregister_test.luau"));
-        CHECK(engine.call<>("test:unregister_test.luau", "emit_ping")
-                  .has_value());
-        auto c1 = engine.call<int>("test:unregister_test.luau", "get_count");
+        auto script = engine.create("test:unregister_test.luau");
+        REQUIRE(script.has_value());
+        CHECK(script->call<>("emit_ping").has_value());
+        auto c1 = script->call<int>("get_count");
         REQUIRE(c1.has_value());
         CHECK(std::get<0>(*c1) == 1);
 
-        CHECK(engine.call<>("test:unregister_test.luau", "unregister_listener")
-                  .has_value());
+        CHECK(script->call<>("unregister_listener").has_value());
 
-        CHECK(engine.call<>("test:unregister_test.luau", "emit_ping")
-                  .has_value());
-        auto c2 = engine.call<int>("test:unregister_test.luau", "get_count");
+        CHECK(script->call<>("emit_ping").has_value());
+        auto c2 = script->call<int>("get_count");
         REQUIRE(c2.has_value());
         CHECK(std::get<0>(*c2) == 1);
     }
@@ -504,10 +503,10 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
             end
         )");
 
-        REQUIRE(engine.load("test:multi_listener.luau"));
-        CHECK(engine.call<>("test:multi_listener.luau", "trigger").has_value());
-        auto status =
-            engine.call<bool, bool>("test:multi_listener.luau", "get_status");
+        auto script = engine.create("test:multi_listener.luau");
+        REQUIRE(script.has_value());
+        CHECK(script->call<>("trigger").has_value());
+        auto status = script->call<bool, bool>("get_status");
         REQUIRE(status.has_value());
         CHECK(std::get<0>(*status) == true);
         CHECK(std::get<1>(*status) == true);
@@ -538,23 +537,20 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
             end
         )");
 
-        REQUIRE(engine.load("test:failing_listener.luau"));
+        auto script = engine.create("test:failing_listener.luau");
+        REQUIRE(script.has_value());
 
         // First trigger: failing listener throws error and normal listener runs
-        CHECK(
-            engine.call<>("test:failing_listener.luau", "trigger").has_value());
-        auto counts1 =
-            engine.call<int, int>("test:failing_listener.luau", "get_counts");
+        CHECK(script->call<>("trigger").has_value());
+        auto counts1 = script->call<int, int>("get_counts");
         REQUIRE(counts1.has_value());
         CHECK(std::get<0>(*counts1) == 1);
         CHECK(std::get<1>(*counts1) == 1);
 
         // Second trigger: failing listener should have been pruned, normal
         // listener still runs
-        CHECK(
-            engine.call<>("test:failing_listener.luau", "trigger").has_value());
-        auto counts2 =
-            engine.call<int, int>("test:failing_listener.luau", "get_counts");
+        CHECK(script->call<>("trigger").has_value());
+        auto counts2 = script->call<int, int>("get_counts");
         REQUIRE(counts2.has_value());
         CHECK(std::get<0>(*counts2) == 1);
         CHECK(std::get<1>(*counts2) == 2);
@@ -570,8 +566,9 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
             end
         )");
 
-        REQUIRE(engine.load("test:empty_emit.luau"));
-        auto res = engine.call<bool>("test:empty_emit.luau", "trigger_empty");
+        auto script = engine.create("test:empty_emit.luau");
+        REQUIRE(script.has_value());
+        auto res = script->call<bool>("trigger_empty");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
     }
@@ -591,17 +588,49 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
             end
         )");
 
-        REQUIRE(engine.load("test:update_listener.luau"));
-        REQUIRE(engine.load("serenkai:scripts/main.luau"));
+        auto listener = engine.create("test:update_listener.luau");
+        auto main = engine.create("serenkai:scripts/main.luau");
+        REQUIRE(listener.has_value());
+        REQUIRE(main.has_value());
 
         // Trigger on_update through main.luau
-        auto call_res =
-            engine.call<>("serenkai:scripts/main.luau", "on_update", 0.016f);
+        auto call_res = main->call<>("on_update", 0.016f);
         REQUIRE(call_res.has_value());
 
-        auto dt_res =
-            engine.call<double>("test:update_listener.luau", "get_dt");
+        auto dt_res = listener->call<double>("get_dt");
         REQUIRE(dt_res.has_value());
         CHECK(std::get<0>(*dt_res) == Catch::Approx(0.016));
     }
+}
+
+TEST_CASE("Script add_global and get_global", "[script]") {
+    TestScriptEnv env;
+    env.register_script("test:globals.luau", R"(
+        function read_globals(): (number, string)
+            return test_number, test_string
+        end
+    )");
+
+    ScriptEngine engine(&env.asset_manager());
+    auto script = engine.create("test:globals.luau");
+    REQUIRE(script.has_value());
+
+    CHECK(script->add_global("test_number", 42));
+    CHECK(script->add_global("test_string", std::string("serenkai")));
+
+    auto res = script->call<int, std::string>("read_globals");
+    REQUIRE(res.has_value());
+    CHECK(std::get<0>(*res) == 42);
+    CHECK(std::get<1>(*res) == "serenkai");
+
+    auto global_num = script->get_global("test_number");
+    REQUIRE(global_num.has_value());
+    CHECK(global_num->cast<int>().value() == 42);
+
+    auto global_str = script->get_global("test_string");
+    REQUIRE(global_str.has_value());
+    CHECK(global_str->cast<std::string>().value() == "serenkai");
+
+    auto non_existent = script->get_global("non_existent_key");
+    CHECK_FALSE(non_existent.has_value());
 }

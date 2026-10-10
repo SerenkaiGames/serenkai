@@ -99,6 +99,7 @@ add_library(
     src/game/camera.cpp
     src/script/script.cpp
     include/serenkai/script/script.hpp
+    include/serenkai/script/lua_compile_options.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

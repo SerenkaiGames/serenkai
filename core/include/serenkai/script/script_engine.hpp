@@ -3,18 +3,17 @@
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/script.hpp"
 
-// clang-format off
-#include <lua.h>
-#include <lualib.h>
-#include <luabridge3/LuaBridge/LuaBridge.h>
-// clang-format on
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
-struct lua_State;
+// clang-format off
+#include <lua.h>
+#include <lualib.h>
+#include <luabridge3/LuaBridge/LuaBridge.h>
+// clang-format on
 
 namespace serenkai {
 

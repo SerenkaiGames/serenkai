@@ -1,19 +1,17 @@
 #pragma once
 #include "serenkai/base/raii.hpp"
 
-// clang-format off
 #include <functional>
-#include <lua.h>
-#include <lualib.h>
-#include <luabridge3/LuaBridge/LuaBridge.h>
-// clang-format on
-
 #include <spdlog/spdlog.h>
 #include <string>
 #include <string_view>
 #include <utility>
 
-struct lua_CompileOptions;
+// clang-format off
+#include <lua.h>
+#include <lualib.h>
+#include <luabridge3/LuaBridge/LuaBridge.h>
+// clang-format on
 
 namespace serenkai {
 using LuaState = RaiiWrapper<lua_State*, std::function<void(lua_State*&)>,
@@ -63,8 +61,6 @@ public:
     Script(LuaState state, std::string_view script, std::string_view name);
     ~Script() = default;
 
-    static lua_CompileOptions get_lua_options();
-
     template <typename... RetTypes, typename... Args>
     std::optional<std::tuple<RetTypes...>> call(std::string_view func,
                                                 Args&&... args) {
@@ -77,21 +73,22 @@ public:
             *fun, std::forward<Args>(args)...);
     }
 
+    /// @brief Get the global variable of the current script; if it is nil,
+    /// return std::nullopt.
+    std::optional<luabridge::LuaRef> get_global(std::string_view global);
+
     /// @brief Add a global variable to the script environment.
     ///
     /// @warning If an object pointer is passed in, ensure the object remains
     /// alive until the script is destructed.
     template <typename T> bool add_global(std::string_view name, T&& t) {
-        return luabridge::setGlobal(m_state.get(), std::forward<T>(t), name);
+        return luabridge::setGlobal(m_state.get(), std::forward<T>(t),
+                                    std::string(name).c_str());
     }
 
 private:
     LuaState m_state;
     std::string m_name;
-
-    /// @brief Get the global variable of the current script; if it is nil,
-    /// return std::nullopt.
-    std::optional<luabridge::LuaRef> get_global(std::string_view global);
 
     /// @brief Load bytecode and initialize.May throws an exception.
     void load(std::string_view script);

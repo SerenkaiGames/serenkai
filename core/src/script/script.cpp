@@ -1,28 +1,13 @@
 #include "serenkai/script/script.hpp"
 
+#include "serenkai/script/lua_compile_options.hpp"
+
 #include <fmt/format.h>
 #include <luacode.h>
 #include <stdexcept>
 #include <utility>
 
 namespace serenkai {
-
-lua_CompileOptions Script::get_lua_options() {
-    lua_CompileOptions options{};
-
-#ifdef NDEBUG
-    // Release
-    options.optimizationLevel = 2;
-    options.debugLevel = 0;
-#else
-    // Debug
-    options.optimizationLevel = 1;
-    options.debugLevel = 2;
-#endif
-    options.typeInfoLevel = 1;
-
-    return options;
-}
 
 Script::Script(LuaState state, std::string_view script, std::string_view name)
     : m_state(std::move(state)), m_name(name) {
@@ -32,7 +17,7 @@ Script::Script(LuaState state, std::string_view script, std::string_view name)
 void Script::load(std::string_view script) {
     size_t bytecode_size = 0;
 
-    auto options = get_lua_options();
+    auto options = detail::get_lua_options();
 
     char* bytecode =
         luau_compile(script.data(), script.size(), &options, &bytecode_size);

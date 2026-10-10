@@ -3,6 +3,7 @@
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
+#include "serenkai/script/lua_compile_options.hpp"
 #include "serenkai/script/script.hpp"
 
 #include <exception>
@@ -51,7 +52,7 @@ bool ScriptEngine::run_string(lua_State* L, const std::string& script,
                               const std::string& chunk_name) {
     size_t bytecode_size = 0;
 
-    auto options = Script::get_lua_options();
+    auto options = detail::get_lua_options();
 
     char* bytecode =
         luau_compile(script.data(), script.size(), &options, &bytecode_size);
@@ -111,13 +112,12 @@ std::optional<Script> ScriptEngine::create(const ResourceLocation& loc) {
         return std::nullopt;
     }
 
-    auto state = lua_newthread(m_root.get());
-    luaL_sandboxthread(state);
-
-    auto id = lua_ref(m_root.get(), -1);
-    lua_pop(m_root.get(), 1);
-
     auto path = m_asset_manager->get(loc);
+
+    if (!path) {
+        spdlog::error("Failed to find {} path", loc.str());
+        return std::nullopt;
+    }
 
     try {
         std::ifstream file(*path, std::ios::binary);
@@ -128,10 +128,17 @@ std::optional<Script> ScriptEngine::create(const ResourceLocation& loc) {
 
         std::ostringstream oss;
         oss << file.rdbuf();
+
+        auto state = lua_newthread(m_root.get());
+        luaL_sandboxthread(state);
+
+        auto id = lua_ref(m_root.get(), -1);
+        lua_pop(m_root.get(), 1);
+
         LuaState l{[state](lua_State*& L) { L = state; },
-                   [id, this](lua_State*&) {
+                   [id, root = m_root.get()](lua_State*&) {
                        if (id != LUA_NOREF && id != LUA_REFNIL) {
-                           lua_unref(m_root.get(), id);
+                           lua_unref(root, id);
                        }
                    }};
         return Script{std::move(l), oss.str(), loc.str()};
