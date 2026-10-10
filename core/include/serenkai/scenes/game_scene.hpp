@@ -5,7 +5,6 @@
 #include "serenkai/render/render_context.hpp"
 #include "serenkai/scenes/scene.hpp"
 
-#include <glm/ext/vector_float2.hpp>
 #include <memory>
 namespace serenkai {
 class GameScene : public Scene {

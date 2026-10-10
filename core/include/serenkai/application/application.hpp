@@ -70,12 +70,13 @@ private:
     std::unique_ptr<Renderer> m_renderer;
     std::unique_ptr<TextureManager> m_texture_manager;
     std::unique_ptr<GuiContext> m_gui_context;
-    std::unique_ptr<SceneManager> m_scene_manager;
     std::unique_ptr<WidgetParser> m_widget_parser;
     std::unique_ptr<ScriptEngine> m_script_engine;
 
     AppContext m_app_ctx;
     RenderContext m_render_ctx;
+
+    std::unique_ptr<SceneManager> m_scene_manager;
 
     bool m_running = true;
     SDL_Event m_event{};

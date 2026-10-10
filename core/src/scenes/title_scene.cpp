@@ -15,6 +15,9 @@ void TitleScene::update(float dt) {
 }
 
 void TitleScene::render(RenderContext* ctx) {
+    if (!ctx) {
+        return;
+    }
     if (m_root_widget) {
         m_root_widget->render(ctx->gui);
     }
@@ -23,10 +26,12 @@ void TitleScene::render(RenderContext* ctx) {
 void TitleScene::on_enter(AppContext* ctx) {
     if (!ctx) {
         throw std::runtime_error(
-            "Failed enter to tille scene, the app context is nullptr");
+            "Failed to enter title scene: Application context is null");
     }
-    m_root_widget =
-        ctx->gui->get_widget_parser()->parse("serenkai:ui/main_title.json");
+    if (ctx->gui) {
+        m_root_widget =
+            ctx->gui->get_widget_parser()->parse("serenkai:ui/main_title.json");
+    }
 }
 
 bool TitleScene::handle_mouse_move_event(const MouseMoveEvent& e) {
