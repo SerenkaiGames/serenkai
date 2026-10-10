@@ -41,6 +41,6 @@ private:
 
     void render_image_layer(const ImageLayer* layer,
                             TextureManager* texture_manager, glm::vec2 camera,
-                            float zoom, glm::vec2 view);
+                            float zoom);
 };
 } // namespace serenkai

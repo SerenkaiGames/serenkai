@@ -6,6 +6,7 @@
 
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
+#include <algorithm>
 #include <glm/ext/vector_float2.hpp>
 #include <span>
 #include <variant>
@@ -16,7 +17,7 @@ MapRenderer::MapRenderer(SDL_Renderer* renderer) : m_renderer(renderer) {}
 
 void MapRenderer::render(Map* map, TextureManager* texture_manager,
                          glm::vec2 camera, float zoom) {
-    if (!m_renderer) {
+    if (!m_renderer || !map || !texture_manager) {
         return;
     }
 
@@ -29,7 +30,9 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
         SDL_Rect vp = {0, 0, w, h};
         SDL_SetRenderViewport(m_renderer, &vp);
     */
-
+    if (zoom <= 0.0f) {
+        zoom = 1.0f;
+    }
     float view_w = w / zoom;
     float view_h = h / zoom;
 
@@ -44,12 +47,15 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
     auto world_size = map->pixel_size();
 
     // Clamp the camera position so it does not go beyond the screen edges.
-    if (camera.x > world_size.x - view_w) {
-        camera.x = world_size.x - view_w;
+
+    float upper_x = std::max(0.0f, world_size.x - view_w);
+    if (camera.x > upper_x) {
+        camera.x = upper_x;
     }
 
-    if (camera.y > world_size.y - view_h) {
-        camera.y = world_size.y - view_h;
+    float upper_y = std::max(0.0f, world_size.y - view_h);
+    if (camera.y > upper_y) {
+        camera.y = upper_y;
     }
 
     auto& data = map->data();
@@ -68,8 +74,7 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
             render_tile_layer(tile_layer, textures, map, camera, zoom);
         }
         if (auto* image_layer = std::get_if<ImageLayer>(&layer)) {
-            render_image_layer(image_layer, texture_manager, camera, zoom,
-                               glm::vec2{view_w, view_h});
+            render_image_layer(image_layer, texture_manager, camera, zoom);
         }
     }
 }
@@ -77,7 +82,7 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
 void MapRenderer::render_tile_layer(const TileLayer* layer,
                                     std::span<SDL_Texture*> textures, Map* map,
                                     glm::vec2 camera, float zoom) {
-    if (layer) {
+    if (!layer) {
         return;
     }
     if (!layer->visible) {
@@ -97,9 +102,9 @@ void MapRenderer::render_tile_layer(const TileLayer* layer,
             if (tile->is_empty()) {
                 continue;
             }
-            auto idx = tile->tileset;
 
-            if (!textures[idx]) {
+            auto idx = tile->tileset;
+            if (idx >= textures.size() || !textures[idx]) {
                 continue;
             }
 
@@ -126,23 +131,43 @@ void MapRenderer::render_tile(SDL_Texture* texture, const SDL_FRect* src,
     double angle = 0.0;
     SDL_FlipMode sdl_flip = SDL_FLIP_NONE;
 
-    if (tile.flip_diagonal()) {
-        angle = 90.0;
-        sdl_flip = SDL_FLIP_HORIZONTAL;
+    bool d = tile.flip_diagonal();
+    bool h = tile.flip_horizontal();
+    bool v = tile.flip_vertical();
 
+    if (!d) {
+        if (h) {
+            sdl_flip =
+                static_cast<SDL_FlipMode>(sdl_flip | SDL_FLIP_HORIZONTAL);
+        }
+        if (v) {
+            sdl_flip = static_cast<SDL_FlipMode>(sdl_flip | SDL_FLIP_VERTICAL);
+        }
+    } else {
+        // Diagonal flip swaps width and height while keeping the tile center
+        // invariant.
         float cx = dst.x + dst.w * 0.5f;
         float cy = dst.y + dst.h * 0.5f;
         std::swap(dst.w, dst.h);
         dst.x = cx - dst.w * 0.5f;
         dst.y = cy - dst.h * 0.5f;
-    }
 
-    if (tile.flip_horizontal()) {
-        sdl_flip = static_cast<SDL_FlipMode>(sdl_flip | SDL_FLIP_HORIZONTAL);
-    }
-
-    if (tile.flip_vertical()) {
-        sdl_flip = static_cast<SDL_FlipMode>(sdl_flip | SDL_FLIP_VERTICAL);
+        if (!h && !v) {
+            angle = 90.0;
+            sdl_flip = SDL_FLIP_VERTICAL;
+        } else if (h && !v) {
+            // Most common case in Tiled: 90 degrees clockwise rotation.
+            angle = 90.0;
+            sdl_flip = SDL_FLIP_NONE;
+        } else if (!h && v) {
+            // 270 degrees clockwise (90 degrees counter-clockwise).
+            angle = 270.0;
+            sdl_flip = SDL_FLIP_NONE;
+        } else {
+            // h && v: 90 degrees + horizontal flip (anti-diagonal reflection).
+            angle = 90.0;
+            sdl_flip = SDL_FLIP_HORIZONTAL;
+        }
     }
 
     SDL_RenderTextureRotated(m_renderer, texture, src, &dst, angle, nullptr,
@@ -151,8 +176,7 @@ void MapRenderer::render_tile(SDL_Texture* texture, const SDL_FRect* src,
 
 void MapRenderer::render_image_layer(const ImageLayer* layer,
                                      TextureManager* texture_manager,
-                                     glm::vec2 camera, float zoom,
-                                     glm::vec2 view) {
+                                     glm::vec2 camera, float zoom) {
     if (!layer || !texture_manager) {
         return;
     }
@@ -166,9 +190,10 @@ void MapRenderer::render_image_layer(const ImageLayer* layer,
     if (!texture) {
         return;
     }
+    auto size = static_cast<glm::vec2>(layer->size);
 
-    // Get the required texture rectangle based on the camera view.
-    SDL_FRect dst{-camera.x * zoom, -camera.y * zoom, view.x, view.y};
+    SDL_FRect dst{-camera.x * zoom, -camera.y * zoom, size.x * zoom,
+                  size.y * zoom};
 
     SDL_RenderTexture(m_renderer, texture, nullptr, &dst);
 }
