@@ -1,6 +1,7 @@
 #pragma once
 
 #include "serenkai/resource/resource_location.hpp"
+#include "serenkai/script/lua_header.hpp"
 #include "serenkai/script/script.hpp"
 
 #include <optional>
@@ -8,12 +9,6 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-
-// clang-format off
-#include <lua.h>
-#include <lualib.h>
-#include <luabridge3/LuaBridge/LuaBridge.h>
-// clang-format on
 
 namespace serenkai {
 

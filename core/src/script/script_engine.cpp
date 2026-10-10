@@ -3,6 +3,7 @@
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
+#include "serenkai/script/bindings/bind_map.hpp"
 #include "serenkai/script/lua_compile_options.hpp"
 #include "serenkai/script/script.hpp"
 
@@ -41,6 +42,8 @@ ScriptEngine::ScriptEngine(AssetManager* asset_manager)
         .addFunction("require", [this](const std::string& module_name) {
             return require(module_name);
         });
+
+    register_lua_map(m_root.get());
 
     // Enable sandbox on root state after all built-in bindings are registered.
     // After all global bindings are registered, enable the read-only sandbox on

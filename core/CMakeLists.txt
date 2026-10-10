@@ -100,6 +100,10 @@ add_library(
     src/script/script.cpp
     include/serenkai/script/script.hpp
     include/serenkai/script/lua_compile_options.hpp
+    src/script/bindings/bind_map.cpp
+    include/serenkai/script/bindings/bind_map.hpp
+    include/serenkai/script/lua_header.hpp
+    include/serenkai/script/bindings/luau_glm.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

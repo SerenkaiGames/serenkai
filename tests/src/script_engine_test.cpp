@@ -1,3 +1,5 @@
+#include "serenkai/game/map.hpp"
+#include "serenkai/game/map_data.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/asset_source.hpp"
 #include "serenkai/resource/directory_source.hpp"
@@ -633,4 +635,190 @@ TEST_CASE("Script add_global and get_global", "[script]") {
 
     auto non_existent = script->get_global("non_existent_key");
     CHECK_FALSE(non_existent.has_value());
+}
+
+TEST_CASE("Script Map and Luau vector bindings", "[script][map]") {
+    TestScriptEnv env;
+    env.register_script("test:map_test.luau", R"(
+        function get_map_dimensions(m: any): (number, number, number, number, number, number)
+            local ms = m:map_size()
+            local ts = m:tile_size()
+            local ps = m:pixel_size()
+            return ms.x, ms.y, ts.x, ts.y, ps.x, ps.y
+        end
+
+        function test_bounds(m: any, x: number, y: number): boolean
+            return m:is_in_bounds(vector.create(x, y, 0))
+        end
+
+        function test_coords(m: any, wx: number, wy: number): (number, number, number, number)
+            local tile = m:world_to_tile(vector.create(wx, wy, 0))
+            local world = m:tile_to_world(tile)
+            return tile.x, tile.y, world.x, world.y
+        end
+
+        function test_layer_visibility(m: any, layer_name: string): (boolean, boolean)
+            local has = m:has_layer(layer_name)
+            m:set_layer_visible(layer_name, false)
+            return has, true
+        end
+    )");
+
+    ScriptEngine engine(&env.asset_manager());
+    auto script = engine.create("test:map_test.luau");
+    REQUIRE(script.has_value());
+
+    MapData data{};
+    data.map_size = {10, 8};
+    data.tile_size = {16, 16};
+    TileLayer layer{};
+    layer.name = "Ground";
+    data.layers.push_back(layer);
+
+    Map map(std::move(data));
+
+    SECTION("Query map dimensions via Luau vectors") {
+        auto res = script->call<double, double, double, double, double, double>(
+            "get_map_dimensions", &map);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 10.0);
+        CHECK(std::get<1>(*res) == 8.0);
+        CHECK(std::get<2>(*res) == 16.0);
+        CHECK(std::get<3>(*res) == 16.0);
+        CHECK(std::get<4>(*res) == 160.0);
+        CHECK(std::get<5>(*res) == 128.0);
+    }
+
+    SECTION("Check bounds using vector argument") {
+        auto res1 = script->call<bool>("test_bounds", &map, 5, 4);
+        REQUIRE(res1.has_value());
+        CHECK(std::get<0>(*res1) == true);
+
+        auto res2 = script->call<bool>("test_bounds", &map, 20, 20);
+        REQUIRE(res2.has_value());
+        CHECK(std::get<0>(*res2) == false);
+    }
+
+    SECTION("Coordinate conversion round-trip") {
+        auto res = script->call<double, double, double, double>(
+            "test_coords", &map, 32.0f, 48.0f);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 2.0);
+        CHECK(std::get<1>(*res) == 3.0);
+        CHECK(std::get<2>(*res) == 32.0);
+        CHECK(std::get<3>(*res) == 48.0);
+    }
+
+    SECTION("Layer visibility operations") {
+        auto res =
+            script->call<bool, bool>("test_layer_visibility", &map, "Ground");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
+    }
+}
+
+TEST_CASE("Script MapObject and Tile bindings", "[script][map]") {
+    TestScriptEnv env;
+    env.register_script("test:map_obj_test.luau", R"(
+        function query_object(m: any, name: string): (string, string, number, number, boolean)
+            local objs = m:find_object(name)
+            if #objs == 0 then
+                return "", "", 0, 0, false
+            end
+            local obj = objs[1]
+            return obj.name, obj.type, obj.pos.x, obj.pos.y, obj.visible
+        end
+
+        function query_properties(m: any, name: string): (boolean, number, number, string, boolean)
+            local objs = m:find_object(name)
+            local obj = objs[1]
+            local is_boss = obj:get_property("is_boss")
+            local hp = obj:get_property("hp")
+            local speed = obj:get_property("speed")
+            local desc = obj:get_property("desc")
+            local non_existent = obj:get_property("not_found")
+            return is_boss, hp, speed, desc, non_existent == nil
+        end
+
+        function query_by_type(m: any, obj_type: string): number
+            local objs = m:find_objects_by_type(obj_type)
+            return #objs
+        end
+
+        function test_tile(t: any): (number, number, boolean)
+            return t.gid, t.local_id, t:is_empty()
+        end
+    )");
+
+    ScriptEngine engine(&env.asset_manager());
+    auto script = engine.create("test:map_obj_test.luau");
+    REQUIRE(script.has_value());
+
+    MapData data{};
+    data.map_size = {10, 8};
+    data.tile_size = {16, 16};
+
+    ObjectGroup og{};
+    og.name = "Entities";
+
+    MapObject boss{};
+    boss.name = "Boss_1";
+    boss.type = "enemy";
+    boss.pos = {64.0f, 128.0f};
+    boss.visible = true;
+    boss.properties.push_back(MapProperty{"is_boss", true});
+    boss.properties.push_back(MapProperty{"hp", 500});
+    boss.properties.push_back(MapProperty{"speed", 3.5f});
+    boss.properties.push_back(MapProperty{"desc", std::string("Final Boss")});
+
+    MapObject minion{};
+    minion.name = "Minion_1";
+    minion.type = "enemy";
+    minion.pos = {32.0f, 32.0f};
+    minion.visible = true;
+
+    og.objects.push_back(std::move(boss));
+    og.objects.push_back(std::move(minion));
+    data.layers.push_back(std::move(og));
+
+    Map map(std::move(data));
+
+    SECTION("Query MapObject fields and position vector") {
+        auto res = script->call<std::string, std::string, double, double, bool>(
+            "query_object", &map, "Boss_1");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == "Boss_1");
+        CHECK(std::get<1>(*res) == "enemy");
+        CHECK(std::get<2>(*res) == 64.0);
+        CHECK(std::get<3>(*res) == 128.0);
+        CHECK(std::get<4>(*res) == true);
+    }
+
+    SECTION("Query MapObject properties with different variant types") {
+        auto res = script->call<bool, int, double, std::string, bool>(
+            "query_properties", &map, "Boss_1");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
+        CHECK(std::get<1>(*res) == 500);
+        CHECK(std::get<2>(*res) == Catch::Approx(3.5));
+        CHECK(std::get<3>(*res) == "Final Boss");
+        CHECK(std::get<4>(*res) == true);
+    }
+
+    SECTION("Query objects by type returns list with correct size") {
+        auto res = script->call<int>("query_by_type", &map, "enemy");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 2);
+    }
+
+    SECTION("Tile property and method access") {
+        Tile t{};
+        t.gid = 100;
+        t.local_id = 15;
+        auto res = script->call<int, int, bool>("test_tile", &t);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 100);
+        CHECK(std::get<1>(*res) == 15);
+        CHECK(std::get<2>(*res) == false);
+    }
 }
