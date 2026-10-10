@@ -1,5 +1,7 @@
 #pragma once
 
+#include "serenkai/resource/resource_location.hpp"
+
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -23,6 +25,8 @@ private:
 
     void load_layers(MapData& data,
                      const std::vector<std::unique_ptr<tmx::Layer>>& layers,
-                     const std::vector<tmx::Tileset>& tilesets) const;
+                     const std::vector<tmx::Tileset>& tilesets,
+                     std::string_view map_path,
+                     const ResourceLocation& map_loc) const;
 };
 } // namespace serenkai

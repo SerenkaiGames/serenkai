@@ -1,5 +1,7 @@
 #pragma once
 
+#include "serenkai/resource/resource_location.hpp"
+
 #include <cstdint>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -132,14 +134,14 @@ struct ObjectGroup {
 
 struct ImageLayer {
     std::string name;
-    std::string path;
+    ResourceLocation loc;
     glm::ivec2 size;
     bool visible{true};
 };
 
 struct Tileset {
     std::string name;
-    std::string path;
+    ResourceLocation loc;
     glm::ivec2 total_size{0};
     glm::ivec2 tile_size{0};
     std::uint32_t spacing{0};
