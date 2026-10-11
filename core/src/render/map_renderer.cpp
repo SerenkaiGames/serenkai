@@ -77,10 +77,11 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
 
     for (auto& layer : data.layers) {
         if (auto* tile_layer = std::get_if<TileLayer>(&layer)) {
-            render_tile_layer(tile_layer, textures, map, camera, zoom);
+            render_tile_layer(tile_layer, textures, map, screen_offset, zoom);
         }
         if (auto* image_layer = std::get_if<ImageLayer>(&layer)) {
-            render_image_layer(image_layer, texture_manager, camera, zoom);
+            render_image_layer(image_layer, texture_manager, screen_offset,
+                               zoom);
         }
     }
 }

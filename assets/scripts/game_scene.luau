@@ -2,7 +2,7 @@
 
 local map_mgr: MapManager
 local camera: Camera
-local speed: number = 1
+local speed: number = 100
 local Event = require("serenkai:scripts/event.luau")
 
 function on_enter(mgr: MapManager, cam: Camera)
