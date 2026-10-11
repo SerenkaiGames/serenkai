@@ -8,7 +8,6 @@ class Renderer;
 class WindowManager;
 class ScriptEngine;
 class GuiContext;
-class Script;
 
 /// @brief Global-level context that aggregates core services.
 struct AppContext {
