@@ -14,7 +14,7 @@ TEST_CASE("Camera default state and properties", "[game][camera]") {
         CHECK(pos.y == Catch::Approx(0.0F));
     }
 
-    SECTION("Default zoom is 1.0") {
-        CHECK(camera.zoom() == Catch::Approx(1.0F));
+    SECTION("Default zoom is 3.0") {
+        CHECK(camera.zoom() == Catch::Approx(3.0F));
     }
 }

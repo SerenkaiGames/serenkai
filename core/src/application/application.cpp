@@ -101,11 +101,15 @@ Application::Application(int argc, char** argv) {
 
     m_script_engine = std::make_unique<ScriptEngine>(m_asset_manager.get());
 
-    m_app_ctx = AppContext{
-        m_asset_manager.get(), m_texture_manager.get(), m_font_manager.get(),
-        m_renderer.get(),      m_window_manager.get(),  m_script_engine.get(),
-        m_gui_context.get(),
-    };
+    auto main = m_script_engine->create(MAIN_SCRIPT_LOC);
+    if (main) {
+        m_main_script = std::make_unique<Script>(std::move(*main));
+    }
+
+    m_app_ctx = AppContext{m_asset_manager.get(),  m_texture_manager.get(),
+                           m_font_manager.get(),   m_renderer.get(),
+                           m_window_manager.get(), m_script_engine.get(),
+                           m_gui_context.get()};
 
     m_render_ctx = RenderContext{m_renderer.get(), m_texture_manager.get(),
                                  m_gui_context.get()};
@@ -126,11 +130,6 @@ Application::Application(int argc, char** argv) {
     auto window_size = m_window_manager->get_window_size();
     m_gui_context->handle_window_resize_event(
         WindowResizeEvent{window_size.x, window_size.y});
-
-    auto main = m_script_engine->create(MAIN_SCRIPT_LOC);
-    if (main) {
-        m_main_script = std::make_unique<Script>(std::move(*main));
-    }
 
     m_scene_manager->request_push(SceneType::Title);
 }

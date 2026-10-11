@@ -6,6 +6,9 @@
 #include "serenkai/script/bindings/luau_glm.hpp"
 #include "serenkai/script/lua_header.hpp"
 
+#include <optional>
+#include <string_view>
+
 namespace serenkai {
 namespace {
 int get_property(lua_State* L) {
@@ -74,7 +77,12 @@ void register_lua_map(lua_State* L) {
         .addFunction("get_property", &get_property)
         .endClass()
         .beginClass<MapManager>("MapManager")
-        .addFunction("switch_map", &MapManager::switch_map)
+        .addFunction("switch_map",
+                     [](MapManager* self, std::string_view loc,
+                        std::optional<std::string_view> spawn_point_name) {
+                         return self->switch_map(loc,
+                                                 spawn_point_name.value_or(""));
+                     })
         .addFunction("current_map", &MapManager::current_map)
         .addFunction("has_map", &MapManager::has_map)
         //.addFunction("unload_current_map", &MapManager::unload_current_map)

@@ -1,17 +1,39 @@
 #include "serenkai/application/event.hpp"
+#include "serenkai/base/raii.hpp"
+#include "serenkai/resource/asset_manager.hpp"
+#include "serenkai/resource/asset_source.hpp"
+#include "serenkai/resource/directory_source.hpp"
 #include "serenkai/scenes/game_scene.hpp"
 #include "serenkai/scenes/scene.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
 #include "serenkai/scenes/title_scene.hpp"
+#include "serenkai/script/script.hpp"
+#include "serenkai/script/script_engine.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <utility>
 
+namespace fs = std::filesystem;
 using namespace serenkai;
 
 namespace {
+
+/// @brief Mock AssetSource for in-memory scene asset mapping.
+class MockSceneAssetSource : public AssetSource {
+public:
+    explicit MockSceneAssetSource(AssetFileMap files)
+        : m_files(std::move(files)) {}
+
+    AssetFileMap& get_asset_files() override { return m_files; }
+    std::string source_name() const override { return "MockSceneAssetSource"; }
+
+private:
+    AssetFileMap m_files;
+};
 
 /// @brief Mock scene that tracks lifecycle calls for testing.
 class MockScene : public Scene {
@@ -256,6 +278,82 @@ TEST_CASE("GameScene lifecycle and safety", "[scene]") {
         RenderContext ctx{};
         scene.render(&ctx);
     }
+}
+
+TEST_CASE("GameScene script lifecycle hooks and event dispatch", "[scene]") {
+    AssetManager asset_manager;
+#ifdef SERENKAI_TEST_ASSET_DIR
+    if (fs::exists(SERENKAI_TEST_ASSET_DIR)) {
+        asset_manager.merge_source(
+            std::make_shared<DirectorySource>(SERENKAI_TEST_ASSET_DIR));
+    }
+#endif
+
+    auto temp_dir =
+        fs::temp_directory_path() / "serenkai_test_game_scene_script";
+    fs::create_directories(temp_dir);
+    RaiiGuard cleanup_guard([]() {},
+                            [&temp_dir]() {
+                                std::error_code ec;
+                                fs::remove_all(temp_dir, ec);
+                            });
+
+    // Register a listener script that listens to game_scene events
+    fs::path listener_path = temp_dir / "listener.luau";
+    {
+        std::ofstream out(listener_path);
+        out << R"(
+            local Event = require("serenkai:scripts/event.luau")
+            local enter_count = 0
+            local update_count = 0
+            local leave_count = 0
+
+            Event.on("serenkai:events/enter_game", function()
+                enter_count += 1
+            end)
+
+            Event.on("serenkai:events/update_game", function()
+                update_count += 1
+            end)
+
+            Event.on("serenkai:events/leave_game", function()
+                leave_count += 1
+            end)
+
+            function get_counts(): (number, number, number)
+                return enter_count, update_count, leave_count
+            end
+        )";
+    }
+
+    auto listener_loc =
+        *ResourceLocation::parse("test:game_scene_listener.luau");
+    AssetFileMap files;
+    files.emplace(listener_loc, listener_path.string());
+    asset_manager.merge_source(
+        std::make_shared<MockSceneAssetSource>(std::move(files)));
+
+    ScriptEngine script_engine(&asset_manager);
+    auto listener_script =
+        script_engine.create("test:game_scene_listener.luau");
+    REQUIRE(listener_script.has_value());
+
+    AppContext ctx{};
+    ctx.assets = &asset_manager;
+    ctx.script = &script_engine;
+
+    {
+        GameScene scene;
+        scene.on_enter(&ctx);
+        scene.update(0.016F);
+        scene.on_leave();
+    }
+
+    auto counts = listener_script->call<int, int, int>("get_counts");
+    REQUIRE(counts.has_value());
+    CHECK(std::get<0>(*counts) == 1);
+    CHECK(std::get<1>(*counts) == 1);
+    CHECK(std::get<2>(*counts) == 1);
 }
 
 TEST_CASE("TitleScene lifecycle and safety", "[scene]") {

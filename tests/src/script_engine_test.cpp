@@ -1,5 +1,6 @@
 #include "serenkai/game/map.hpp"
 #include "serenkai/game/map_data.hpp"
+#include "serenkai/game/map_manager.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/asset_source.hpp"
 #include "serenkai/resource/directory_source.hpp"
@@ -820,5 +821,56 @@ TEST_CASE("Script MapObject and Tile bindings", "[script][map]") {
         CHECK(std::get<0>(*res) == 100);
         CHECK(std::get<1>(*res) == 15);
         CHECK(std::get<2>(*res) == false);
+    }
+}
+
+TEST_CASE("Script MapManager bindings", "[script][map]") {
+    TestScriptEnv env;
+    env.register_script("test:map_manager_test.luau", R"(
+        function test_switch_single(mgr: any, loc: string): boolean
+            return mgr:switch_map(loc)
+        end
+
+        function test_switch_double(mgr: any, loc: string, spawn: string): boolean
+            return mgr:switch_map(loc, spawn)
+        end
+
+        function test_has_map(mgr: any): boolean
+            return mgr:has_map()
+        end
+
+        function test_current_map_nil(mgr: any): boolean
+            return mgr:current_map() == nil
+        end
+    )");
+
+    ScriptEngine engine(&env.asset_manager());
+    auto script = engine.create("test:map_manager_test.luau");
+    REQUIRE(script.has_value());
+
+    MapManager manager(&env.asset_manager());
+
+    SECTION("has_map and current_map initial state") {
+        auto has = script->call<bool>("test_has_map", &manager);
+        REQUIRE(has.has_value());
+        CHECK(std::get<0>(*has) == false);
+
+        auto is_nil = script->call<bool>("test_current_map_nil", &manager);
+        REQUIRE(is_nil.has_value());
+        CHECK(std::get<0>(*is_nil) == true);
+    }
+
+    SECTION("switch_map with single argument succeeds without type error") {
+        auto res = script->call<bool>("test_switch_single", &manager,
+                                      "nonexistent:map.tmx");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == false);
+    }
+
+    SECTION("switch_map with two arguments succeeds without type error") {
+        auto res = script->call<bool>("test_switch_double", &manager,
+                                      "nonexistent:map.tmx", "SpawnPoint");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == false);
     }
 }

@@ -53,11 +53,10 @@ convert_to_resource_location(std::string_view image_path,
         fs::path map_dir = fs::path(map_path).parent_path();
         fs::path img_p(image_path);
 
-        fs::path rel_path;
-        if (img_p.is_absolute()) {
-            rel_path = fs::relative(img_p, map_dir);
-        } else {
-            rel_path = img_p;
+        std::error_code ec;
+        fs::path rel_path = fs::relative(img_p, map_dir, ec);
+        if (ec || rel_path.empty()) {
+            rel_path = img_p.lexically_relative(map_dir);
         }
 
         fs::path map_loc_dir = fs::path(map_loc.path()).parent_path();

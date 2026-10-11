@@ -17,6 +17,6 @@ public:
 
 private:
     glm::vec2 m_pos{0.0f};
-    float m_zoom{1.0f};
+    float m_zoom{3.0f};
 };
 } // namespace serenkai
