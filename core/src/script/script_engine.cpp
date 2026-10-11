@@ -44,7 +44,9 @@ ScriptEngine::ScriptEngine(ScriptEngineConfig config)
 
     register_lua_log(m_root.get());
 
-    register_lua_input(m_root.get(), config.input_manager);
+    if (config.input_manager) {
+        register_lua_input(m_root.get(), config.input_manager);
+    }
 
     register_lua_map(m_root.get());
 

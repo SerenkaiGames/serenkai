@@ -147,7 +147,7 @@ InputManager::get_action_id_map() const {
 }
 const std::string& InputManager::get_action_name(ActionId id) const {
     static std::string u = "Unknown";
-    if (id >= MAX_ACTIONS) [[unlikely]] {
+    if (id >= m_id_to_string.size()) [[unlikely]] {
         SE_ASSERT(false);
         return u;
     }
