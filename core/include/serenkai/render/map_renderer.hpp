@@ -26,8 +26,9 @@ public:
     /// @param camera Camera position in the world (usually the player's
     /// position).
     /// @param zoom Camera zoom.
-    void render(Map* map, TextureManager* texture_manager, glm::vec2 camera,
-                float zoom);
+    /// @return The valid camera position after clamping.
+    [[nodiscard]] glm::vec2 render(Map* map, TextureManager* texture_manager,
+                                   glm::vec2 camera, float zoom);
 
 private:
     SDL_Renderer* m_renderer = nullptr;

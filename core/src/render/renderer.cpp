@@ -9,6 +9,7 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_vulkan.h>
 #include <fmt/format.h>
+#include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
@@ -257,11 +258,12 @@ void Renderer::draw_image(SDL_Texture* texture, glm::ivec2 pos, glm::ivec2 size,
     SDL_RenderTexture(m_sdl_renderer, texture, nullptr, &dst);
 }
 
-void Renderer::draw_map(Map* map, TextureManager* texture_manager,
-                        glm::vec2 camera, float zoom) {
+glm::vec2 Renderer::draw_map(Map* map, TextureManager* texture_manager,
+                             glm::vec2 camera, float zoom) {
     if (m_map_renderer) {
-        m_map_renderer->render(map, texture_manager, camera, zoom);
+        return m_map_renderer->render(map, texture_manager, camera, zoom);
     }
+    return camera;
 }
 
 } // namespace serenkai

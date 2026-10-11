@@ -8,7 +8,6 @@ local Event = require("serenkai:scripts/event.luau")
 function on_enter(mgr: MapManager, cam: Camera)
 	map_mgr = mgr
 	camera = cam
-
 	map_mgr:switch_map("serenkai:maps/tea_house.tmx")
 
 	Event.emit("serenkai:events/enter_game")
@@ -24,23 +23,26 @@ function on_leave()
 end
 
 function update_move(dt: number)
-	local distance = vector.create(0, 0)
+	local dx = 0
+	local dy = 0
 
 	if Input.is_down(Input.Action["inputs/move_up"]) then
-		distance.y -= dt * speed
+		dy -= dt * speed
 	end
 
 	if Input.is_down(Input.Action["inputs/move_down"]) then
-		distance.y += dt * speed
+		dy += dt * speed
 	end
 
 	if Input.is_down(Input.Action["inputs/move_left"]) then
-		distance.x -= dt * speed
+		dx -= dt * speed
 	end
 
 	if Input.is_down(Input.Action["inputs/move_right"]) then
-		distance.x += dt * speed
+		dx += dt * speed
 	end
 
-	camera:move(distance)
+	if dx ~= 0 or dy ~= 0 then
+		camera:move(vector.create(dx, dy, 0))
+	end
 end

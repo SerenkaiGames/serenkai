@@ -15,10 +15,10 @@ namespace serenkai {
 
 MapRenderer::MapRenderer(SDL_Renderer* renderer) : m_renderer(renderer) {}
 
-void MapRenderer::render(Map* map, TextureManager* texture_manager,
-                         glm::vec2 camera, float zoom) {
+glm::vec2 MapRenderer::render(Map* map, TextureManager* texture_manager,
+                              glm::vec2 camera, float zoom) {
     if (!m_renderer || !map || !texture_manager) {
-        return;
+        return camera;
     }
 
     int w = 0, h = 0;
@@ -43,17 +43,13 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
 
     // If the map is smaller than the viewport on an axis, center it on that
     // axis; otherwise, clamp the viewport within the map's world bounds.
-    if (world.x < view.x) {
-        camera.x = world.x * 0.5f;
-    } else {
-        camera.x = std::clamp(camera.x, half.x, world.x - half.x);
-    }
+    const float min_x = std::min(half.x, world.x - half.x);
+    const float max_x = std::max(half.x, world.x - half.x);
+    camera.x = std::clamp(camera.x, min_x, max_x);
 
-    if (world.y < view.y) {
-        camera.y = world.y * 0.5f;
-    } else {
-        camera.y = std::clamp(camera.y, half.y, world.y - half.y);
-    }
+    const float min_y = std::min(half.y, world.y - half.y);
+    const float max_y = std::max(half.y, world.y - half.y);
+    camera.y = std::clamp(camera.y, min_y, max_y);
 
     const glm::vec2 screen_center{static_cast<float>(w) * 0.5f,
                                   static_cast<float>(h) * 0.5f};
@@ -84,6 +80,8 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
                                zoom);
         }
     }
+
+    return camera;
 }
 
 void MapRenderer::render_tile_layer(const TileLayer* layer,
