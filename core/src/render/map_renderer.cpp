@@ -33,34 +33,36 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
     if (zoom <= 0.0f) {
         zoom = 1.0f;
     }
-    float view_w = w / zoom;
-    float view_h = h / zoom;
 
-    if (camera.x < 0) {
-        camera.x = 0;
-    }
+    // Viewport size in world units.
+    const glm::vec2 view{static_cast<float>(w) / zoom,
+                         static_cast<float>(h) / zoom};
 
-    if (camera.y < 0) {
-        camera.y = 0;
-    }
+    const auto world = static_cast<glm::vec2>(map->pixel_size());
+    const glm::vec2 half = view * 0.5f;
 
-    auto world_size = map->pixel_size();
-
-    // If the map width is smaller than the screen viewport, automatically
-    // center horizontally; otherwise, clamp within the map's world bounds.
-    if (world_size.x < view_w) {
-        camera.x = -(view_w - world_size.x) / 2.0f;
+    // If the map is smaller than the viewport on an axis, center it on that
+    // axis; otherwise, clamp the viewport within the map's world bounds.
+    if (world.x < view.x) {
+        camera.x = world.x * 0.5f;
     } else {
-        camera.x = std::clamp(camera.x, 0.0f, world_size.x - view_w);
+        camera.x = std::clamp(camera.x, half.x, world.x - half.x);
     }
 
-    // If the map height is smaller than the screen viewport, automatically
-    // center vertically; otherwise, clamp within the map's world bounds.
-    if (world_size.y < view_h) {
-        camera.y = -(view_h - world_size.y) / 2.0f;
+    if (world.y < view.y) {
+        camera.y = world.y * 0.5f;
     } else {
-        camera.y = std::clamp(camera.y, 0.0f, world_size.y - view_h);
+        camera.y = std::clamp(camera.y, half.y, world.y - half.y);
     }
+
+    const glm::vec2 screen_center{static_cast<float>(w) * 0.5f,
+                                  static_cast<float>(h) * 0.5f};
+
+    // World space -> screen space.
+    // The camera is the observation point and lands at the window center:
+    // p_screen = (p_world - camera) * zoom + screen_center
+    const glm::vec2 screen_offset{screen_center.x - camera.x * zoom,
+                                  screen_center.y - camera.y * zoom};
 
     auto& data = map->data();
 
@@ -85,7 +87,7 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
 
 void MapRenderer::render_tile_layer(const TileLayer* layer,
                                     std::span<SDL_Texture*> textures, Map* map,
-                                    glm::vec2 camera, float zoom) {
+                                    glm::vec2 screen_offset, float zoom) {
     if (!layer) {
         return;
     }
@@ -119,10 +121,9 @@ void MapRenderer::render_tile_layer(const TileLayer* layer,
 
             auto world_pos = map->tile_to_world({x, y});
 
-            // Rectangle of the render position; converts world-view coordinates
-            // into camera-view coordinates for rendering.
-            SDL_FRect dst_rect = {(world_pos.x - camera.x) * zoom,
-                                  (world_pos.y - camera.y) * zoom,
+            // world -> screen
+            SDL_FRect dst_rect = {world_pos.x * zoom + screen_offset.x,
+                                  world_pos.y * zoom + screen_offset.y,
                                   tile_size.x * zoom, tile_size.y * zoom};
 
             render_tile(textures[idx], &src_rect, dst_rect, *tile);
@@ -180,7 +181,7 @@ void MapRenderer::render_tile(SDL_Texture* texture, const SDL_FRect* src,
 
 void MapRenderer::render_image_layer(const ImageLayer* layer,
                                      TextureManager* texture_manager,
-                                     glm::vec2 camera, float zoom) {
+                                     glm::vec2 screen_offset, float zoom) {
     if (!layer || !texture_manager) {
         return;
     }
@@ -196,7 +197,8 @@ void MapRenderer::render_image_layer(const ImageLayer* layer,
     }
     auto size = static_cast<glm::vec2>(layer->size);
 
-    SDL_FRect dst{-camera.x * zoom, -camera.y * zoom, size.x * zoom,
+    // world -> screen
+    SDL_FRect dst{screen_offset.x, screen_offset.y, size.x * zoom,
                   size.y * zoom};
 
     SDL_RenderTexture(m_renderer, texture, nullptr, &dst);

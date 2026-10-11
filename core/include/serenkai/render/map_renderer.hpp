@@ -34,13 +34,13 @@ private:
 
     void render_tile_layer(const TileLayer* layer,
                            std::span<SDL_Texture*> textures, Map* map,
-                           glm::vec2 camera, float zoom);
+                           glm::vec2 screen_offset, float zoom);
 
     void render_tile(SDL_Texture* texture, const SDL_FRect* src, SDL_FRect dst,
                      const Tile& tile);
 
     void render_image_layer(const ImageLayer* layer,
-                            TextureManager* texture_manager, glm::vec2 camera,
-                            float zoom);
+                            TextureManager* texture_manager,
+                            glm::vec2 screen_offset, float zoom);
 };
 } // namespace serenkai
