@@ -427,3 +427,47 @@ TEST_CASE("MapLoader successfully loads valid orthogonal TMX map",
         }
     }
 }
+
+TEST_CASE("MapLoader handles relative map path and normalizes image location",
+          "[resource][map_loader]") {
+    fs::path temp_dir =
+        fs::temp_directory_path() / "serenkai_test_map_rel_load";
+    fs::create_directories(temp_dir / "maps");
+    RaiiGuard cleanup_guard([]() {},
+                            [&temp_dir]() {
+                                std::error_code ec;
+                                fs::remove_all(temp_dir, ec);
+                            });
+
+    fs::path abs_map_path = temp_dir / "maps" / "sample.tmx";
+    {
+        std::ofstream out(abs_map_path);
+        out << R"(<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="1" height="1" tilewidth="16" tileheight="16" infinite="0">
+ <tileset firstgid="1" name="sample_tileset" tilewidth="16" tileheight="16" tilecount="1" columns="1">
+  <image source="sample.png" width="16" height="16"/>
+ </tileset>
+ <layer id="1" name="Ground" width="1" height="1">
+  <data encoding="csv">
+1
+</data>
+ </layer>
+</map>)";
+    }
+
+    fs::path rel_map_path = fs::relative(abs_map_path, fs::current_path());
+
+    AssetManager asset_manager;
+    auto loc = *ResourceLocation::parse("test:maps/sample.tmx");
+    AssetFileMap files;
+    files.emplace(loc, rel_map_path.string());
+    asset_manager.merge_source(
+        std::make_shared<MockMapAssetSource>("MockRel", std::move(files)));
+
+    MapLoader loader(&asset_manager);
+    auto map_data = loader.load("test:maps/sample.tmx");
+    REQUIRE(map_data.has_value());
+    REQUIRE(map_data->tilesets.size() == 1);
+    CHECK(map_data->tilesets[0].loc ==
+          *ResourceLocation::parse("test:maps/sample.png"));
+}
