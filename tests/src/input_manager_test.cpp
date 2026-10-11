@@ -92,15 +92,15 @@ TEST_CASE("InputManager config merging and action mapping", "[input_manager]") {
         REQUIRE(mgr.merge_config(json));
 
         const auto& action_map = mgr.get_action_id_map();
-        REQUIRE(action_map.contains("inputs/move_up"));
-        REQUIRE(action_map.contains("inputs/jump"));
+        REQUIRE(action_map.contains("inputs/move_up"_rl));
+        REQUIRE(action_map.contains("inputs/jump"_rl));
 
-        auto up_id = action_map.at("inputs/move_up");
-        auto jump_id = action_map.at("inputs/jump");
+        auto up_id = action_map.at("inputs/move_up"_rl);
+        auto jump_id = action_map.at("inputs/jump"_rl);
 
         CHECK(up_id != jump_id);
-        CHECK(mgr.get_action_name(up_id) == "inputs/move_up");
-        CHECK(mgr.get_action_name(jump_id) == "inputs/jump");
+        CHECK(mgr.get_action_location(up_id) == "inputs/move_up"_rl);
+        CHECK(mgr.get_action_location(jump_id) == "inputs/jump"_rl);
     }
 
     SECTION("Invalid JSON fails gracefully") {
@@ -122,12 +122,12 @@ TEST_CASE("InputManager config merging and action mapping", "[input_manager]") {
         })";
 
         REQUIRE(mgr.merge_config(json1));
-        auto up_id_1 = mgr.get_action_id_map().at("inputs/move_up");
+        auto up_id_1 = mgr.get_action_id_map().at("inputs/move_up"_rl);
 
         REQUIRE(mgr.merge_config(json2));
-        auto up_id_2 = mgr.get_action_id_map().at("inputs/move_up");
+        auto up_id_2 = mgr.get_action_id_map().at("inputs/move_up"_rl);
         CHECK(up_id_1 == up_id_2);
-        CHECK(mgr.get_action_id_map().contains("inputs/move_down"));
+        CHECK(mgr.get_action_id_map().contains("inputs/move_down"_rl));
     }
 }
 
@@ -140,7 +140,7 @@ TEST_CASE("InputManager key event lifecycle and reference counting",
         }
     })";
     REQUIRE(mgr.merge_config(json));
-    auto up_id = mgr.get_action_id_map().at("inputs/move_up");
+    auto up_id = mgr.get_action_id_map().at("inputs/move_up"_rl);
 
     SECTION("Single key press, tick, and release cycle") {
         CHECK_FALSE(mgr.is_down(up_id));
@@ -230,7 +230,7 @@ TEST_CASE("InputManager boundary and query safety", "[input_manager]") {
     REQUIRE(mgr.merge_config(json));
 
     // Valid registered ID
-    CHECK(mgr.get_action_name(0) == "inputs/action_0");
+    CHECK(mgr.get_action_location(0) == "inputs/action_0"_rl);
     CHECK_FALSE(mgr.is_down(0));
     CHECK_FALSE(mgr.is_pressed(0));
     CHECK_FALSE(mgr.is_released(0));
@@ -245,7 +245,8 @@ TEST_CASE("InputManager Lua script bindings", "[input_manager][script]") {
     InputManager input_mgr;
     constexpr std::string_view json = R"({
         "bindings": {
-            "inputs/fire": ["Space"]
+            "inputs/fire": ["Space"],
+            "custom:inputs/special": ["Q"]
         }
     })";
     REQUIRE(input_mgr.merge_config(json));
@@ -254,6 +255,18 @@ TEST_CASE("InputManager Lua script bindings", "[input_manager][script]") {
     env.register_script("test:input_script.luau", R"(
         function get_fire_action_id(): number
             return Input.Action["inputs/fire"]
+        end
+
+        function get_fire_action_id_full(): number
+            return Input.Action["serenkai:inputs/fire"]
+        end
+
+        function get_custom_action_id(): number
+            return Input.Action["custom:inputs/special"]
+        end
+
+        function has_custom_short_action(): boolean
+            return Input.Action["inputs/special"] ~= nil
         end
 
         function is_fire_down(): boolean
@@ -282,7 +295,21 @@ TEST_CASE("InputManager Lua script bindings", "[input_manager][script]") {
         auto id_res = script->call<int>("get_fire_action_id");
         REQUIRE(id_res.has_value());
         CHECK(std::get<0>(*id_res) ==
-              input_mgr.get_action_id_map().at("inputs/fire"));
+              input_mgr.get_action_id_map().at("inputs/fire"_rl));
+
+        auto full_id_res = script->call<int>("get_fire_action_id_full");
+        REQUIRE(full_id_res.has_value());
+        CHECK(std::get<0>(*full_id_res) ==
+              input_mgr.get_action_id_map().at("inputs/fire"_rl));
+
+        auto custom_id_res = script->call<int>("get_custom_action_id");
+        REQUIRE(custom_id_res.has_value());
+        CHECK(std::get<0>(*custom_id_res) ==
+              input_mgr.get_action_id_map().at("custom:inputs/special"_rl));
+
+        auto has_custom_short = script->call<bool>("has_custom_short_action");
+        REQUIRE(has_custom_short.has_value());
+        CHECK(std::get<0>(*has_custom_short) == false);
 
         auto down_res = script->call<bool>("is_fire_down");
         REQUIRE(down_res.has_value());
