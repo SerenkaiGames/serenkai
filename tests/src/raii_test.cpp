@@ -125,6 +125,22 @@ TEST_CASE("RaiiWrapper basic lifecycle and value access", "[raii]") {
     CHECK(cleaned_value == 100);
 }
 
+TEST_CASE("RaiiWrapper const value access", "[raii]") {
+    auto init = [](int& val) { val = 42; };
+    auto cleanup = [](int&) {};
+
+    const auto wrapper = make_raii<int>(init, cleanup);
+
+    // Const accessors must return a reference, not a pointer.
+    CHECK(wrapper.get() == 42);
+    CHECK(*wrapper == 42);
+    CHECK(wrapper.operator->() != nullptr);
+
+    const auto& ref = wrapper;
+    CHECK(ref.get() == 42);
+    CHECK(*ref == 42);
+}
+
 TEST_CASE("RaiiWrapper manual reset and release", "[raii]") {
     int cleanup_count = 0;
     auto init = [](int& val) { val = 10; };
