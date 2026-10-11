@@ -8,7 +8,6 @@
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
-#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -41,7 +40,7 @@ public:
     const std::unordered_map<ResourceLocation, ActionId>&
     get_action_id_map() const;
 
-    std::string get_action_name(ActionId id) const;
+    const ResourceLocation& get_action_location(ActionId id) const;
 
 private:
     ActionBits m_held_bits;     // All Actions currently in the held state.

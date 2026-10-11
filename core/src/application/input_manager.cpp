@@ -152,12 +152,12 @@ const std::unordered_map<ResourceLocation, InputManager::ActionId>&
 InputManager::get_action_id_map() const {
     return m_action_to_id;
 }
-std::string InputManager::get_action_name(ActionId id) const {
-    static std::string u = "Unknown";
+const ResourceLocation& InputManager::get_action_location(ActionId id) const {
+    static ResourceLocation u = "Unknown"_rl;
     if (id >= m_id_to_loc.size()) [[unlikely]] {
         SE_ASSERT(false);
         return u;
     }
-    return m_id_to_loc[id].to_string();
+    return m_id_to_loc[id];
 }
 } // namespace serenkai
