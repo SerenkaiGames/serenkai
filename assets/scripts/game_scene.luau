@@ -15,6 +15,7 @@ end
 
 function on_update(dt: number)
 	update_move(dt)
+	update_zoom()
 	Event.emit("serenkai:events/update_game")
 end
 
@@ -44,5 +45,15 @@ function update_move(dt: number)
 
 	if dx ~= 0 or dy ~= 0 then
 		camera:move(vector.create(dx, dy, 0))
+	end
+end
+
+function update_zoom()
+	if Input.is_pressed(Input.Action["inputs/zoom_in"]) then
+		camera:add_zoom(1)
+	end
+
+	if Input.is_pressed(Input.Action["inputs/zoom_out"]) then
+		camera:add_zoom(-1)
 	end
 end

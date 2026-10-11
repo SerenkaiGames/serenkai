@@ -13,6 +13,7 @@ void register_lua_camera(lua_State* L) {
         .addFunction("set_pos", &Camera::set_pos)
         .addFunction("move", &Camera::move)
         .addFunction("set_zoom", &Camera::set_zoom)
+        .addFunction("add_zoom", &Camera::add_zoom)
         .endClass();
 }
 } // namespace serenkai

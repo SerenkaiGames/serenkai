@@ -10,6 +10,8 @@ namespace serenkai {
 /// and +y downward.
 class Camera {
 public:
+    static constexpr float MAX_ZOOM = 15.0f;
+
     Camera(const Camera&) = delete;
     Camera(Camera&&) = delete;
     Camera& operator=(const Camera&) = delete;
@@ -23,6 +25,8 @@ public:
 
     void set_pos(glm::vec2 pos);
     void set_zoom(float zoom);
+
+    void add_zoom(float zoom);
 
     void move(glm::vec2 distance);
 
