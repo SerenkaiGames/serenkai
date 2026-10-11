@@ -112,7 +112,8 @@ TEST_CASE("ScriptEngine script creation and lifecycle", "[script]") {
     env.register_script("test:runtime_err.luau",
                         "error('runtime error on load')");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
 
     SECTION("Create valid script succeeds") {
         auto script = engine.create("test:valid.luau");
@@ -144,7 +145,7 @@ TEST_CASE("ScriptEngine script creation and lifecycle", "[script]") {
     }
 
     SECTION("Create with null AssetManager returns nullopt") {
-        ScriptEngine null_engine(nullptr);
+        ScriptEngine null_engine(ScriptEngineConfig{.asset_manager = nullptr});
         CHECK_FALSE(null_engine.create("test:valid.luau").has_value());
     }
 
@@ -184,7 +185,8 @@ TEST_CASE("Script function call invocation", "[script]") {
         not_a_func = 12345
     )");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
     auto script = engine.create("test:math.luau");
     REQUIRE(script.has_value());
 
@@ -251,7 +253,8 @@ TEST_CASE("Script per-resource thread isolation", "[script]") {
         end
     )");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
     auto script_a = engine.create("test:script_a.luau");
     auto script_b = engine.create("test:script_b.luau");
     REQUIRE(script_a.has_value());
@@ -297,7 +300,8 @@ TEST_CASE("Script logging bindings and standard libraries", "[script]") {
         end
     )");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
     auto script = engine.create("test:logging.luau");
     REQUIRE(script.has_value());
 
@@ -367,7 +371,8 @@ TEST_CASE("Script module require and caching", "[script]") {
         end
     )");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
 
     SECTION("Require loads module and allows calling its functions") {
         auto script = engine.create("test:consumer_a.luau");
@@ -411,7 +416,8 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
     TestScriptEnv env;
     env.merge_project_assets();
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
 
     SECTION("Event listener registration and emission") {
         env.register_script("test:event_test.luau", R"(
@@ -614,7 +620,8 @@ TEST_CASE("Script add_global and get_global", "[script]") {
         end
     )");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
     auto script = engine.create("test:globals.luau");
     REQUIRE(script.has_value());
 
@@ -665,7 +672,8 @@ TEST_CASE("Script Map and Luau vector bindings", "[script][map]") {
         end
     )");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
     auto script = engine.create("test:map_test.luau");
     REQUIRE(script.has_value());
 
@@ -751,7 +759,8 @@ TEST_CASE("Script MapObject and Tile bindings", "[script][map]") {
         end
     )");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
     auto script = engine.create("test:map_obj_test.luau");
     REQUIRE(script.has_value());
 
@@ -844,7 +853,8 @@ TEST_CASE("Script MapManager bindings", "[script][map]") {
         end
     )");
 
-    ScriptEngine engine(&env.asset_manager());
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
     auto script = engine.create("test:map_manager_test.luau");
     REQUIRE(script.has_value());
 

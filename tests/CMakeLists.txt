@@ -4,6 +4,7 @@ add_executable(serenkai_tests
     src/application_test.cpp
     src/scene_test.cpp
     src/input_test.cpp
+    src/input_manager_test.cpp
     src/widget_test.cpp
     src/gui_context_test.cpp
     src/raii_test.cpp
