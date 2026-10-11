@@ -2,7 +2,6 @@
 #include "serenkai/base/raii.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/asset_source.hpp"
-#include "serenkai/resource/directory_source.hpp"
 #include "serenkai/scenes/game_scene.hpp"
 #include "serenkai/scenes/scene.hpp"
 #include "serenkai/scenes/scene_manager.hpp"
@@ -282,12 +281,6 @@ TEST_CASE("GameScene lifecycle and safety", "[scene]") {
 
 TEST_CASE("GameScene script lifecycle hooks and event dispatch", "[scene]") {
     AssetManager asset_manager;
-#ifdef SERENKAI_TEST_ASSET_DIR
-    if (fs::exists(SERENKAI_TEST_ASSET_DIR)) {
-        asset_manager.merge_source(
-            std::make_shared<DirectorySource>(SERENKAI_TEST_ASSET_DIR));
-    }
-#endif
 
     auto temp_dir =
         fs::temp_directory_path() / "serenkai_test_game_scene_script";
@@ -297,6 +290,54 @@ TEST_CASE("GameScene script lifecycle hooks and event dispatch", "[scene]") {
                                 std::error_code ec;
                                 fs::remove_all(temp_dir, ec);
                             });
+
+    // Provide mock event dispatcher module
+    fs::path event_path = temp_dir / "event.luau";
+    {
+        std::ofstream out(event_path);
+        out << R"(
+            local Event = {}
+            local listeners = {}
+
+            function Event.on(name, fn)
+                if not listeners[name] then
+                    listeners[name] = {}
+                end
+                table.insert(listeners[name], fn)
+            end
+
+            function Event.emit(name, ...)
+                local list = listeners[name]
+                if not list then return end
+                for _, fn in list do
+                    fn(...)
+                end
+            end
+
+            return Event
+        )";
+    }
+
+    // Provide mock game scene script targeting lifecycle events
+    fs::path game_scene_path = temp_dir / "game_scene.luau";
+    {
+        std::ofstream out(game_scene_path);
+        out << R"(
+            local Event = require("serenkai:scripts/event.luau")
+
+            function on_enter(mgr, cam)
+                Event.emit("serenkai:events/enter_game")
+            end
+
+            function on_update(dt)
+                Event.emit("serenkai:events/update_game")
+            end
+
+            function on_leave()
+                Event.emit("serenkai:events/leave_game")
+            end
+        )";
+    }
 
     // Register a listener script that listens to game_scene events
     fs::path listener_path = temp_dir / "listener.luau";
@@ -326,10 +367,13 @@ TEST_CASE("GameScene script lifecycle hooks and event dispatch", "[scene]") {
         )";
     }
 
-    auto listener_loc =
-        *ResourceLocation::parse("test:game_scene_listener.luau");
     AssetFileMap files;
-    files.emplace(listener_loc, listener_path.string());
+    files.emplace(*ResourceLocation::parse("serenkai:scripts/event.luau"),
+                  event_path.string());
+    files.emplace(*ResourceLocation::parse("serenkai:scripts/game_scene.luau"),
+                  game_scene_path.string());
+    files.emplace(*ResourceLocation::parse("test:game_scene_listener.luau"),
+                  listener_path.string());
     asset_manager.merge_source(
         std::make_shared<MockSceneAssetSource>(std::move(files)));
 

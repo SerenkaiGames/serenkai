@@ -26,21 +26,22 @@ public:
     /// @param camera Camera position in the world (usually the player's
     /// position).
     /// @param zoom Camera zoom.
-    void render(Map* map, TextureManager* texture_manager, glm::vec2 camera,
-                float zoom);
+    /// @return The valid camera position after clamping.
+    [[nodiscard]] glm::vec2 render(Map* map, TextureManager* texture_manager,
+                                   glm::vec2 camera, float zoom);
 
 private:
     SDL_Renderer* m_renderer = nullptr;
 
     void render_tile_layer(const TileLayer* layer,
                            std::span<SDL_Texture*> textures, Map* map,
-                           glm::vec2 camera, float zoom);
+                           glm::vec2 screen_offset, float zoom);
 
     void render_tile(SDL_Texture* texture, const SDL_FRect* src, SDL_FRect dst,
                      const Tile& tile);
 
     void render_image_layer(const ImageLayer* layer,
-                            TextureManager* texture_manager, glm::vec2 camera,
-                            float zoom);
+                            TextureManager* texture_manager,
+                            glm::vec2 screen_offset, float zoom);
 };
 } // namespace serenkai

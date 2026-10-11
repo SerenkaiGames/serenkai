@@ -1,3 +1,4 @@
+#include "serenkai/game/camera.hpp"
 #include "serenkai/game/map.hpp"
 #include "serenkai/game/map_data.hpp"
 #include "serenkai/game/map_manager.hpp"
@@ -882,5 +883,83 @@ TEST_CASE("Script MapManager bindings", "[script][map]") {
                                       "nonexistent:map.tmx", "SpawnPoint");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == false);
+    }
+}
+
+TEST_CASE("Script Camera bindings", "[script][camera]") {
+    TestScriptEnv env;
+    env.register_script("test:camera_test.luau", R"(
+        function get_pos(cam: any): (number, number)
+            local p = cam.pos
+            return p.x, p.y
+        end
+
+        function get_zoom(cam: any): number
+            return cam.zoom
+        end
+
+        function set_pos(cam: any, x: number, y: number)
+            cam:set_pos(vector.create(x, y, 0))
+        end
+
+        function set_zoom(cam: any, z: number)
+            cam:set_zoom(z)
+        end
+
+        function add_zoom(cam: any, z: number)
+            cam:add_zoom(z)
+        end
+
+        function move(cam: any, dx: number, dy: number)
+            cam:move(vector.create(dx, dy, 0))
+        end
+    )");
+
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
+    auto script = engine.create("test:camera_test.luau");
+    REQUIRE(script.has_value());
+
+    Camera camera;
+
+    SECTION("Read pos and zoom properties") {
+        auto p = script->call<double, double>("get_pos", &camera);
+        REQUIRE(p.has_value());
+        CHECK(std::get<0>(*p) == Catch::Approx(0.0));
+        CHECK(std::get<1>(*p) == Catch::Approx(0.0));
+
+        auto z = script->call<double>("get_zoom", &camera);
+        REQUIRE(z.has_value());
+        CHECK(std::get<0>(*z) == Catch::Approx(3.0));
+    }
+
+    SECTION("set_pos and set_zoom via script") {
+        auto set_p_res = script->call<>("set_pos", &camera, 120.0, 240.0);
+        REQUIRE(set_p_res.has_value());
+        CHECK(camera.pos().x == Catch::Approx(120.0f));
+        CHECK(camera.pos().y == Catch::Approx(240.0f));
+
+        auto set_z_res = script->call<>("set_zoom", &camera, 2.0);
+        REQUIRE(set_z_res.has_value());
+        CHECK(camera.zoom() == Catch::Approx(2.0f));
+    }
+
+    SECTION("add_zoom via script") {
+        camera.set_zoom(3.0f);
+        auto add_res = script->call<>("add_zoom", &camera, 2.0);
+        REQUIRE(add_res.has_value());
+        CHECK(camera.zoom() == Catch::Approx(5.0f));
+
+        auto clamp_res = script->call<>("add_zoom", &camera, 50.0);
+        REQUIRE(clamp_res.has_value());
+        CHECK(camera.zoom() == Catch::Approx(Camera::MAX_ZOOM));
+    }
+
+    SECTION("move via script") {
+        camera.set_pos({10.0f, 20.0f});
+        auto move_res = script->call<>("move", &camera, 5.0, -15.0);
+        REQUIRE(move_res.has_value());
+        CHECK(camera.pos().x == Catch::Approx(15.0f));
+        CHECK(camera.pos().y == Catch::Approx(5.0f));
     }
 }

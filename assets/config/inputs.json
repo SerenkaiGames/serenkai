@@ -15,6 +15,12 @@
         "inputs/move_right": [
             "D",
             "Right"
+        ],
+        "inputs/zoom_in": [
+            "Equals"
+        ],
+        "inputs/zoom_out": [
+            "Minus"
         ]
     }
 }

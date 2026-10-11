@@ -26,7 +26,7 @@ void GameScene::on_enter(AppContext* ctx) {
         auto s = ctx->script->create(GAME_SCENE_SCRIPT_LOC);
         if (s) {
             m_script = std::make_unique<Script>(std::move(*s));
-            m_script->call<>("on_enter", m_map_manager.get());
+            m_script->call<>("on_enter", m_map_manager.get(), m_camera.get());
         }
     }
 }
@@ -47,8 +47,9 @@ void GameScene::render(RenderContext* ctx) {
     if (m_map_manager && m_camera) {
         auto map = m_map_manager->current_map();
         if (map) {
-            ctx->renderer->draw_map(map.get(), ctx->textures, m_camera->pos(),
-                                    m_camera->zoom());
+            auto camera_pos = ctx->renderer->draw_map(
+                map.get(), ctx->textures, m_camera->pos(), m_camera->zoom());
+            m_camera->set_pos(camera_pos);
         }
     }
 }
