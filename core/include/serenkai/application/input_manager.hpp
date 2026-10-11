@@ -36,10 +36,12 @@ public:
     /// @note Only handles the frame in which it is triggered.
     bool is_released(ActionId id) const noexcept;
 
-    ActionBits get_held_mask() const noexcept;
+    std::vector<ActionId> get_held_actions() const noexcept;
 
-    std::unordered_map<std::string, ActionId, StringHash, StringEqual>
+    const std::unordered_map<std::string, ActionId, StringHash, StringEqual>&
     get_action_id_map() const;
+
+    const std::string& get_action_name(ActionId id) const;
 
 private:
     ActionBits m_held_bits;     // All Actions currently in the held state.

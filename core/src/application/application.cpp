@@ -200,6 +200,7 @@ void Application::run() {
 }
 
 void Application::step(float dt) {
+    m_input_manager->tick();
 
     while (SDL_PollEvent(&m_event)) {
         if (auto event = input::process_sdl_event(m_event)) {

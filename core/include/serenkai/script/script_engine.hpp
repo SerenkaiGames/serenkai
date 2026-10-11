@@ -24,7 +24,6 @@ struct ScriptEngineConfig {
 /// Automatically manages the lifecycle of lua_State.
 class ScriptEngine {
 public:
-    /// @note May throw an exception.
     ScriptEngine(ScriptEngineConfig config);
 
     /// @brief Create a script.

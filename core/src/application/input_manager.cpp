@@ -7,6 +7,8 @@
 #include <glaze/json/generic.hpp>
 #include <map>
 #include <spdlog/spdlog.h>
+#include <string>
+#include <vector>
 
 namespace serenkai {
 
@@ -35,8 +37,8 @@ bool InputManager::merge_config(std::string_view json_content) {
         } else {
 
             if (m_next_id >= MAX_ACTIONS) {
-                spdlog::error("Exceeded MAX_ACTIONS limit when registering'{}'",
-                              k);
+                spdlog::error(
+                    "Exceeded MAX_ACTIONS limit when registering '{}'", k);
                 return false;
             }
 
@@ -105,34 +107,50 @@ void InputManager::tick() {
 }
 
 bool InputManager::is_down(ActionId id) const noexcept {
-    if (id > MAX_ACTIONS) [[unlikely]] {
+    if (id >= MAX_ACTIONS) [[unlikely]] {
         SE_ASSERT(false);
         return false;
     }
     return m_held_bits[id];
 }
 bool InputManager::is_pressed(ActionId id) const noexcept {
-    if (id > MAX_ACTIONS) [[unlikely]] {
+    if (id >= MAX_ACTIONS) [[unlikely]] {
         SE_ASSERT(false);
         return false;
     }
     return m_pressed_bits[id];
 }
 bool InputManager::is_released(ActionId id) const noexcept {
-    if (id > MAX_ACTIONS) [[unlikely]] {
+    if (id >= MAX_ACTIONS) [[unlikely]] {
         SE_ASSERT(false);
         return false;
     }
     return m_released_bits[id];
 }
 
-InputManager::ActionBits InputManager::get_held_mask() const noexcept {
-    return m_held_bits;
+std::vector<InputManager::ActionId>
+InputManager::get_held_actions() const noexcept {
+    std::vector<ActionId> held;
+
+    for (ActionId id = 0; id < m_next_id; ++id) {
+        if (m_held_bits[id]) {
+            held.push_back(id);
+        }
+    }
+    return held;
 }
 
-std::unordered_map<std::string, InputManager::ActionId, StringHash, StringEqual>
+const std::unordered_map<std::string, InputManager::ActionId, StringHash,
+                         StringEqual>&
 InputManager::get_action_id_map() const {
     return m_action_to_id;
 }
-
+const std::string& InputManager::get_action_name(ActionId id) const {
+    static std::string u = "Unknown";
+    if (id >= MAX_ACTIONS) [[unlikely]] {
+        SE_ASSERT(false);
+        return u;
+    }
+    return m_id_to_string[id];
+}
 } // namespace serenkai

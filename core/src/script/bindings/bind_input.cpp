@@ -4,13 +4,13 @@
 #include "serenkai/script/lua_header.hpp"
 
 #include <luabridge3/LuaBridge/detail/Namespace.h>
-#include <stdexcept>
+#include <spdlog/spdlog.h>
 
 namespace serenkai {
 void register_lua_input(lua_State* L, InputManager* input_manager) {
     if (!input_manager) {
-        throw std::runtime_error(
-            "Register lua input failed, input manager is nullptr");
+        spdlog::error("Register lua input failed, input manager is nullptr");
+        return;
     }
 
     auto action_table = luabridge::newTable(L);
@@ -34,8 +34,8 @@ void register_lua_input(lua_State* L, InputManager* input_manager) {
                          return input_manager->is_released(id);
                      })
         .addFunction(
-            "get_held_mask",
-            [input_manager]() { return input_manager->get_held_mask(); })
+            "get_held_actions",
+            [input_manager]() { return input_manager->get_held_actions(); })
         .endNamespace();
 }
 } // namespace serenkai
