@@ -102,7 +102,7 @@ public:
     T* operator->() noexcept { return &m_value; }
     const T* operator->() const noexcept { return &m_value; }
     T& operator*() noexcept { return m_value; }
-    const T& operator*() const noexcept { return &m_value; }
+    const T& operator*() const noexcept { return m_value; }
     explicit operator bool() const noexcept { return m_active; }
 
 private:
