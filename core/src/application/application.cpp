@@ -4,6 +4,7 @@
 #include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
+#include "serenkai/application/input_manager.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/gui/widget_parser.hpp"
@@ -27,9 +28,11 @@
 #include <SDL3/SDL_version.h>
 #include <array>
 #include <fmt/format.h>
+#include <fstream>
 #include <glm/ext/vector_float2.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -66,17 +69,9 @@ Application::Application(int argc, char** argv) {
 
     const auto arg = handle_argument(argc, argv);
 
-    m_asset_manager = std::make_unique<AssetManager>();
+    init_assets(arg);
 
-    for (auto path : DEFAULT_ASSETS) {
-        auto source = std::make_shared<DirectorySource>(path);
-        m_asset_manager->merge_source(source);
-    }
-
-    for (auto& path : arg.assets) {
-        auto source = std::make_shared<DirectorySource>(path);
-        m_asset_manager->merge_source(source);
-    }
+    init_input();
 
     m_font_manager = std::make_unique<FontManager>(m_asset_manager.get());
 
@@ -150,6 +145,40 @@ Application::Argument Application::handle_argument(int argc, char** argv) {
     }
 
     return arg;
+}
+
+void Application::init_assets(const Argument& arg) {
+    m_asset_manager = std::make_unique<AssetManager>();
+
+    for (auto path : DEFAULT_ASSETS) {
+        auto source = std::make_shared<DirectorySource>(path);
+        m_asset_manager->merge_source(source);
+    }
+
+    for (auto& path : arg.assets) {
+        auto source = std::make_shared<DirectorySource>(path);
+        m_asset_manager->merge_source(source);
+    }
+}
+
+void Application::init_input() {
+    m_input_manager = std::make_unique<InputManager>();
+    auto path = m_asset_manager->get("serenkai:config/inputs.json"_rl);
+    if (!path) {
+        spdlog::warn("Failed to load default key bindings");
+        return;
+    }
+
+    std::ifstream file(*path, std::ios::binary);
+
+    if (!file.is_open()) {
+        spdlog::warn("Failed to open file {}", *path);
+        return;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    m_input_manager->merge_config(buffer.str());
 }
 
 bool Application::is_running() const { return m_running; }
