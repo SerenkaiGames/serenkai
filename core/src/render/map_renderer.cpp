@@ -46,16 +46,20 @@ void MapRenderer::render(Map* map, TextureManager* texture_manager,
 
     auto world_size = map->pixel_size();
 
-    // Clamp the camera position so it does not go beyond the screen edges.
-
-    float upper_x = std::max(0.0f, world_size.x - view_w);
-    if (camera.x > upper_x) {
-        camera.x = upper_x;
+    // If the map width is smaller than the screen viewport, automatically
+    // center horizontally; otherwise, clamp within the map's world bounds.
+    if (world_size.x < view_w) {
+        camera.x = -(view_w - world_size.x) / 2.0f;
+    } else {
+        camera.x = std::clamp(camera.x, 0.0f, world_size.x - view_w);
     }
 
-    float upper_y = std::max(0.0f, world_size.y - view_h);
-    if (camera.y > upper_y) {
-        camera.y = upper_y;
+    // If the map height is smaller than the screen viewport, automatically
+    // center vertically; otherwise, clamp within the map's world bounds.
+    if (world_size.y < view_h) {
+        camera.y = -(view_h - world_size.y) / 2.0f;
+    } else {
+        camera.y = std::clamp(camera.y, 0.0f, world_size.y - view_h);
     }
 
     auto& data = map->data();
