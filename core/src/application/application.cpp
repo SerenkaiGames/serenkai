@@ -1,6 +1,5 @@
 #include "serenkai/application/application.hpp"
 
-#include "CLI/CLI.hpp"
 #include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
