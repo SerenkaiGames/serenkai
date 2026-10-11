@@ -38,6 +38,9 @@ public:
 
     ActionBits get_held_mask() const noexcept;
 
+    std::unordered_map<std::string, ActionId, StringHash, StringEqual>
+    get_action_id_map() const;
+
 private:
     ActionBits m_held_bits;     // All Actions currently in the held state.
     ActionBits m_pressed_bits;  // Actions that just became pressed this frame.

@@ -130,4 +130,9 @@ InputManager::ActionBits InputManager::get_held_mask() const noexcept {
     return m_held_bits;
 }
 
+std::unordered_map<std::string, InputManager::ActionId, StringHash, StringEqual>
+InputManager::get_action_id_map() const {
+    return m_action_to_id;
+}
+
 } // namespace serenkai

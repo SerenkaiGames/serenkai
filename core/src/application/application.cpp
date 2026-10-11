@@ -94,7 +94,8 @@ Application::Application(int argc, char** argv) {
         GuiConfig{m_renderer.get(), m_texture_manager.get(),
                   m_widget_parser.get(), m_font_manager.get()});
 
-    m_script_engine = std::make_unique<ScriptEngine>(m_asset_manager.get());
+    m_script_engine = std::make_unique<ScriptEngine>(
+        ScriptEngineConfig{m_asset_manager.get(), m_input_manager.get()});
 
     auto main = m_script_engine->create(MAIN_SCRIPT_LOC);
     if (main) {
@@ -224,6 +225,7 @@ void Application::render() {
 }
 
 void Application::dispatch_event(Event& e) {
+
     if (auto _ = std::get_if<QuitEvent>(&e)) {
         m_running = false;
         return;
@@ -244,8 +246,14 @@ void Application::dispatch_event(Event& e) {
         }
     }
 
+    // Let the scene's UI handle the event first.
     if (m_scene_manager->handle_event(e)) {
         return;
+    }
+
+    // Convert the remaining input events into game actions.
+    if (auto event = std::get_if<KeyEvent>(&e)) {
+        m_input_manager->process_key_event(*event);
     }
 }
 

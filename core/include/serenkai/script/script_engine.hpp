@@ -13,13 +13,19 @@
 namespace serenkai {
 
 class AssetManager;
+class InputManager;
+struct ScriptEngineConfig {
+    AssetManager* asset_manager = nullptr;
+    InputManager* input_manager = nullptr;
+};
 
 /// @brief Lua scripting engine
 ///
 /// Automatically manages the lifecycle of lua_State.
 class ScriptEngine {
 public:
-    ScriptEngine(AssetManager* asset_manager);
+    /// @note May throw an exception.
+    ScriptEngine(ScriptEngineConfig config);
 
     /// @brief Create a script.
     ///
