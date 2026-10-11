@@ -906,6 +906,10 @@ TEST_CASE("Script Camera bindings", "[script][camera]") {
             cam:set_zoom(z)
         end
 
+        function add_zoom(cam: any, z: number)
+            cam:add_zoom(z)
+        end
+
         function move(cam: any, dx: number, dy: number)
             cam:move(vector.create(dx, dy, 0))
         end
@@ -938,6 +942,17 @@ TEST_CASE("Script Camera bindings", "[script][camera]") {
         auto set_z_res = script->call<>("set_zoom", &camera, 2.0);
         REQUIRE(set_z_res.has_value());
         CHECK(camera.zoom() == Catch::Approx(2.0f));
+    }
+
+    SECTION("add_zoom via script") {
+        camera.set_zoom(3.0f);
+        auto add_res = script->call<>("add_zoom", &camera, 2.0);
+        REQUIRE(add_res.has_value());
+        CHECK(camera.zoom() == Catch::Approx(5.0f));
+
+        auto clamp_res = script->call<>("add_zoom", &camera, 50.0);
+        REQUIRE(clamp_res.has_value());
+        CHECK(camera.zoom() == Catch::Approx(Camera::MAX_ZOOM));
     }
 
     SECTION("move via script") {
