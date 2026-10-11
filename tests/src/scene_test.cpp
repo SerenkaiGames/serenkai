@@ -333,7 +333,8 @@ TEST_CASE("GameScene script lifecycle hooks and event dispatch", "[scene]") {
     asset_manager.merge_source(
         std::make_shared<MockSceneAssetSource>(std::move(files)));
 
-    ScriptEngine script_engine(&asset_manager);
+    ScriptEngine script_engine(
+        ScriptEngineConfig{.asset_manager = &asset_manager});
     auto listener_script =
         script_engine.create("test:game_scene_listener.luau");
     REQUIRE(listener_script.has_value());

@@ -2,6 +2,7 @@
 
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/resource_location.hpp"
+#include "serenkai/script/bindings/bind_input.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
 #include "serenkai/script/bindings/bind_map.hpp"
 #include "serenkai/script/lua_compile_options.hpp"
@@ -33,15 +34,19 @@ void cleanup_lua(lua_State*& L) { lua_close(L); }
 } // namespace
 
 namespace serenkai {
-ScriptEngine::ScriptEngine(AssetManager* asset_manager)
-    : m_asset_manager(asset_manager), m_root(init_lua, cleanup_lua) {
-
-    register_lua_log(m_root.get());
+ScriptEngine::ScriptEngine(ScriptEngineConfig config)
+    : m_asset_manager(config.asset_manager), m_root(init_lua, cleanup_lua) {
 
     luabridge::getGlobalNamespace(m_root.get())
         .addFunction("require", [this](const std::string& module_name) {
             return require(module_name);
         });
+
+    register_lua_log(m_root.get());
+
+    if (config.input_manager) {
+        register_lua_input(m_root.get(), config.input_manager);
+    }
 
     register_lua_map(m_root.get());
 

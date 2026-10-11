@@ -104,6 +104,10 @@ add_library(
     include/serenkai/script/bindings/bind_map.hpp
     include/serenkai/script/lua_header.hpp
     include/serenkai/script/bindings/luau_glm.hpp
+    include/serenkai/application/input_manager.hpp
+    src/application/input_manager.cpp
+    src/script/bindings/bind_input.cpp
+    include/serenkai/script/bindings/bind_input.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

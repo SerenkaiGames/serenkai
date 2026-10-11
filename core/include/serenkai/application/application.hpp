@@ -2,6 +2,7 @@
 
 #include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
+#include "serenkai/application/input_manager.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/base/raii.hpp"
 #include "serenkai/gui/gui_context.hpp"
@@ -65,6 +66,7 @@ private:
     // Must be declared first to ensure it is destroyed last.
     // Do not change the order
     std::unique_ptr<AssetManager> m_asset_manager;
+    std::unique_ptr<InputManager> m_input_manager;
     std::unique_ptr<FontManager> m_font_manager;
     std::unique_ptr<SdlGuard> m_sdl_wrapper;
     std::unique_ptr<WindowManager> m_window_manager;
@@ -85,6 +87,9 @@ private:
     DeltaTime m_delta_time_ns;
 
     Argument handle_argument(int argc, char** argv);
+
+    void init_assets(const Argument& arg);
+    void init_input();
 
     void render();
     void update(float dt);

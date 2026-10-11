@@ -1,0 +1,20 @@
+{
+    "bindings": {
+        "inputs/move_up": [
+            "W",
+            "Up"
+        ],
+        "inputs/move_down": [
+            "S",
+            "Down"
+        ],
+        "inputs/move_left": [
+            "A",
+            "Left"
+        ],
+        "inputs/move_right": [
+            "D",
+            "Right"
+        ]
+    }
+}

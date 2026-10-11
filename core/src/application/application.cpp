@@ -1,9 +1,9 @@
 #include "serenkai/application/application.hpp"
 
-#include "CLI/CLI.hpp"
 #include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
+#include "serenkai/application/input_manager.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/gui/widget_parser.hpp"
@@ -27,9 +27,11 @@
 #include <SDL3/SDL_version.h>
 #include <array>
 #include <fmt/format.h>
+#include <fstream>
 #include <glm/ext/vector_float2.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -66,17 +68,9 @@ Application::Application(int argc, char** argv) {
 
     const auto arg = handle_argument(argc, argv);
 
-    m_asset_manager = std::make_unique<AssetManager>();
+    init_assets(arg);
 
-    for (auto path : DEFAULT_ASSETS) {
-        auto source = std::make_shared<DirectorySource>(path);
-        m_asset_manager->merge_source(source);
-    }
-
-    for (auto& path : arg.assets) {
-        auto source = std::make_shared<DirectorySource>(path);
-        m_asset_manager->merge_source(source);
-    }
+    init_input();
 
     m_font_manager = std::make_unique<FontManager>(m_asset_manager.get());
 
@@ -99,7 +93,8 @@ Application::Application(int argc, char** argv) {
         GuiConfig{m_renderer.get(), m_texture_manager.get(),
                   m_widget_parser.get(), m_font_manager.get()});
 
-    m_script_engine = std::make_unique<ScriptEngine>(m_asset_manager.get());
+    m_script_engine = std::make_unique<ScriptEngine>(
+        ScriptEngineConfig{m_asset_manager.get(), m_input_manager.get()});
 
     auto main = m_script_engine->create(MAIN_SCRIPT_LOC);
     if (main) {
@@ -152,6 +147,40 @@ Application::Argument Application::handle_argument(int argc, char** argv) {
     return arg;
 }
 
+void Application::init_assets(const Argument& arg) {
+    m_asset_manager = std::make_unique<AssetManager>();
+
+    for (auto path : DEFAULT_ASSETS) {
+        auto source = std::make_shared<DirectorySource>(path);
+        m_asset_manager->merge_source(source);
+    }
+
+    for (auto& path : arg.assets) {
+        auto source = std::make_shared<DirectorySource>(path);
+        m_asset_manager->merge_source(source);
+    }
+}
+
+void Application::init_input() {
+    m_input_manager = std::make_unique<InputManager>();
+    auto path = m_asset_manager->get("serenkai:config/inputs.json"_rl);
+    if (!path) {
+        spdlog::warn("Failed to load default key bindings");
+        return;
+    }
+
+    std::ifstream file(*path, std::ios::binary);
+
+    if (!file.is_open()) {
+        spdlog::warn("Failed to open file {}", *path);
+        return;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    m_input_manager->merge_config(buffer.str());
+}
+
 bool Application::is_running() const { return m_running; }
 
 void Application::run() {
@@ -170,6 +199,7 @@ void Application::run() {
 }
 
 void Application::step(float dt) {
+    m_input_manager->tick();
 
     while (SDL_PollEvent(&m_event)) {
         if (auto event = input::process_sdl_event(m_event)) {
@@ -195,6 +225,7 @@ void Application::render() {
 }
 
 void Application::dispatch_event(Event& e) {
+
     if (auto _ = std::get_if<QuitEvent>(&e)) {
         m_running = false;
         return;
@@ -215,8 +246,14 @@ void Application::dispatch_event(Event& e) {
         }
     }
 
+    // Let the scene's UI handle the event first.
     if (m_scene_manager->handle_event(e)) {
         return;
+    }
+
+    // Convert the remaining input events into game actions.
+    if (auto event = std::get_if<KeyEvent>(&e)) {
+        m_input_manager->process_key_event(*event);
     }
 }
 
