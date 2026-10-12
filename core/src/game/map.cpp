@@ -1,6 +1,7 @@
 #include "serenkai/game/map.hpp"
 
 #include <glm/common.hpp>
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <utility>
 #include <variant>
@@ -125,6 +126,21 @@ std::vector<MapObject> Map::find_objects_by_type(std::string_view type) const {
         }
     }
     return result;
+}
+
+std::optional<glm::vec2> Map::get_spawn_point(std::string_view name) const {
+    auto obj = find_object(name);
+    if (obj.empty()) {
+        return std::nullopt;
+    }
+    if (obj.size() != 1) {
+        spdlog::warn("Multiple duplicate spawn points {}", name);
+    }
+
+    const auto& o = *obj.begin();
+    const auto& aabb = o.aabb;
+    // 取包装盒的中心点
+    return glm::vec2{aabb.x + aabb.z * 0.5f, aabb.y + aabb.w * 0.5f};
 }
 
 bool Map::has_layer(std::string_view name) const {

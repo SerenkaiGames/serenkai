@@ -8,7 +8,8 @@ local Event = require("serenkai:scripts/event.luau")
 function on_enter(mgr: MapManager, cam: Camera)
 	map_mgr = mgr
 	camera = cam
-	map_mgr:switch_map("serenkai:maps/tea_house.tmx")
+
+	init_map()
 
 	Event.emit("serenkai:events/enter_game")
 end
@@ -21,6 +22,18 @@ end
 
 function on_leave()
 	Event.emit("serenkai:events/leave_game")
+end
+
+function init_map()
+	map_mgr:switch_map("serenkai:maps/tea_house.tmx")
+
+	local map = map_mgr:current_map()
+	if map then
+		local point = map:get_spawn_point("spawn_point")
+		if point then
+			camera:set_pos(point)
+		end
+	end
 end
 
 function update_move(dt: number)
