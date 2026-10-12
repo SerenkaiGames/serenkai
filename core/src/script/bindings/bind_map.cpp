@@ -98,6 +98,7 @@ void register_lua_map(lua_State* L) {
         .addFunction("set_layer_visible", &Map::set_layer_visible)
         .addFunction("find_object", &Map::find_object)
         .addFunction("find_objects_by_type", &Map::find_objects_by_type)
+        .addFunction("get_spawn_point", &Map::get_spawn_point)
         .endClass();
 }
 } // namespace serenkai

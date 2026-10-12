@@ -172,6 +172,62 @@ TEST_CASE("Map object lookups and index querying", "[game][map]") {
     }
 }
 
+TEST_CASE("Map spawn point queries", "[game][map]") {
+    MapData data{};
+    data.map_size = {10, 10};
+    data.tile_size = {16, 16};
+
+    ObjectGroup group{};
+    group.name = "Entities";
+
+    MapObject single_spawn{};
+    single_spawn.name = "player_spawn";
+    single_spawn.aabb = {10.0f, 20.0f, 30.0f, 40.0f};
+
+    MapObject point_spawn{};
+    point_spawn.name = "point_spawn";
+    point_spawn.aabb = {15.0f, 25.0f, 0.0f, 0.0f};
+
+    MapObject dup_spawn_1{};
+    dup_spawn_1.name = "dup_spawn";
+    dup_spawn_1.aabb = {0.0f, 0.0f, 10.0f, 20.0f};
+
+    MapObject dup_spawn_2{};
+    dup_spawn_2.name = "dup_spawn";
+    dup_spawn_2.aabb = {100.0f, 100.0f, 20.0f, 20.0f};
+
+    group.objects = {single_spawn, point_spawn, dup_spawn_1, dup_spawn_2};
+    data.layers.emplace_back(std::move(group));
+
+    Map map(std::move(data));
+
+    SECTION("Retrieves center of bounding box for single spawn point") {
+        auto spawn = map.get_spawn_point("player_spawn");
+        REQUIRE(spawn.has_value());
+        CHECK(spawn->x == 25.0f);
+        CHECK(spawn->y == 40.0f);
+    }
+
+    SECTION("Retrieves position for zero-size point spawn") {
+        auto spawn = map.get_spawn_point("point_spawn");
+        REQUIRE(spawn.has_value());
+        CHECK(spawn->x == 15.0f);
+        CHECK(spawn->y == 25.0f);
+    }
+
+    SECTION("Returns first matching object when duplicates exist") {
+        auto spawn = map.get_spawn_point("dup_spawn");
+        REQUIRE(spawn.has_value());
+        CHECK(spawn->x == 5.0f);
+        CHECK(spawn->y == 10.0f);
+    }
+
+    SECTION("Returns std::nullopt for non-existent spawn point") {
+        auto spawn = map.get_spawn_point("non_existent");
+        CHECK_FALSE(spawn.has_value());
+    }
+}
+
 TEST_CASE("Map dirty flags and update lifecycle", "[game][map]") {
     MapData data{};
     Map map(std::move(data));

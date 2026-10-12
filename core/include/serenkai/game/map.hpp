@@ -58,8 +58,7 @@ public:
                        std::string_view object_name); // todo
 
     /// @brief The player's initial position when entering the map; may be null.
-    std::optional<glm::vec2>
-    get_spawn_point(std::string_view name) const; // todo
+    std::optional<glm::vec2> get_spawn_point(std::string_view name) const;
 
     bool has_layer(std::string_view name) const;
 
