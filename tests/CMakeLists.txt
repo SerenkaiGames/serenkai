@@ -10,6 +10,7 @@ add_executable(serenkai_tests
     src/raii_test.cpp
     src/resource_test.cpp
     src/math_test.cpp
+    src/aabb_test.cpp
     src/texture_test.cpp
     src/text_renderer_test.cpp
     src/font_test.cpp

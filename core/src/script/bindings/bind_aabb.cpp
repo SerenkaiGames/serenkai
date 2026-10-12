@@ -1,6 +1,7 @@
 #include "serenkai/script/bindings/bind_aabb.hpp"
 
 #include "serenkai/base/aabb.hpp"
+#include "serenkai/script/bindings/luau_glm.hpp"
 #include "serenkai/script/lua_header.hpp"
 
 namespace serenkai {
