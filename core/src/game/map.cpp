@@ -138,9 +138,8 @@ std::optional<glm::vec2> Map::get_spawn_point(std::string_view name) const {
     }
 
     const auto& o = *obj.begin();
-    const auto& aabb = o.aabb;
-    // Get the center point of the aabb box.
-    return glm::vec2{aabb.x + aabb.z * 0.5f, aabb.y + aabb.w * 0.5f};
+
+    return o.aabb.center();
 }
 
 bool Map::has_layer(std::string_view name) const {
