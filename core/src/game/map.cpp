@@ -134,12 +134,12 @@ std::optional<glm::vec2> Map::get_spawn_point(std::string_view name) const {
         return std::nullopt;
     }
     if (obj.size() != 1) {
-        spdlog::warn("Multiple duplicate spawn points {}", name);
+        spdlog::warn("Multiple duplicate spawn points for '{}'", name);
     }
 
     const auto& o = *obj.begin();
     const auto& aabb = o.aabb;
-    // 取包装盒的中心点
+    // Get the center point of the aabb box.
     return glm::vec2{aabb.x + aabb.z * 0.5f, aabb.y + aabb.w * 0.5f};
 }
 

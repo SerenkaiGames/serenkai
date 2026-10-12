@@ -28,7 +28,7 @@ export type Map = {
 	set_layer_visible: (self: Map, name: string, visible: boolean) -> (),
 	find_object: (self: Map, name: string) -> { MapObject },
 	find_objects_by_type: (self: Map, type: string) -> { MapObject },
-	get_spawn_point: (name: string) -> vector?,
+	get_spawn_point: (self: Map, name: string) -> vector?,
 }
 
 export type MapManager = {
