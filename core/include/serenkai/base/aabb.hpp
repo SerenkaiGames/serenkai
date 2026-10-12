@@ -93,8 +93,9 @@ struct AABB {
         glm::vec2 mx(std::min(right(), other.right()),
                      std::min(bottom(), other.bottom()));
 
-        if (mx.x <= mn.x || mx.y <= mn.y)
+        if (mx.x < mn.x || mx.y < mn.y) {
             return AABB(glm::vec2(0.0f), glm::vec2(0.0f));
+        }
 
         return AABB::from_min_max(mn, mx);
     }
@@ -119,5 +120,9 @@ struct AABB {
     }
 
     float area() const { return size.x * size.y; }
+
+    bool is_empty() const { return size.x <= 0.0f || size.y <= 0.0f; }
+
+    bool operator==(const AABB&) const = default;
 };
 } // namespace serenkai

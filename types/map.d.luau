@@ -12,7 +12,7 @@ export type MapObject = {
 	name: string,
 	type: string,
 	pos: vector,
-	aabb: vector,
+	aabb: AABB,
 	visible: boolean,
 	get_property: (self: MapObject, key: string) -> MapPropertyValue?,
 }

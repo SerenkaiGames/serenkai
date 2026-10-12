@@ -1,6 +1,7 @@
 #pragma once
 
 #include "map_data.hpp"
+#include "serenkai/base/aabb.hpp"
 #include "serenkai/base/string_hash.hpp"
 
 #include <optional>
@@ -66,7 +67,7 @@ public:
 
     bool is_solid(glm::ivec2 tile_pos) const; // todo
 
-    bool check_collision(const glm::vec4& aabb) const; // todo
+    bool check_collision(const AABB& aabb) const; // todo
 
     bool is_tile_dirty() const;
     bool is_object_dirty() const;
