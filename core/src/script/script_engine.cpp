@@ -2,6 +2,7 @@
 
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/resource_location.hpp"
+#include "serenkai/script/bindings/bind_aabb.hpp"
 #include "serenkai/script/bindings/bind_camera.hpp"
 #include "serenkai/script/bindings/bind_input.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
@@ -48,6 +49,8 @@ ScriptEngine::ScriptEngine(ScriptEngineConfig config)
     if (config.input_manager) {
         register_lua_input(m_root.get(), config.input_manager);
     }
+
+    register_lua_aabb(m_root.get());
 
     register_lua_map(m_root.get());
 

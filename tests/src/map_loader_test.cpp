@@ -413,10 +413,10 @@ TEST_CASE("MapLoader successfully loads valid orthogonal TMX map",
     CHECK(obj.type == "PlayerSpawn");
     CHECK(obj.visible);
     CHECK(obj.rotation == 45.0f);
-    CHECK(obj.aabb.x == 8.0f);
-    CHECK(obj.aabb.y == 16.0f);
-    CHECK(obj.aabb.z == 16.0f);
-    CHECK(obj.aabb.w == 16.0f);
+    CHECK(obj.aabb.left() == 8.0f);
+    CHECK(obj.aabb.top() == 16.0f);
+    CHECK(obj.aabb.width() == 16.0f);
+    CHECK(obj.aabb.height() == 16.0f);
 
     REQUIRE(obj.properties.size() == 2);
     for (const auto& prop : obj.properties) {

@@ -963,3 +963,70 @@ TEST_CASE("Script Camera bindings", "[script][camera]") {
         CHECK(camera.pos().y == Catch::Approx(5.0f));
     }
 }
+
+TEST_CASE("Script AABB bindings", "[script][aabb]") {
+    TestScriptEnv env;
+    env.register_script("test:aabb_test.luau", R"(
+        function test_construct_new(x: number, y: number, w: number, h: number): (number, number, number, number)
+            local b = AABB.new(x, y, w, h)
+            return b:left(), b:top(), b:width(), b:height()
+        end
+
+        function test_construct_call(x: number, y: number, w: number, h: number): (number, number)
+            local b = AABB(x, y, w, h)
+            local c = b:center()
+            return c.x, c.y
+        end
+
+        function test_from_center(cx: number, cy: number, w: number, h: number): (number, number)
+            local b = AABB.from_center(vector.create(cx, cy, 0), vector.create(w, h, 0))
+            return b:left(), b:top()
+        end
+
+        function test_methods(): (boolean, boolean, number)
+            local b1 = AABB.new(0, 0, 10, 10)
+            local b2 = AABB.new(5, 5, 10, 10)
+            local b3 = AABB.new(20, 20, 5, 5)
+            return b1:intersects(b2), b1:intersects(b3), b1:area()
+        end
+    )");
+
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
+    auto script = engine.create("test:aabb_test.luau");
+    REQUIRE(script.has_value());
+
+    SECTION("AABB.new and basic accessors") {
+        auto res = script->call<double, double, double, double>(
+            "test_construct_new", 10.0, 20.0, 30.0, 40.0);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == Catch::Approx(10.0));
+        CHECK(std::get<1>(*res) == Catch::Approx(20.0));
+        CHECK(std::get<2>(*res) == Catch::Approx(30.0));
+        CHECK(std::get<3>(*res) == Catch::Approx(40.0));
+    }
+
+    SECTION("AABB call constructor and center") {
+        auto res = script->call<double, double>("test_construct_call", 10.0,
+                                                20.0, 30.0, 40.0);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == Catch::Approx(25.0));
+        CHECK(std::get<1>(*res) == Catch::Approx(40.0));
+    }
+
+    SECTION("AABB.from_center") {
+        auto res = script->call<double, double>("test_from_center", 50.0, 50.0,
+                                                20.0, 10.0);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == Catch::Approx(40.0));
+        CHECK(std::get<1>(*res) == Catch::Approx(45.0));
+    }
+
+    SECTION("AABB methods intersects and area") {
+        auto res = script->call<bool, bool, double>("test_methods");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
+        CHECK(std::get<1>(*res) == false);
+        CHECK(std::get<2>(*res) == Catch::Approx(100.0));
+    }
+}

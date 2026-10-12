@@ -64,7 +64,7 @@ template <class T, class Component, glm::length_t N> struct VectorStack {
         return result;
     }
 
-    static bool is_instance(lua_State* L, int index) {
+    static bool isInstance(lua_State* L, int index) { // NOLINT
         return lua_isvector(L, index) != 0;
     }
 };

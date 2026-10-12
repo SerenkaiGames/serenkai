@@ -110,6 +110,9 @@ add_library(
     include/serenkai/script/bindings/bind_input.hpp
     include/serenkai/script/bindings/bind_camera.hpp
     src/script/bindings/bind_camera.cpp
+    include/serenkai/base/aabb.hpp
+    include/serenkai/script/bindings/bind_aabb.hpp
+    src/script/bindings/bind_aabb.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "serenkai/base/aabb.hpp"
 #include "serenkai/resource/resource_location.hpp"
 
 #include <cstdint>
@@ -121,7 +122,7 @@ struct MapObject {
     bool visible{true};
     std::vector<MapProperty> properties;
     float rotation{0.0f};
-    glm::vec4 aabb{0};
+    AABB aabb;
 };
 
 struct ObjectGroup {
