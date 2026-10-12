@@ -15,7 +15,11 @@ void register_lua_input(lua_State* L, InputManager* input_manager) {
 
     auto action_table = luabridge::newTable(L);
     for (const auto& [name, id] : input_manager->get_action_id_map()) {
-        action_table[name] = id;
+        action_table[name.str()] = id;
+        // Provide a shorter path for the default namespace.
+        if (name.ns() == ResourceLocation::DEFAULT_NAMESPACE) {
+            action_table[name.path()] = id;
+        }
     }
 
     luabridge::getGlobalNamespace(L)

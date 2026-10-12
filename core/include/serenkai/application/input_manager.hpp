@@ -2,13 +2,12 @@
 
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/key.hpp"
-#include "serenkai/base/string_hash.hpp"
+#include "serenkai/resource/resource_location.hpp"
 
 #include <array>
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
-#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -38,10 +37,10 @@ public:
 
     std::vector<ActionId> get_held_actions() const noexcept;
 
-    const std::unordered_map<std::string, ActionId, StringHash, StringEqual>&
+    const std::unordered_map<ResourceLocation, ActionId>&
     get_action_id_map() const;
 
-    const std::string& get_action_name(ActionId id) const;
+    const ResourceLocation& get_action_location(ActionId id) const;
 
 private:
     ActionBits m_held_bits;     // All Actions currently in the held state.
@@ -52,10 +51,9 @@ private:
 
     std::array<std::uint8_t, MAX_ACTIONS> m_action_press_counts{};
 
-    std::unordered_map<std::string, ActionId, StringHash, StringEqual>
-        m_action_to_id;
+    std::unordered_map<ResourceLocation, ActionId> m_action_to_id;
 
-    std::vector<std::string> m_id_to_string;
+    std::vector<ResourceLocation> m_id_to_loc;
 
     std::unordered_map<Key, std::vector<ActionId>> m_key_to_actions;
 

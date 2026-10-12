@@ -3,6 +3,7 @@
 #include "serenkai/application/key.hpp"
 #include "serenkai/base/assert.hpp"
 #include "serenkai/base/enum_meta.hpp"
+#include "serenkai/resource/resource_location.hpp"
 
 #include <glaze/json/generic.hpp>
 #include <map>
@@ -27,8 +28,15 @@ bool InputManager::merge_config(std::string_view json_content) {
     }
 
     for (const auto& [k, v] : cfg.bindings) {
+
+        auto loc = ResourceLocation::parse(k);
+        if (!loc) {
+            spdlog::error("Failed to parse action name {}", k);
+            continue;
+        }
+
         ActionId id = 0;
-        auto it = m_action_to_id.find(k);
+        auto it = m_action_to_id.find(*loc);
 
         if (it != m_action_to_id.end()) {
 
@@ -43,8 +51,8 @@ bool InputManager::merge_config(std::string_view json_content) {
             }
 
             id = m_next_id++;
-            m_action_to_id.try_emplace(k, id);
-            m_id_to_string.emplace_back(k);
+            m_action_to_id.try_emplace(*loc, id);
+            m_id_to_loc.emplace_back(*loc);
         }
 
         for (Key key : v) {
@@ -140,17 +148,16 @@ InputManager::get_held_actions() const noexcept {
     return held;
 }
 
-const std::unordered_map<std::string, InputManager::ActionId, StringHash,
-                         StringEqual>&
+const std::unordered_map<ResourceLocation, InputManager::ActionId>&
 InputManager::get_action_id_map() const {
     return m_action_to_id;
 }
-const std::string& InputManager::get_action_name(ActionId id) const {
-    static std::string u = "Unknown";
-    if (id >= m_id_to_string.size()) [[unlikely]] {
+const ResourceLocation& InputManager::get_action_location(ActionId id) const {
+    static ResourceLocation u = "Unknown"_rl;
+    if (id >= m_id_to_loc.size()) [[unlikely]] {
         SE_ASSERT(false);
         return u;
     }
-    return m_id_to_string[id];
+    return m_id_to_loc[id];
 }
 } // namespace serenkai
