@@ -49,7 +49,7 @@ int lua_log_debug(lua_State* state) {
 } // namespace
 
 namespace serenkai {
-void register_lua_log(lua_State* L) {
+void bind_log_to_lua(lua_State* L) {
     luabridge::getGlobalNamespace(L)
         .addFunction("print", lua_print)
         .beginNamespace("log")

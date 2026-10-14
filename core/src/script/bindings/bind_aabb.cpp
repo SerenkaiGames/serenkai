@@ -5,7 +5,7 @@
 #include "serenkai/script/lua_header.hpp"
 
 namespace serenkai {
-void register_lua_aabb(lua_State* L) {
+void bind_aabb_to_lua(lua_State* L) {
     luabridge::getGlobalNamespace(L)
         .beginClass<AABB>("AABB")
         .addConstructor<void (*)(), void (*)(float, float, float, float),

@@ -3,5 +3,5 @@
 struct lua_State;
 
 namespace serenkai {
-void register_lua_entity(lua_State* L);
+void bind_entity_to_lua(lua_State* L);
 }

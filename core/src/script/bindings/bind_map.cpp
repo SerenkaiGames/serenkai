@@ -40,7 +40,7 @@ int get_property(lua_State* L) {
 }
 } // namespace
 
-void register_lua_map(lua_State* L) {
+void bind_map_to_lua(lua_State* L) {
     luabridge::getGlobalNamespace(L)
 
         .beginClass<Tile>("Tile")

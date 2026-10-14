@@ -5,7 +5,7 @@
 #include "serenkai/script/lua_header.hpp"
 
 namespace serenkai {
-void register_lua_camera(lua_State* L) {
+void bind_camera_to_lua(lua_State* L) {
     luabridge::getGlobalNamespace(L)
         .beginClass<Camera>("Camera")
         .addProperty("pos", &Camera::pos)

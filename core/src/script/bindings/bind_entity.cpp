@@ -90,7 +90,7 @@ int lua_entity_get_prop(lua_State* L) {
 
 } // namespace
 
-void register_lua_entity(lua_State* L) {
+void bind_entity_to_lua(lua_State* L) {
     luabridge::getGlobalNamespace(L)
         .beginClass<EntityManager>("EntityManager")
         .addStaticProperty("NULL_ID", &EntityManager::NULL_ID)

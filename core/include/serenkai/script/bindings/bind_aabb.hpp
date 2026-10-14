@@ -2,5 +2,5 @@
 struct lua_State;
 
 namespace serenkai {
-void register_lua_aabb(lua_State* L);
+void bind_aabb_to_lua(lua_State* L);
 }
