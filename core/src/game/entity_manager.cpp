@@ -1,7 +1,10 @@
 #include "serenkai/game/entity_manager.hpp"
 
+#include "serenkai/resource/resource_location.hpp"
+
 #include <cstdint>
 #include <optional>
+#include <spdlog/spdlog.h>
 
 namespace serenkai {
 EntityId EntityManager::create() {
@@ -42,8 +45,18 @@ bool EntityManager::set_prop(EntityId id, const ResourceLocation& key,
         return false;
     }
 
-    e->props[key] = value;
+    e->props[key] = std::move(value);
     return true;
+}
+bool EntityManager::set_prop(EntityId id, std::string_view loc,
+                             PropValue value) {
+    auto res = ResourceLocation::parse(loc);
+    if (!res) {
+        spdlog::error("Invalid loc {}", loc);
+        return false;
+    }
+
+    return set_prop(id, *res, std::move(value));
 }
 
 std::optional<PropValue>
@@ -58,6 +71,15 @@ EntityManager::get_prop(EntityId id, const ResourceLocation& key) const {
     }
     return it->second;
 }
+std::optional<PropValue> EntityManager::get_prop(EntityId id,
+                                                 std::string_view loc) const {
+    auto res = ResourceLocation::parse(loc);
+    if (!res) {
+        spdlog::error("Invalid loc {}", loc);
+        return std::nullopt;
+    }
+    return get_prop(id, *res);
+}
 
 bool EntityManager::has_prop(EntityId id, const ResourceLocation& key) const {
     auto e = fetch(id);
@@ -68,12 +90,28 @@ bool EntityManager::has_prop(EntityId id, const ResourceLocation& key) const {
     auto it = e->props.find(key);
     return it != e->props.end();
 }
+bool EntityManager::has_prop(EntityId id, std::string_view loc) const {
+    auto res = ResourceLocation::parse(loc);
+    if (!res) {
+        spdlog::error("Invalid loc {}", loc);
+        return false;
+    }
+    return has_prop(id, *res);
+}
 
 bool EntityManager::remove_prop(EntityId id, const ResourceLocation& key) {
     if (auto e = fetch(id)) {
         return e->props.erase(key);
     }
     return false;
+}
+bool EntityManager::remove_prop(EntityId id, std::string_view loc) {
+    auto res = ResourceLocation::parse(loc);
+    if (!res) {
+        spdlog::error("Invalid loc {}", loc);
+        return false;
+    }
+    return remove_prop(id, *res);
 }
 
 Entity* EntityManager::fetch(EntityId id) {

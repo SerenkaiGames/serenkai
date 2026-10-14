@@ -3,6 +3,7 @@
 #include "serenkai/game/entity.hpp"
 
 #include <cstdint>
+#include <string_view>
 #include <utility>
 #include <vector>
 namespace serenkai {
@@ -12,11 +13,19 @@ public:
     EntityId create();
     void destroy(EntityId id);
     bool alive(EntityId id) const;
+
     bool set_prop(EntityId id, const ResourceLocation& key, PropValue value);
+    bool set_prop(EntityId id, std::string_view loc, PropValue value);
+
     std::optional<PropValue> get_prop(EntityId id,
                                       const ResourceLocation& key) const;
+    std::optional<PropValue> get_prop(EntityId id, std::string_view loc) const;
+
     bool has_prop(EntityId id, const ResourceLocation& key) const;
+    bool has_prop(EntityId id, std::string_view loc) const;
+
     bool remove_prop(EntityId id, const ResourceLocation& key);
+    bool remove_prop(EntityId id, std::string_view loc);
 
 private:
     static EntityId pack(std::uint32_t index, std::uint32_t generation);
