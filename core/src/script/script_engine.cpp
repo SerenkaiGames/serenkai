@@ -4,6 +4,7 @@
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/bindings/bind_aabb.hpp"
 #include "serenkai/script/bindings/bind_camera.hpp"
+#include "serenkai/script/bindings/bind_entity.hpp"
 #include "serenkai/script/bindings/bind_input.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
 #include "serenkai/script/bindings/bind_map.hpp"
@@ -55,6 +56,8 @@ ScriptEngine::ScriptEngine(ScriptEngineConfig config)
     register_lua_map(m_root.get());
 
     register_lua_camera(m_root.get());
+
+    register_lua_entity(m_root.get());
 
     // Enable sandbox on root state after all built-in bindings are registered.
     // After all global bindings are registered, enable the read-only sandbox on

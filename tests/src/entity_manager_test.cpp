@@ -103,47 +103,49 @@ TEST_CASE("EntityManager property access with ResourceLocation",
     const auto vec4_key = *ResourceLocation::parse("game:color");
 
     SECTION("Set and get properties of different variant types") {
-        CHECK(manager.set_prop(e, bool_key, true));
-        CHECK(manager.set_prop(e, int_key, 100));
-        CHECK(manager.set_prop(e, float_key, 5.5f));
-        CHECK(manager.set_prop(e, string_key, std::string("Hero")));
-        CHECK(manager.set_prop(e, vec2_key, glm::vec2{1.0f, 2.0f}));
-        CHECK(manager.set_prop(e, vec3_key, glm::vec3{1.0f, 2.0f, 3.0f}));
-        CHECK(manager.set_prop(e, vec4_key, glm::vec4{1.0f, 0.5f, 0.2f, 1.0f}));
+        CHECK(manager.set_prop_by_loc(e, bool_key, true));
+        CHECK(manager.set_prop_by_loc(e, int_key, 100));
+        CHECK(manager.set_prop_by_loc(e, float_key, 5.5f));
+        CHECK(manager.set_prop_by_loc(e, string_key, std::string("Hero")));
+        CHECK(manager.set_prop_by_loc(e, vec2_key, glm::vec2{1.0f, 2.0f}));
+        CHECK(
+            manager.set_prop_by_loc(e, vec3_key, glm::vec3{1.0f, 2.0f, 3.0f}));
+        CHECK(manager.set_prop_by_loc(e, vec4_key,
+                                      glm::vec4{1.0f, 0.5f, 0.2f, 1.0f}));
 
-        CHECK(manager.has_prop(e, bool_key));
-        CHECK(manager.has_prop(e, int_key));
-        CHECK(manager.has_prop(e, float_key));
-        CHECK(manager.has_prop(e, string_key));
-        CHECK(manager.has_prop(e, vec2_key));
-        CHECK(manager.has_prop(e, vec3_key));
-        CHECK(manager.has_prop(e, vec4_key));
+        CHECK(manager.has_prop_by_loc(e, bool_key));
+        CHECK(manager.has_prop_by_loc(e, int_key));
+        CHECK(manager.has_prop_by_loc(e, float_key));
+        CHECK(manager.has_prop_by_loc(e, string_key));
+        CHECK(manager.has_prop_by_loc(e, vec2_key));
+        CHECK(manager.has_prop_by_loc(e, vec3_key));
+        CHECK(manager.has_prop_by_loc(e, vec4_key));
 
-        auto bool_val = manager.get_prop(e, bool_key);
+        auto bool_val = manager.get_prop_by_loc(e, bool_key);
         REQUIRE(bool_val.has_value());
         CHECK(std::get<bool>(*bool_val) == true);
 
-        auto int_val = manager.get_prop(e, int_key);
+        auto int_val = manager.get_prop_by_loc(e, int_key);
         REQUIRE(int_val.has_value());
         CHECK(std::get<int>(*int_val) == 100);
 
-        auto float_val = manager.get_prop(e, float_key);
+        auto float_val = manager.get_prop_by_loc(e, float_key);
         REQUIRE(float_val.has_value());
         CHECK(std::get<float>(*float_val) == 5.5f);
 
-        auto string_val = manager.get_prop(e, string_key);
+        auto string_val = manager.get_prop_by_loc(e, string_key);
         REQUIRE(string_val.has_value());
         CHECK(std::get<std::string>(*string_val) == "Hero");
 
-        auto vec2_val = manager.get_prop(e, vec2_key);
+        auto vec2_val = manager.get_prop_by_loc(e, vec2_key);
         REQUIRE(vec2_val.has_value());
         CHECK(std::get<glm::vec2>(*vec2_val) == glm::vec2{1.0f, 2.0f});
 
-        auto vec3_val = manager.get_prop(e, vec3_key);
+        auto vec3_val = manager.get_prop_by_loc(e, vec3_key);
         REQUIRE(vec3_val.has_value());
         CHECK(std::get<glm::vec3>(*vec3_val) == glm::vec3{1.0f, 2.0f, 3.0f});
 
-        auto vec4_val = manager.get_prop(e, vec4_key);
+        auto vec4_val = manager.get_prop_by_loc(e, vec4_key);
         REQUIRE(vec4_val.has_value());
         CHECK(std::get<glm::vec4>(*vec4_val) ==
               glm::vec4{1.0f, 0.5f, 0.2f, 1.0f});
@@ -151,54 +153,56 @@ TEST_CASE("EntityManager property access with ResourceLocation",
 
     SECTION("Query non-existent property") {
         const auto unknown_key = *ResourceLocation::parse("game:unknown");
-        CHECK_FALSE(manager.has_prop(e, unknown_key));
-        CHECK_FALSE(manager.get_prop(e, unknown_key).has_value());
+        CHECK_FALSE(manager.has_prop_by_loc(e, unknown_key));
+        CHECK_FALSE(manager.get_prop_by_loc(e, unknown_key).has_value());
     }
 
     SECTION("Overwrite property value") {
-        manager.set_prop(e, int_key, 100);
-        manager.set_prop(e, int_key, 250);
+        manager.set_prop_by_loc(e, int_key, 100);
+        manager.set_prop_by_loc(e, int_key, 250);
 
-        auto val = manager.get_prop(e, int_key);
+        auto val = manager.get_prop_by_loc(e, int_key);
         REQUIRE(val.has_value());
         CHECK(std::get<int>(*val) == 250);
     }
 
     SECTION("Remove property") {
-        manager.set_prop(e, int_key, 100);
-        CHECK(manager.has_prop(e, int_key));
+        manager.set_prop_by_loc(e, int_key, 100);
+        CHECK(manager.has_prop_by_loc(e, int_key));
 
-        CHECK(manager.remove_prop(e, int_key));
-        CHECK_FALSE(manager.has_prop(e, int_key));
-        CHECK_FALSE(manager.get_prop(e, int_key).has_value());
+        CHECK(manager.remove_prop_by_loc(e, int_key));
+        CHECK_FALSE(manager.has_prop_by_loc(e, int_key));
+        CHECK_FALSE(manager.get_prop_by_loc(e, int_key).has_value());
 
         // Removing non-existent property returns false
-        CHECK_FALSE(manager.remove_prop(e, int_key));
+        CHECK_FALSE(manager.remove_prop_by_loc(e, int_key));
     }
 
     SECTION("Operations on invalid or destroyed entity fail") {
-        CHECK_FALSE(manager.set_prop(EntityManager::NULL_ID, int_key, 10));
         CHECK_FALSE(
-            manager.get_prop(EntityManager::NULL_ID, int_key).has_value());
-        CHECK_FALSE(manager.has_prop(EntityManager::NULL_ID, int_key));
-        CHECK_FALSE(manager.remove_prop(EntityManager::NULL_ID, int_key));
+            manager.set_prop_by_loc(EntityManager::NULL_ID, int_key, 10));
+        CHECK_FALSE(manager.get_prop_by_loc(EntityManager::NULL_ID, int_key)
+                        .has_value());
+        CHECK_FALSE(manager.has_prop_by_loc(EntityManager::NULL_ID, int_key));
+        CHECK_FALSE(
+            manager.remove_prop_by_loc(EntityManager::NULL_ID, int_key));
 
-        manager.set_prop(e, int_key, 10);
+        manager.set_prop_by_loc(e, int_key, 10);
         manager.destroy(e);
 
-        CHECK_FALSE(manager.set_prop(e, int_key, 20));
-        CHECK_FALSE(manager.get_prop(e, int_key).has_value());
-        CHECK_FALSE(manager.has_prop(e, int_key));
-        CHECK_FALSE(manager.remove_prop(e, int_key));
+        CHECK_FALSE(manager.set_prop_by_loc(e, int_key, 20));
+        CHECK_FALSE(manager.get_prop_by_loc(e, int_key).has_value());
+        CHECK_FALSE(manager.has_prop_by_loc(e, int_key));
+        CHECK_FALSE(manager.remove_prop_by_loc(e, int_key));
     }
 
     SECTION("Reused entity slot starts with cleared properties") {
-        manager.set_prop(e, int_key, 42);
+        manager.set_prop_by_loc(e, int_key, 42);
         manager.destroy(e);
 
         EntityId new_e = manager.create();
-        CHECK_FALSE(manager.has_prop(new_e, int_key));
-        CHECK_FALSE(manager.get_prop(new_e, int_key).has_value());
+        CHECK_FALSE(manager.has_prop_by_loc(new_e, int_key));
+        CHECK_FALSE(manager.get_prop_by_loc(new_e, int_key).has_value());
     }
 }
 
@@ -217,7 +221,7 @@ TEST_CASE("EntityManager property access with string_view overload",
 
         // Also readable via parsed ResourceLocation
         auto key = *ResourceLocation::parse("game:score");
-        CHECK(manager.has_prop(e, key));
+        CHECK(manager.has_prop_by_loc(e, key));
 
         CHECK(manager.remove_prop(e, "game:score"));
         CHECK_FALSE(manager.has_prop(e, "game:score"));

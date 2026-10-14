@@ -117,6 +117,9 @@ add_library(
     include/serenkai/game/entity_manager.hpp
     include/serenkai/game/property.hpp
     src/game/entity_manager.cpp
+    include/serenkai/script/bindings/bind_entity.hpp
+    src/script/bindings/bind_entity.cpp
+    include/serenkai/script/bindings/luau_prop.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

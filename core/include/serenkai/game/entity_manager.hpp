@@ -16,17 +16,18 @@ public:
     void destroy(EntityId id);
     bool alive(EntityId id) const;
 
-    bool set_prop(EntityId id, const ResourceLocation& key, PropValue value);
+    bool set_prop_by_loc(EntityId id, const ResourceLocation& key,
+                         PropValue value);
     bool set_prop(EntityId id, std::string_view loc, PropValue value);
 
-    std::optional<PropValue> get_prop(EntityId id,
-                                      const ResourceLocation& key) const;
+    std::optional<PropValue> get_prop_by_loc(EntityId id,
+                                             const ResourceLocation& key) const;
     std::optional<PropValue> get_prop(EntityId id, std::string_view loc) const;
 
-    bool has_prop(EntityId id, const ResourceLocation& key) const;
+    bool has_prop_by_loc(EntityId id, const ResourceLocation& key) const;
     bool has_prop(EntityId id, std::string_view loc) const;
 
-    bool remove_prop(EntityId id, const ResourceLocation& key);
+    bool remove_prop_by_loc(EntityId id, const ResourceLocation& key);
     bool remove_prop(EntityId id, std::string_view loc);
 
     std::size_t alive_size() const;
