@@ -5,7 +5,7 @@
 
 #include <type_traits>
 namespace serenkai {
-void push_property(lua_State* L, const PropValue& prop) {
+inline void push_property(lua_State* L, const PropValue& prop) {
 
     std::visit(
         [L](const auto& v) {
