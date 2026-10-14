@@ -40,8 +40,8 @@ void EntityManager::destroy(EntityId id) {
 }
 
 bool EntityManager::alive(EntityId id) const { return fetch(id) != nullptr; }
-bool EntityManager::set_prop(EntityId id, const ResourceLocation& key,
-                             PropValue value) {
+bool EntityManager::set_prop_by_loc(EntityId id, const ResourceLocation& key,
+                                    PropValue value) {
     auto e = fetch(id);
     if (!e) {
         return false;
@@ -58,11 +58,11 @@ bool EntityManager::set_prop(EntityId id, std::string_view loc,
         return false;
     }
 
-    return set_prop(id, *res, std::move(value));
+    return set_prop_by_loc(id, *res, std::move(value));
 }
 
 std::optional<PropValue>
-EntityManager::get_prop(EntityId id, const ResourceLocation& key) const {
+EntityManager::get_prop_by_loc(EntityId id, const ResourceLocation& key) const {
     auto e = fetch(id);
     if (!e) {
         return std::nullopt;
@@ -80,10 +80,11 @@ std::optional<PropValue> EntityManager::get_prop(EntityId id,
         spdlog::error("Invalid loc {}", loc);
         return std::nullopt;
     }
-    return get_prop(id, *res);
+    return get_prop_by_loc(id, *res);
 }
 
-bool EntityManager::has_prop(EntityId id, const ResourceLocation& key) const {
+bool EntityManager::has_prop_by_loc(EntityId id,
+                                    const ResourceLocation& key) const {
     auto e = fetch(id);
     if (!e) {
         return false;
@@ -98,10 +99,11 @@ bool EntityManager::has_prop(EntityId id, std::string_view loc) const {
         spdlog::error("Invalid loc {}", loc);
         return false;
     }
-    return has_prop(id, *res);
+    return has_prop_by_loc(id, *res);
 }
 
-bool EntityManager::remove_prop(EntityId id, const ResourceLocation& key) {
+bool EntityManager::remove_prop_by_loc(EntityId id,
+                                       const ResourceLocation& key) {
     if (auto e = fetch(id)) {
         return e->props.erase(key);
     }
@@ -113,7 +115,7 @@ bool EntityManager::remove_prop(EntityId id, std::string_view loc) {
         spdlog::error("Invalid loc {}", loc);
         return false;
     }
-    return remove_prop(id, *res);
+    return remove_prop_by_loc(id, *res);
 }
 
 std::size_t EntityManager::alive_size() const {
