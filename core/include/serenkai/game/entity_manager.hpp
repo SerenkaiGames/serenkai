@@ -2,6 +2,7 @@
 
 #include "serenkai/game/entity.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <utility>
@@ -10,6 +11,7 @@ namespace serenkai {
 
 class EntityManager {
 public:
+    inline static constexpr EntityId NULL_ID = 0;
     EntityId create();
     void destroy(EntityId id);
     bool alive(EntityId id) const;
@@ -26,6 +28,27 @@ public:
 
     bool remove_prop(EntityId id, const ResourceLocation& key);
     bool remove_prop(EntityId id, std::string_view loc);
+
+    std::size_t alive_size() const;
+
+    /// @brief Perform an operation for each alive entity.
+    ///
+    /// Interface for batch processing, intended for engine use.
+    /// @tparam Fn The type is void(EntityId, Entity&).
+    /// @note If you need to obtain a pointer to the entity, ensure that the
+    /// pointer is valid.
+    template <typename Fn> void for_each_alive(Fn&& fn) {
+        for (std::uint32_t i = 0; i < m_entities.size(); ++i) {
+            if (m_entities[i].alive)
+                fn(pack(i, m_entities[i].generation), m_entities[i]);
+        }
+    }
+    template <typename Fn> void for_each_alive(Fn&& fn) const {
+        for (std::uint32_t i = 0; i < m_entities.size(); ++i) {
+            if (m_entities[i].alive)
+                fn(pack(i, m_entities[i].generation), m_entities[i]);
+        }
+    }
 
 private:
     static EntityId pack(std::uint32_t index, std::uint32_t generation);

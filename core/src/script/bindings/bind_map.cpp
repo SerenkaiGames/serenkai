@@ -6,8 +6,11 @@
 #include "serenkai/script/bindings/luau_glm.hpp"
 #include "serenkai/script/lua_header.hpp"
 
+#include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <optional>
 #include <string_view>
+#include <type_traits>
 
 namespace serenkai {
 namespace {
@@ -50,6 +53,10 @@ int get_property(lua_State* L) {
 #else
                         lua_pushvector(L, v.x, v.y, v.z);
 #endif
+                    } else if constexpr (std::is_same_v<T, glm::vec2>) {
+                        lua_pushvector(L, v.x, v.y, 0);
+                    } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                        lua_pushvector(L, v.x, v.y, v.z);
                     }
                 },
                 prop.value);

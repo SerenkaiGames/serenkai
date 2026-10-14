@@ -2,9 +2,11 @@
 
 #include "serenkai/resource/resource_location.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <spdlog/spdlog.h>
+#include <utility>
 
 namespace serenkai {
 EntityId EntityManager::create() {
@@ -114,7 +116,21 @@ bool EntityManager::remove_prop(EntityId id, std::string_view loc) {
     return remove_prop(id, *res);
 }
 
+std::size_t EntityManager::alive_size() const {
+    std::size_t count = 0;
+    for (auto& e : m_entities) {
+        if (e.alive) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 Entity* EntityManager::fetch(EntityId id) {
+    return const_cast<Entity*>(std::as_const(*this).fetch(id));
+}
+
+const Entity* EntityManager::fetch(EntityId id) const {
     auto [idx, gen] = unpack(id);
     if (idx >= m_entities.size()) {
         return nullptr;
@@ -126,10 +142,6 @@ Entity* EntityManager::fetch(EntityId id) {
     }
 
     return &e;
-}
-
-const Entity* EntityManager::fetch(EntityId id) const {
-    return const_cast<EntityManager*>(this)->fetch(id);
 }
 
 EntityId EntityManager::pack(std::uint32_t index, std::uint32_t generation) {

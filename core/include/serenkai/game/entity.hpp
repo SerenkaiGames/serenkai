@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <unordered_map>
 namespace serenkai {
-class EntityManager;
 
 // generation is in the upper 32 bits
 // idx is in the lower 32 bits
