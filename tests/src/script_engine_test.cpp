@@ -1,4 +1,5 @@
 #include "serenkai/game/camera.hpp"
+#include "serenkai/game/entity_manager.hpp"
 #include "serenkai/game/map.hpp"
 #include "serenkai/game/map_data.hpp"
 #include "serenkai/game/map_manager.hpp"
@@ -1028,5 +1029,159 @@ TEST_CASE("Script AABB bindings", "[script][aabb]") {
         CHECK(std::get<0>(*res) == true);
         CHECK(std::get<1>(*res) == false);
         CHECK(std::get<2>(*res) == Catch::Approx(100.0));
+    }
+}
+
+TEST_CASE("Script EntityManager bindings", "[script][entity]") {
+    TestScriptEnv env;
+    env.register_script("test:entity_test.luau", R"(
+        function get_null_id(mgr: any): (number, number)
+            return EntityManager.NULL_ID, mgr.NULL_ID
+        end
+
+        function test_lifecycle(mgr: any): (number, boolean, number, boolean, number)
+            local id = mgr:create()
+            local alive_before = mgr:alive(id)
+            local size_before = mgr:alive_size()
+            mgr:destroy(id)
+            local alive_after = mgr:alive(id)
+            local size_after = mgr:alive_size()
+            return id, alive_before, size_before, alive_after, size_after
+        end
+
+        function test_boolean_prop(mgr: any, id: number): (boolean, any, boolean, any)
+            local s1 = mgr:set_prop(id, "game:flag", true)
+            local g1 = mgr:get_prop(id, "game:flag")
+            local s2 = mgr:set_prop(id, "game:flag", false)
+            local g2 = mgr:get_prop(id, "game:flag")
+            return s1, g1, s2, g2
+        end
+
+        function test_number_prop(mgr: any, id: number): (boolean, number, boolean, number)
+            local s1 = mgr:set_prop(id, "game:count", 42)
+            local g1 = mgr:get_prop(id, "game:count")
+            local s2 = mgr:set_prop(id, "game:ratio", 3.14)
+            local g2 = mgr:get_prop(id, "game:ratio")
+            return s1, g1, s2, g2
+        end
+
+        function test_string_prop(mgr: any, id: number): (boolean, string)
+            local s = mgr:set_prop(id, "game:name", "hero_character")
+            local g = mgr:get_prop(id, "game:name")
+            return s, g
+        end
+
+        function test_vector_prop(mgr: any, id: number): (boolean, number, number, number)
+            local s = mgr:set_prop(id, "game:velocity", vector.create(1.5, 2.5, 3.5))
+            local v = mgr:get_prop(id, "game:velocity")
+            return s, v.x, v.y, v.z
+        end
+
+        function test_has_and_remove_prop(mgr: any, id: number): (boolean, boolean, boolean, boolean, any)
+            local has_before = mgr:has_prop(id, "game:score")
+            mgr:set_prop(id, "game:score", 100)
+            local has_after_set = mgr:has_prop(id, "game:score")
+            local rm_res = mgr:remove_prop(id, "game:score")
+            local has_after_rm = mgr:has_prop(id, "game:score")
+            local get_after_rm = mgr:get_prop(id, "game:score")
+            return has_before, has_after_set, rm_res, has_after_rm, get_after_rm
+        end
+
+        function test_null_entity_ops(mgr: any): (boolean, boolean, boolean, any)
+            local alive = mgr:alive(EntityManager.NULL_ID)
+            local set_res = mgr:set_prop(EntityManager.NULL_ID, "game:prop", 123)
+            local rm_res = mgr:remove_prop(EntityManager.NULL_ID, "game:prop")
+            local get_res = mgr:get_prop(EntityManager.NULL_ID, "game:prop")
+            return alive, set_res, rm_res, get_res
+        end
+    )");
+
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
+    auto script = engine.create("test:entity_test.luau");
+    REQUIRE(script.has_value());
+
+    EntityManager manager;
+
+    SECTION("NULL_ID static and instance property") {
+        auto res = script->call<double, double>("get_null_id", &manager);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 0.0);
+        CHECK(std::get<1>(*res) == 0.0);
+    }
+
+    SECTION("Entity creation, alive check, and destruction") {
+        auto res = script->call<double, bool, double, bool, double>(
+            "test_lifecycle", &manager);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) != 0.0);
+        CHECK(std::get<1>(*res) == true);
+        CHECK(std::get<2>(*res) == 1.0);
+        CHECK(std::get<3>(*res) == false);
+        CHECK(std::get<4>(*res) == 0.0);
+    }
+
+    SECTION("Boolean property read and write") {
+        EntityId e = manager.create();
+        auto res = script->call<bool, bool, bool, bool>(
+            "test_boolean_prop", &manager, static_cast<double>(e));
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
+        CHECK(std::get<1>(*res) == true);
+        CHECK(std::get<2>(*res) == true);
+        CHECK(std::get<3>(*res) == false);
+    }
+
+    SECTION("Number property read and write (int and float)") {
+        EntityId e = manager.create();
+        auto res = script->call<bool, double, bool, double>(
+            "test_number_prop", &manager, static_cast<double>(e));
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
+        CHECK(std::get<1>(*res) == Catch::Approx(42.0));
+        CHECK(std::get<2>(*res) == true);
+        CHECK(std::get<3>(*res) == Catch::Approx(3.14));
+    }
+
+    SECTION("String property read and write") {
+        EntityId e = manager.create();
+        auto res = script->call<bool, std::string>("test_string_prop", &manager,
+                                                   static_cast<double>(e));
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
+        CHECK(std::get<1>(*res) == "hero_character");
+    }
+
+    SECTION("Vector property read and write") {
+        EntityId e = manager.create();
+        auto res = script->call<bool, double, double, double>(
+            "test_vector_prop", &manager, static_cast<double>(e));
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
+        CHECK(std::get<1>(*res) == Catch::Approx(1.5));
+        CHECK(std::get<2>(*res) == Catch::Approx(2.5));
+        CHECK(std::get<3>(*res) == Catch::Approx(3.5));
+    }
+
+    SECTION("has_prop and remove_prop operations") {
+        EntityId e = manager.create();
+        auto res = script->call<bool, bool, bool, bool, std::optional<int>>(
+            "test_has_and_remove_prop", &manager, static_cast<double>(e));
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == false);
+        CHECK(std::get<1>(*res) == true);
+        CHECK(std::get<2>(*res) == true);
+        CHECK(std::get<3>(*res) == false);
+        CHECK(std::get<4>(*res).has_value() == false);
+    }
+
+    SECTION("Operations on NULL_ID return expected failure defaults") {
+        auto res = script->call<bool, bool, bool, std::optional<int>>(
+            "test_null_entity_ops", &manager);
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == false);
+        CHECK(std::get<1>(*res) == false);
+        CHECK(std::get<2>(*res) == false);
+        CHECK(std::get<3>(*res).has_value() == false);
     }
 }
