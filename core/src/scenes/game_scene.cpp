@@ -1,6 +1,7 @@
 #include "serenkai/scenes/game_scene.hpp"
 
 #include "serenkai/game/camera.hpp"
+#include "serenkai/game/entity_manager.hpp"
 #include "serenkai/game/map_manager.hpp"
 #include "serenkai/game/world_context.hpp"
 #include "serenkai/render/renderer.hpp"
@@ -22,6 +23,7 @@ void GameScene::on_enter(AppContext* ctx) {
     }
     m_map_manager = std::make_unique<MapManager>(ctx->assets);
     m_camera = std::make_unique<Camera>();
+    m_entity_manager = std::make_unique<EntityManager>();
 
     if (ctx->script) {
 
@@ -64,7 +66,6 @@ void GameScene::on_leave(AppContext* ctx) {
     if (m_script) {
         m_script->call<>("on_leave");
     }
-    // Enter the world and inject the related context.
     if (ctx && ctx->script) {
 
         // Clear the corresponding context.
