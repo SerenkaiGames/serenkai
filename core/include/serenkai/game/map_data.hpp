@@ -1,6 +1,7 @@
 #pragma once
 
 #include "serenkai/base/aabb.hpp"
+#include "serenkai/game/property.hpp"
 #include "serenkai/resource/resource_location.hpp"
 
 #include <cstdint>
@@ -12,6 +13,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+
 namespace serenkai {
 
 struct Tile {
@@ -72,12 +74,9 @@ constexpr Tile::FlipFlag operator~(Tile::FlipFlag a) noexcept {
     return static_cast<Tile::FlipFlag>(~static_cast<std::uint8_t>(a));
 }
 
-using MapPropertyValue =
-    std::variant<std::monostate, bool, int, float, std::string, glm::vec4>;
-
 struct MapProperty {
     std::string name;
-    MapPropertyValue value;
+    PropValue value;
 
     template <typename T> bool is() const {
         return std::holds_alternative<T>(value);

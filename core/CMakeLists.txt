@@ -113,6 +113,10 @@ add_library(
     include/serenkai/base/aabb.hpp
     include/serenkai/script/bindings/bind_aabb.hpp
     src/script/bindings/bind_aabb.cpp
+    include/serenkai/game/entity.hpp
+    include/serenkai/game/entity_manager.hpp
+    include/serenkai/game/property.hpp
+    src/game/entity_manager.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

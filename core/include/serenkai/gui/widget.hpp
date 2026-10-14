@@ -9,6 +9,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace serenkai {
@@ -63,6 +64,11 @@ public:
     /// Linear time complexity
     template <std::derived_from<Widget> T>
     T* fetch_child(std::string_view name) {
+        return const_cast<T*>(std::as_const(*this).fetch_child<T>(name));
+    }
+
+    template <std::derived_from<Widget> T>
+    const T* fetch_child(std::string_view name) const {
         auto it = std::find_if(m_children.begin(), m_children.end(),
                                [name](const std::unique_ptr<Widget>& widget) {
                                    return name == widget->m_name;
@@ -70,12 +76,7 @@ public:
         if (it == m_children.end()) {
             return nullptr;
         }
-        return dynamic_cast<T*>(it->get());
-    }
-
-    template <std::derived_from<Widget> T>
-    const T* fetch_child(std::string_view name) const {
-        return const_cast<Widget*>(this)->fetch_child<T>(name);
+        return dynamic_cast<const T*>(it->get());
     }
 
     glm::ivec2 size() const;
