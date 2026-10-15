@@ -34,7 +34,7 @@ void GameScene::on_enter(AppContext* ctx) {
         auto s = ctx->script->create(GAME_SCENE_SCRIPT_LOC);
         if (s) {
             m_script = std::make_unique<Script>(std::move(*s));
-            m_script->call<>("on_enter", m_map_manager.get(), m_camera.get());
+            m_script->call<>("on_enter");
         }
     }
 }

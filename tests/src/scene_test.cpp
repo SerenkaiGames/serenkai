@@ -326,7 +326,7 @@ TEST_CASE("GameScene script lifecycle hooks and event dispatch", "[scene]") {
         out << R"(
             local Event = require("serenkai:scripts/event.luau")
 
-            function on_enter(mgr, cam)
+            function on_enter()
                 Event.emit("serenkai:events/enter_game")
             end
 

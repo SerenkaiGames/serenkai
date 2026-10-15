@@ -835,84 +835,92 @@ TEST_CASE("Script MapObject and Tile bindings", "[script][map]") {
     }
 }
 
-TEST_CASE("Script MapManager bindings", "[script][map]") {
+TEST_CASE("Script Map bindings", "[script][map]") {
     TestScriptEnv env;
-    env.register_script("test:map_manager_test.luau", R"(
-        function test_switch_single(mgr: any, loc: string): boolean
-            return mgr:switch_map(loc)
+    env.register_script("test:map_test.luau", R"(
+        function test_switch_single(loc: string): boolean
+            return World.Map.switch_map(loc)
         end
 
-        function test_switch_double(mgr: any, loc: string, spawn: string): boolean
-            return mgr:switch_map(loc, spawn)
+        function test_switch_double(loc: string, spawn: string): boolean
+            return World.Map.switch_map(loc, spawn)
         end
 
-        function test_has_map(mgr: any): boolean
-            return mgr:has_map()
+        function test_has_map(): boolean
+            return World.Map.has_map()
         end
 
-        function test_current_map_nil(mgr: any): boolean
-            return mgr:current_map() == nil
+        function test_current_map_nil(): boolean
+            return World.Map.current_map() == nil
         end
     )");
 
     ScriptEngine engine(
         ScriptEngineConfig{.asset_manager = &env.asset_manager()});
-    auto script = engine.create("test:map_manager_test.luau");
+    auto script = engine.create("test:map_test.luau");
     REQUIRE(script.has_value());
 
     MapManager manager(&env.asset_manager());
+    engine.set_active_world(WorldContext{.map_mgr = &manager});
 
     SECTION("has_map and current_map initial state") {
-        auto has = script->call<bool>("test_has_map", &manager);
+        auto has = script->call<bool>("test_has_map");
         REQUIRE(has.has_value());
         CHECK(std::get<0>(*has) == false);
 
-        auto is_nil = script->call<bool>("test_current_map_nil", &manager);
+        auto is_nil = script->call<bool>("test_current_map_nil");
         REQUIRE(is_nil.has_value());
         CHECK(std::get<0>(*is_nil) == true);
     }
 
     SECTION("switch_map with single argument succeeds without type error") {
-        auto res = script->call<bool>("test_switch_single", &manager,
-                                      "nonexistent:map.tmx");
+        auto res =
+            script->call<bool>("test_switch_single", "nonexistent:map.tmx");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == false);
     }
 
     SECTION("switch_map with two arguments succeeds without type error") {
-        auto res = script->call<bool>("test_switch_double", &manager,
+        auto res = script->call<bool>("test_switch_double",
                                       "nonexistent:map.tmx", "SpawnPoint");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == false);
+    }
+
+    SECTION("Fallback when world context is empty") {
+        engine.set_active_world(WorldContext{});
+        auto has = script->call<bool>("test_has_map");
+        REQUIRE(has.has_value());
+        CHECK(std::get<0>(*has) == false);
     }
 }
 
 TEST_CASE("Script Camera bindings", "[script][camera]") {
     TestScriptEnv env;
     env.register_script("test:camera_test.luau", R"(
-        function get_pos(cam: any): (number, number)
-            local p = cam.pos
+        function get_pos(): (number, number)
+            local p = World.Camera.pos()
             return p.x, p.y
         end
 
-        function get_zoom(cam: any): number
-            return cam.zoom
+        function get_zoom(): number
+            return World.Camera.zoom()
         end
 
-        function set_pos(cam: any, x: number, y: number)
-            cam:set_pos(vector.create(x, y, 0))
+        function set_pos(x: number, y: number)
+            World.Camera.set_pos(vector.create(x, y, 0))
         end
 
-        function set_zoom(cam: any, z: number)
-            cam:set_zoom(z)
+        function set_zoom(z: number)
+            World.Camera.set_zoom(z)
         end
 
-        function add_zoom(cam: any, z: number)
-            cam:add_zoom(z)
+        function add_zoom(z: number)
+            World.Camera.add_zoom(z)
         end
 
-        function move(cam: any, dx: number, dy: number)
-            cam:move(vector.create(dx, dy, 0))
+        function move(dx: number, dy: number)
+            World.Camera.move(vector.create(dx, dy, 0))
         end
     )");
 
@@ -922,46 +930,59 @@ TEST_CASE("Script Camera bindings", "[script][camera]") {
     REQUIRE(script.has_value());
 
     Camera camera;
+    engine.set_active_world(WorldContext{.camera = &camera});
 
-    SECTION("Read pos and zoom properties") {
-        auto p = script->call<double, double>("get_pos", &camera);
+    SECTION("Read pos and zoom functions") {
+        auto p = script->call<double, double>("get_pos");
         REQUIRE(p.has_value());
         CHECK(std::get<0>(*p) == Catch::Approx(0.0));
         CHECK(std::get<1>(*p) == Catch::Approx(0.0));
 
-        auto z = script->call<double>("get_zoom", &camera);
+        auto z = script->call<double>("get_zoom");
         REQUIRE(z.has_value());
         CHECK(std::get<0>(*z) == Catch::Approx(3.0));
     }
 
     SECTION("set_pos and set_zoom via script") {
-        auto set_p_res = script->call<>("set_pos", &camera, 120.0, 240.0);
+        auto set_p_res = script->call<>("set_pos", 120.0, 240.0);
         REQUIRE(set_p_res.has_value());
         CHECK(camera.pos().x == Catch::Approx(120.0f));
         CHECK(camera.pos().y == Catch::Approx(240.0f));
 
-        auto set_z_res = script->call<>("set_zoom", &camera, 2.0);
+        auto set_z_res = script->call<>("set_zoom", 2.0);
         REQUIRE(set_z_res.has_value());
         CHECK(camera.zoom() == Catch::Approx(2.0f));
     }
 
     SECTION("add_zoom via script") {
         camera.set_zoom(3.0f);
-        auto add_res = script->call<>("add_zoom", &camera, 2.0);
+        auto add_res = script->call<>("add_zoom", 2.0);
         REQUIRE(add_res.has_value());
         CHECK(camera.zoom() == Catch::Approx(5.0f));
 
-        auto clamp_res = script->call<>("add_zoom", &camera, 50.0);
+        auto clamp_res = script->call<>("add_zoom", 50.0);
         REQUIRE(clamp_res.has_value());
         CHECK(camera.zoom() == Catch::Approx(Camera::MAX_ZOOM));
     }
 
     SECTION("move via script") {
         camera.set_pos({10.0f, 20.0f});
-        auto move_res = script->call<>("move", &camera, 5.0, -15.0);
+        auto move_res = script->call<>("move", 5.0, -15.0);
         REQUIRE(move_res.has_value());
         CHECK(camera.pos().x == Catch::Approx(15.0f));
         CHECK(camera.pos().y == Catch::Approx(5.0f));
+    }
+
+    SECTION("Fallback when world context is empty") {
+        engine.set_active_world(WorldContext{});
+        auto p = script->call<double, double>("get_pos");
+        REQUIRE(p.has_value());
+        CHECK(std::get<0>(*p) == Catch::Approx(0.0));
+        CHECK(std::get<1>(*p) == Catch::Approx(0.0));
+
+        auto z = script->call<double>("get_zoom");
+        REQUIRE(z.has_value());
+        CHECK(std::get<0>(*z) == Catch::Approx(0.0));
     }
 }
 
@@ -1035,63 +1056,63 @@ TEST_CASE("Script AABB bindings", "[script][aabb]") {
 TEST_CASE("Script EntityManager bindings", "[script][entity]") {
     TestScriptEnv env;
     env.register_script("test:entity_test.luau", R"(
-        function get_null_id(mgr: any): (number, number)
-            return EntityManager.NULL_ID, mgr.NULL_ID
+        function get_null_id(): number
+            return World.Entities.NULL_ID
         end
 
-        function test_lifecycle(mgr: any): (number, boolean, number, boolean, number)
-            local id = mgr:create()
-            local alive_before = mgr:alive(id)
-            local size_before = mgr:alive_size()
-            mgr:destroy(id)
-            local alive_after = mgr:alive(id)
-            local size_after = mgr:alive_size()
+        function test_lifecycle(): (number, boolean, number, boolean, number)
+            local id = World.Entities.create()
+            local alive_before = World.Entities.alive(id)
+            local size_before = World.Entities.alive_size()
+            World.Entities.destroy(id)
+            local alive_after = World.Entities.alive(id)
+            local size_after = World.Entities.alive_size()
             return id, alive_before, size_before, alive_after, size_after
         end
 
-        function test_boolean_prop(mgr: any, id: number): (boolean, any, boolean, any)
-            local s1 = mgr:set_prop(id, "game:flag", true)
-            local g1 = mgr:get_prop(id, "game:flag")
-            local s2 = mgr:set_prop(id, "game:flag", false)
-            local g2 = mgr:get_prop(id, "game:flag")
+        function test_boolean_prop(id: number): (boolean, any, boolean, any)
+            local s1 = World.Entities.set_prop(id, "game:flag", true)
+            local g1 = World.Entities.get_prop(id, "game:flag")
+            local s2 = World.Entities.set_prop(id, "game:flag", false)
+            local g2 = World.Entities.get_prop(id, "game:flag")
             return s1, g1, s2, g2
         end
 
-        function test_number_prop(mgr: any, id: number): (boolean, number, boolean, number)
-            local s1 = mgr:set_prop(id, "game:count", 42)
-            local g1 = mgr:get_prop(id, "game:count")
-            local s2 = mgr:set_prop(id, "game:ratio", 3.14)
-            local g2 = mgr:get_prop(id, "game:ratio")
+        function test_number_prop(id: number): (boolean, number, boolean, number)
+            local s1 = World.Entities.set_prop(id, "game:count", 42)
+            local g1 = World.Entities.get_prop(id, "game:count")
+            local s2 = World.Entities.set_prop(id, "game:ratio", 3.14)
+            local g2 = World.Entities.get_prop(id, "game:ratio")
             return s1, g1, s2, g2
         end
 
-        function test_string_prop(mgr: any, id: number): (boolean, string)
-            local s = mgr:set_prop(id, "game:name", "hero_character")
-            local g = mgr:get_prop(id, "game:name")
+        function test_string_prop(id: number): (boolean, string)
+            local s = World.Entities.set_prop(id, "game:name", "hero_character")
+            local g = World.Entities.get_prop(id, "game:name")
             return s, g
         end
 
-        function test_vector_prop(mgr: any, id: number): (boolean, number, number, number)
-            local s = mgr:set_prop(id, "game:velocity", vector.create(1.5, 2.5, 3.5))
-            local v = mgr:get_prop(id, "game:velocity")
+        function test_vector_prop(id: number): (boolean, number, number, number)
+            local s = World.Entities.set_prop(id, "game:velocity", vector.create(1.5, 2.5, 3.5))
+            local v = World.Entities.get_prop(id, "game:velocity")
             return s, v.x, v.y, v.z
         end
 
-        function test_has_and_remove_prop(mgr: any, id: number): (boolean, boolean, boolean, boolean, any)
-            local has_before = mgr:has_prop(id, "game:score")
-            mgr:set_prop(id, "game:score", 100)
-            local has_after_set = mgr:has_prop(id, "game:score")
-            local rm_res = mgr:remove_prop(id, "game:score")
-            local has_after_rm = mgr:has_prop(id, "game:score")
-            local get_after_rm = mgr:get_prop(id, "game:score")
+        function test_has_and_remove_prop(id: number): (boolean, boolean, boolean, boolean, any)
+            local has_before = World.Entities.has_prop(id, "game:score")
+            World.Entities.set_prop(id, "game:score", 100)
+            local has_after_set = World.Entities.has_prop(id, "game:score")
+            local rm_res = World.Entities.remove_prop(id, "game:score")
+            local has_after_rm = World.Entities.has_prop(id, "game:score")
+            local get_after_rm = World.Entities.get_prop(id, "game:score")
             return has_before, has_after_set, rm_res, has_after_rm, get_after_rm
         end
 
-        function test_null_entity_ops(mgr: any): (boolean, boolean, boolean, any)
-            local alive = mgr:alive(EntityManager.NULL_ID)
-            local set_res = mgr:set_prop(EntityManager.NULL_ID, "game:prop", 123)
-            local rm_res = mgr:remove_prop(EntityManager.NULL_ID, "game:prop")
-            local get_res = mgr:get_prop(EntityManager.NULL_ID, "game:prop")
+        function test_null_entity_ops(): (boolean, boolean, boolean, any)
+            local alive = World.Entities.alive(World.Entities.NULL_ID)
+            local set_res = World.Entities.set_prop(World.Entities.NULL_ID, "game:prop", 123)
+            local rm_res = World.Entities.remove_prop(World.Entities.NULL_ID, "game:prop")
+            local get_res = World.Entities.get_prop(World.Entities.NULL_ID, "game:prop")
             return alive, set_res, rm_res, get_res
         end
     )");
@@ -1102,17 +1123,17 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
     REQUIRE(script.has_value());
 
     EntityManager manager;
+    engine.set_active_world(WorldContext{.entity_mgr = &manager});
 
-    SECTION("NULL_ID static and instance property") {
-        auto res = script->call<double, double>("get_null_id", &manager);
+    SECTION("NULL_ID property") {
+        auto res = script->call<double>("get_null_id");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == 0.0);
-        CHECK(std::get<1>(*res) == 0.0);
     }
 
     SECTION("Entity creation, alive check, and destruction") {
-        auto res = script->call<double, bool, double, bool, double>(
-            "test_lifecycle", &manager);
+        auto res =
+            script->call<double, bool, double, bool, double>("test_lifecycle");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) != 0.0);
         CHECK(std::get<1>(*res) == true);
@@ -1123,8 +1144,8 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
 
     SECTION("Boolean property read and write") {
         EntityId e = manager.create();
-        auto res = script->call<bool, bool, bool, bool>(
-            "test_boolean_prop", &manager, static_cast<double>(e));
+        auto res = script->call<bool, bool, bool, bool>("test_boolean_prop",
+                                                        static_cast<double>(e));
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
         CHECK(std::get<1>(*res) == true);
@@ -1135,7 +1156,7 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
     SECTION("Number property read and write (int and float)") {
         EntityId e = manager.create();
         auto res = script->call<bool, double, bool, double>(
-            "test_number_prop", &manager, static_cast<double>(e));
+            "test_number_prop", static_cast<double>(e));
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
         CHECK(std::get<1>(*res) == Catch::Approx(42.0));
@@ -1145,7 +1166,7 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
 
     SECTION("String property read and write") {
         EntityId e = manager.create();
-        auto res = script->call<bool, std::string>("test_string_prop", &manager,
+        auto res = script->call<bool, std::string>("test_string_prop",
                                                    static_cast<double>(e));
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
@@ -1155,7 +1176,7 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
     SECTION("Vector property read and write") {
         EntityId e = manager.create();
         auto res = script->call<bool, double, double, double>(
-            "test_vector_prop", &manager, static_cast<double>(e));
+            "test_vector_prop", static_cast<double>(e));
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
         CHECK(std::get<1>(*res) == Catch::Approx(1.5));
@@ -1166,7 +1187,7 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
     SECTION("has_prop and remove_prop operations") {
         EntityId e = manager.create();
         auto res = script->call<bool, bool, bool, bool, std::optional<int>>(
-            "test_has_and_remove_prop", &manager, static_cast<double>(e));
+            "test_has_and_remove_prop", static_cast<double>(e));
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == false);
         CHECK(std::get<1>(*res) == true);
@@ -1177,11 +1198,20 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
 
     SECTION("Operations on NULL_ID return expected failure defaults") {
         auto res = script->call<bool, bool, bool, std::optional<int>>(
-            "test_null_entity_ops", &manager);
+            "test_null_entity_ops");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == false);
         CHECK(std::get<1>(*res) == false);
         CHECK(std::get<2>(*res) == false);
         CHECK(std::get<3>(*res).has_value() == false);
+    }
+
+    SECTION("Fallback when world context is empty") {
+        engine.set_active_world(WorldContext{});
+        auto res =
+            script->call<double, bool, double, bool, double>("test_lifecycle");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 0.0);
+        CHECK(std::get<1>(*res) == false);
     }
 }
