@@ -10,64 +10,6 @@
 #define BIND(name, fn) addFunction(name, wrap_facade(get_subsystem, fn))
 
 namespace serenkai {
-namespace {
-PropValue lua_ref_to_prop(const luabridge::LuaRef& ref) {
-    if (ref.isNil()) {
-        return std::monostate{};
-    }
-    if (ref.isBool()) {
-        return ref.cast<bool>().value();
-    }
-    if (ref.isNumber()) {
-        double n = ref.cast<double>().value();
-        if (static_cast<double>(static_cast<int>(n)) == n) {
-            return static_cast<int>(n);
-        }
-        return static_cast<float>(n);
-    }
-    if (ref.isString()) {
-        return ref.cast<std::string>().value();
-    }
-
-    lua_State* l = ref.state();
-    ref.push();
-    if (lua_isvector(l, -1)) {
-        const float* v = lua_tovector(l, -1);
-        glm::vec3 vec{v[0], v[1], v[2]};
-        lua_pop(l, 1);
-        return vec;
-    }
-    lua_pop(l, 1);
-
-    return std::monostate{};
-}
-
-int lua_entity_get_prop(lua_State* L) {
-    auto res_mgr = luabridge::Stack<EntityManager*>::get(L, 1);
-    if (!res_mgr) {
-        lua_pushnil(L);
-        return 1;
-    }
-    auto* mgr = *res_mgr;
-
-    const double id_num = luaL_checknumber(L, 2);
-    const EntityId id = static_cast<EntityId>(id_num);
-
-    size_t len = 0;
-    const char* loc_str = luaL_checklstring(L, 3, &len);
-    const std::string_view loc{loc_str, len};
-
-    auto prop = mgr->get_prop(id, loc);
-    if (!prop.has_value()) {
-        lua_pushnil(L);
-        return 1;
-    }
-
-    push_property(L, *prop);
-    return 1;
-}
-
-} // namespace
 
 void bind_entity_to_lua(lua_State* L, ScriptEngine* engine) {
 

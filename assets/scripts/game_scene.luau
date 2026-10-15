@@ -1,14 +1,9 @@
 --!nolint FunctionUnused
 
-local map_mgr: MapManager
-local camera: Camera
 local speed: number = 100
 local Event = require("serenkai:scripts/event.luau")
 
-function on_enter(mgr: MapManager, cam: Camera)
-	map_mgr = mgr
-	camera = cam
-
+function on_enter()
 	init_map()
 
 	Event.emit("serenkai:events/enter_game")
@@ -25,13 +20,13 @@ function on_leave()
 end
 
 function init_map()
-	map_mgr:switch_map("serenkai:maps/tea_house.tmx")
+	World.Map.switch_map("serenkai:maps/tea_house.tmx")
 
-	local map = map_mgr:current_map()
+	local map = World.Map.current_map()
 	if map then
 		local point = map:get_spawn_point("spawn_point")
 		if point then
-			camera:set_pos(point)
+			World.Camera.set_pos(point)
 		end
 	end
 end
@@ -57,16 +52,16 @@ function update_move(dt: number)
 	end
 
 	if dx ~= 0 or dy ~= 0 then
-		camera:move(vector.create(dx, dy, 0))
+		World.Camera.move(vector.create(dx, dy, 0))
 	end
 end
 
 function update_zoom()
 	if Input.is_pressed(Input.Action["inputs/zoom_in"]) then
-		camera:add_zoom(1)
+		World.Camera.add_zoom(1)
 	end
 
 	if Input.is_pressed(Input.Action["inputs/zoom_out"]) then
-		camera:add_zoom(-1)
+		World.Camera.add_zoom(-1)
 	end
 end

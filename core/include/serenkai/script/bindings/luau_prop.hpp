@@ -35,4 +35,36 @@ inline void push_property(lua_State* L, const PropValue& prop) {
         },
         prop);
 }
+
+inline PropValue lua_ref_to_prop(const luabridge::LuaRef& ref) {
+    if (ref.isNil()) {
+        return std::monostate{};
+    }
+    if (ref.isBool()) {
+        return ref.cast<bool>().value();
+    }
+    if (ref.isNumber()) {
+        double n = ref.cast<double>().value();
+        if (static_cast<double>(static_cast<int>(n)) == n) {
+            return static_cast<int>(n);
+        }
+        return static_cast<float>(n);
+    }
+    if (ref.isString()) {
+        return ref.cast<std::string>().value();
+    }
+
+    lua_State* l = ref.state();
+    ref.push();
+    if (lua_isvector(l, -1)) {
+        const float* v = lua_tovector(l, -1);
+        glm::vec3 vec{v[0], v[1], v[2]};
+        lua_pop(l, 1);
+        return vec;
+    }
+    lua_pop(l, 1);
+
+    return std::monostate{};
+}
+
 } // namespace serenkai
