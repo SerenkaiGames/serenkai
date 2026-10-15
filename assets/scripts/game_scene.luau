@@ -1,6 +1,5 @@
 --!nolint FunctionUnused
 
-local speed: number = 100
 local Event = require("serenkai:scripts/event.luau")
 
 function on_enter()
@@ -10,8 +9,6 @@ function on_enter()
 end
 
 function on_update(dt: number)
-	update_move(dt)
-	update_zoom()
 	Event.emit("serenkai:events/update_game")
 end
 
@@ -28,40 +25,5 @@ function init_map()
 		if point then
 			World.Camera.set_pos(point)
 		end
-	end
-end
-
-function update_move(dt: number)
-	local dx = 0
-	local dy = 0
-
-	if Input.is_down(Input.Action["inputs/move_up"]) then
-		dy -= dt * speed
-	end
-
-	if Input.is_down(Input.Action["inputs/move_down"]) then
-		dy += dt * speed
-	end
-
-	if Input.is_down(Input.Action["inputs/move_left"]) then
-		dx -= dt * speed
-	end
-
-	if Input.is_down(Input.Action["inputs/move_right"]) then
-		dx += dt * speed
-	end
-
-	if dx ~= 0 or dy ~= 0 then
-		World.Camera.move(vector.create(dx, dy, 0))
-	end
-end
-
-function update_zoom()
-	if Input.is_pressed(Input.Action["inputs/zoom_in"]) then
-		World.Camera.add_zoom(1)
-	end
-
-	if Input.is_pressed(Input.Action["inputs/zoom_out"]) then
-		World.Camera.add_zoom(-1)
 	end
 end
