@@ -76,16 +76,20 @@ SDL_Texture* TextureManager::get(const ResourceLocation& loc) {
 }
 
 glm::ivec2 TextureManager::measure_size(std::string_view loc) {
-    float w = 0, h = 0;
+
     auto texture = get(loc);
     if (!texture) {
         spdlog::error("Failed to measure texture {} size, texture is nullptr",
                       loc);
         return {};
     }
+    return measure_size(texture);
+}
+
+glm::ivec2 TextureManager::measure_size(SDL_Texture* texture) const {
+    float w = 0, h = 0;
     if (!SDL_GetTextureSize(texture, &w, &h)) {
-        spdlog::error("Failed to measure texture {} size, {}", loc,
-                      SDL_GetError());
+        spdlog::error("Failed to measure texture size, {}", SDL_GetError());
     }
 
     return {w, h};

@@ -15,14 +15,11 @@ namespace serenkai {
 
 MapRenderer::MapRenderer(SDL_Renderer* renderer) : m_renderer(renderer) {}
 
-glm::vec2 MapRenderer::render(Map* map, TextureManager* texture_manager,
-                              glm::vec2 camera, float zoom) {
+void MapRenderer::render(Map* map, TextureManager* texture_manager,
+                         glm::vec2 screen_offset, float zoom) {
     if (!m_renderer || !map || !texture_manager) {
-        return camera;
+        return;
     }
-
-    int w = 0, h = 0;
-    SDL_GetRenderOutputSize(m_renderer, &w, &h);
 
     /*
         The viewport should be set by the external rendering pipeline.
@@ -33,36 +30,6 @@ glm::vec2 MapRenderer::render(Map* map, TextureManager* texture_manager,
     if (zoom <= 0.0f) {
         zoom = 1.0f;
     }
-
-    // Viewport size in world units.
-    const glm::vec2 view{static_cast<float>(w) / zoom,
-                         static_cast<float>(h) / zoom};
-
-    const auto world = static_cast<glm::vec2>(map->pixel_size());
-    const glm::vec2 half = view * 0.5f;
-
-    // If the map is smaller than the viewport on an axis, center it on that
-    // axis; otherwise, clamp the viewport within the map's world bounds.
-    if (world.x < view.x) {
-        camera.x = world.x * 0.5f;
-    } else {
-        camera.x = std::clamp(camera.x, half.x, world.x - half.x);
-    }
-
-    if (world.y < view.y) {
-        camera.y = world.y * 0.5f;
-    } else {
-        camera.y = std::clamp(camera.y, half.y, world.y - half.y);
-    }
-
-    const glm::vec2 screen_center{static_cast<float>(w) * 0.5f,
-                                  static_cast<float>(h) * 0.5f};
-
-    // World space -> screen space.
-    // The camera is the observation point and lands at the window center:
-    // p_screen = (p_world - camera) * zoom + screen_center
-    const glm::vec2 screen_offset{screen_center.x - camera.x * zoom,
-                                  screen_center.y - camera.y * zoom};
 
     auto& data = map->data();
 
@@ -84,8 +51,6 @@ glm::vec2 MapRenderer::render(Map* map, TextureManager* texture_manager,
                                zoom);
         }
     }
-
-    return camera;
 }
 
 void MapRenderer::render_tile_layer(const TileLayer* layer,

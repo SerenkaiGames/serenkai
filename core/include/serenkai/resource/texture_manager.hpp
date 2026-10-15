@@ -30,7 +30,7 @@ public:
     SDL_Texture* get(const ResourceLocation& loc);
 
     glm::ivec2 measure_size(std::string_view loc);
-
+    glm::ivec2 measure_size(SDL_Texture* texture) const;
     void clear();
 
 private:

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <unordered_map>
+#include <variant>
 namespace serenkai {
 
 // generation is in the upper 32 bits
@@ -29,5 +30,14 @@ struct Entity {
     // Use ResourceLocation as the key to normalize properties while ensuring
     // good hash lookup performance.
     std::unordered_map<ResourceLocation, PropValue> props;
+
+    template <typename T> const T* get_prop(const ResourceLocation& loc) const {
+        auto it = props.find(loc);
+        if (it == props.end()) {
+            return nullptr;
+        }
+
+        return std::get_if<T>(&it->second);
+    }
 };
 } // namespace serenkai

@@ -1,6 +1,7 @@
 #include "serenkai/game/entity_manager.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <glm/vec3.hpp>
 #include <string>
 #include <vector>
 
@@ -284,4 +285,40 @@ TEST_CASE("EntityManager for_each_alive iteration", "[game][entity]") {
     REQUIRE(visited_indices.size() == 2);
     CHECK(visited_indices[0] == 1);
     CHECK(visited_indices[1] == 3);
+}
+
+TEST_CASE("Entity get_prop template helper", "[game][entity]") {
+    EntityManager manager;
+    EntityId e = manager.create();
+
+    manager.set_prop(e, "speed", 5.5f);
+    manager.set_prop(e, "tag", std::string("player"));
+    manager.set_prop(e, "pos", glm::vec3{10.0f, 20.0f, 1.0f});
+
+    manager.for_each_alive([&](EntityId, const Entity& entity) {
+        auto speed = entity.get_prop<float>(*ResourceLocation::parse("speed"));
+        REQUIRE(speed != nullptr);
+        CHECK(*speed == 5.5f);
+
+        auto tag =
+            entity.get_prop<std::string>(*ResourceLocation::parse("tag"));
+        REQUIRE(tag != nullptr);
+        CHECK(*tag == "player");
+
+        auto pos = entity.get_prop<glm::vec3>(*ResourceLocation::parse("pos"));
+        REQUIRE(pos != nullptr);
+        CHECK(pos->x == 10.0f);
+        CHECK(pos->y == 20.0f);
+        CHECK(pos->z == 1.0f);
+
+        // Non-existent prop returns nullptr
+        auto missing =
+            entity.get_prop<int>(*ResourceLocation::parse("missing"));
+        CHECK(missing == nullptr);
+
+        // Type mismatch returns nullptr
+        auto wrong_type =
+            entity.get_prop<int>(*ResourceLocation::parse("speed"));
+        CHECK(wrong_type == nullptr);
+    });
 }

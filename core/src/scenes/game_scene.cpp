@@ -1,6 +1,7 @@
 #include "serenkai/scenes/game_scene.hpp"
 
 #include "serenkai/game/camera.hpp"
+#include "serenkai/game/entity.hpp"
 #include "serenkai/game/entity_manager.hpp"
 #include "serenkai/game/map_manager.hpp"
 #include "serenkai/game/world_context.hpp"
@@ -9,10 +10,16 @@
 #include "serenkai/script/script_constants.hpp"
 #include "serenkai/script/script_engine.hpp"
 
+#include <algorithm>
+#include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 namespace serenkai {
 
@@ -49,15 +56,89 @@ void GameScene::update(float dt) {
 }
 
 void GameScene::render(RenderContext* ctx) {
-    if (!ctx) {
+    if (!ctx || !ctx->renderer || !ctx->textures) {
         return;
     }
     if (m_map_manager && m_camera) {
         auto map = m_map_manager->current_map();
         if (map) {
-            auto camera_pos = ctx->renderer->draw_map(
-                map.get(), ctx->textures, m_camera->pos(), m_camera->zoom());
-            m_camera->set_pos(camera_pos);
+            auto camera = m_camera->pos();
+            float zoom = m_camera->zoom();
+            auto size = ctx->renderer->render_size();
+            // Viewport size in world units.
+            const glm::vec2 view{static_cast<float>(size.x) / zoom,
+                                 static_cast<float>(size.y) / zoom};
+
+            const auto world = static_cast<glm::vec2>(map->pixel_size());
+            const glm::vec2 half = view * 0.5f;
+
+            // If the map is smaller than the viewport on an axis, center it on
+            // that axis; otherwise, clamp the viewport within the map's world
+            // bounds.
+            if (world.x < view.x) {
+                camera.x = world.x * 0.5f;
+            } else {
+                camera.x = std::clamp(camera.x, half.x, world.x - half.x);
+            }
+
+            if (world.y < view.y) {
+                camera.y = world.y * 0.5f;
+            } else {
+                camera.y = std::clamp(camera.y, half.y, world.y - half.y);
+            }
+
+            m_camera->set_pos(camera);
+
+            const glm::vec2 screen_center{static_cast<float>(size.x) * 0.5f,
+                                          static_cast<float>(size.y) * 0.5f};
+
+            // World space -> screen space.
+            // The camera is the observation point and lands at the window
+            // center: p_screen = (p_world - camera) * zoom + screen_center
+            // offset = screen_center - camera * zoom
+            // p_screen = p_world * zoom + offset
+            const glm::vec2 screen_offset{screen_center.x - camera.x * zoom,
+                                          screen_center.y - camera.y * zoom};
+
+            ctx->renderer->draw_map(map.get(), ctx->textures, screen_offset,
+                                    zoom);
+
+            if (m_entity_manager) {
+
+                std::vector<std::pair<std::string, glm::vec3>> pending_sprites;
+
+                m_entity_manager->for_each_alive(
+                    [&pending_sprites](EntityId, const Entity& e) {
+                        auto path = e.get_prop<std::string>(
+                            "serenkai:props/texture"_rl);
+
+                        if (!path) {
+                            return;
+                        }
+
+                        auto pos =
+                            e.get_prop<glm::vec3>("serenkai:props/pos"_rl);
+
+                        if (!pos) {
+                            return;
+                        }
+                        pending_sprites.emplace_back(*path, *pos);
+                    });
+
+                std::sort(pending_sprites.begin(), pending_sprites.end(),
+                          [](const auto& a, const auto& b) {
+                              if (a.second.z != b.second.z) {
+                                  return a.second.z < b.second.z;
+                              }
+                              return a.second.y < b.second.y;
+                          });
+
+                for (auto& [path, pos] : pending_sprites) {
+                    ctx->renderer->draw_sprite(path, ctx->textures,
+                                               {pos.x, pos.y}, screen_offset,
+                                               zoom);
+                }
+            }
         }
     }
 }
