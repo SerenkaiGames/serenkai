@@ -278,6 +278,10 @@ void Renderer::draw_map(Map* map, TextureManager* texture_manager,
 void Renderer::draw_sprite(std::string_view sprite_loc,
                            TextureManager* texture_manager, glm::vec2 world_pos,
                            glm::vec2 screen_offset, float zoom) {
+    if (zoom <= 0.0f) {
+        zoom = 1.0f;
+    }
+
     if (!m_sprite_renderer || !texture_manager) {
         return;
     }

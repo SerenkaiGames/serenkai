@@ -10,12 +10,16 @@
 #include "serenkai/script/script_constants.hpp"
 #include "serenkai/script/script_engine.hpp"
 
+#include <algorithm>
 #include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace serenkai {
 
@@ -100,8 +104,11 @@ void GameScene::render(RenderContext* ctx) {
                                     zoom);
 
             if (m_entity_manager) {
+
+                std::vector<std::pair<std::string, glm::vec3>> pending_sprites;
+
                 m_entity_manager->for_each_alive(
-                    [screen_offset, ctx, zoom](EntityId, const Entity& e) {
+                    [&pending_sprites](EntityId, const Entity& e) {
                         auto path = e.get_prop<std::string>(
                             "serenkai:props/texture"_rl);
 
@@ -110,15 +117,27 @@ void GameScene::render(RenderContext* ctx) {
                         }
 
                         auto pos =
-                            e.get_prop<glm::vec2>("serenkai:props/pos"_rl);
+                            e.get_prop<glm::vec3>("serenkai:props/pos"_rl);
 
                         if (!pos) {
                             return;
                         }
-
-                        ctx->renderer->draw_sprite(*path, ctx->textures, *pos,
-                                                   screen_offset, zoom);
+                        pending_sprites.emplace_back(*path, *pos);
                     });
+
+                std::sort(pending_sprites.begin(), pending_sprites.end(),
+                          [](const auto& a, const auto& b) {
+                              if (a.second.z != b.second.z) {
+                                  return a.second.z < b.second.z;
+                              }
+                              return a.second.y < b.second.y;
+                          });
+
+                for (auto& [path, pos] : pending_sprites) {
+                    ctx->renderer->draw_sprite(path, ctx->textures,
+                                               {pos.x, pos.y}, screen_offset,
+                                               zoom);
+                }
             }
         }
     }
