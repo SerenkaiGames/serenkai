@@ -1,3 +1,4 @@
+#include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/base/raii.hpp"
 #include "serenkai/resource/asset_manager.hpp"
@@ -66,7 +67,7 @@ public:
         }
     }
 
-    void on_leave() override {
+    void on_leave(AppContext*) override {
         if (m_stats) {
             ++m_stats->leave_count;
         }
@@ -325,7 +326,7 @@ TEST_CASE("GameScene script lifecycle hooks and event dispatch", "[scene]") {
         out << R"(
             local Event = require("serenkai:scripts/event.luau")
 
-            function on_enter(mgr, cam)
+            function on_enter()
                 Event.emit("serenkai:events/enter_game")
             end
 
@@ -391,7 +392,7 @@ TEST_CASE("GameScene script lifecycle hooks and event dispatch", "[scene]") {
         GameScene scene;
         scene.on_enter(&ctx);
         scene.update(0.016F);
-        scene.on_leave();
+        scene.on_leave(&ctx);
     }
 
     auto counts = listener_script->call<int, int, int>("get_counts");

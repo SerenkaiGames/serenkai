@@ -45,19 +45,19 @@ ScriptEngine::ScriptEngine(ScriptEngineConfig config)
             return require(module_name);
         });
 
-    register_lua_log(m_root.get());
+    bind_log_to_lua(m_root.get());
 
     if (config.input_manager) {
-        register_lua_input(m_root.get(), config.input_manager);
+        bind_input_to_lua(m_root.get(), config.input_manager);
     }
 
-    register_lua_aabb(m_root.get());
+    bind_aabb_to_lua(m_root.get());
 
-    register_lua_map(m_root.get());
+    bind_map_to_lua(m_root.get(), this);
 
-    register_lua_camera(m_root.get());
+    bind_camera_to_lua(m_root.get(), this);
 
-    register_lua_entity(m_root.get());
+    bind_entity_to_lua(m_root.get(), this);
 
     // Enable sandbox on root state after all built-in bindings are registered.
     // After all global bindings are registered, enable the read-only sandbox on
@@ -220,6 +220,14 @@ luabridge::LuaRef ScriptEngine::require(const std::string& module_name) {
     m_module_cache.try_emplace(*res, result);
 
     return result;
+}
+
+void ScriptEngine::set_active_world(const WorldContext& contex) {
+    m_world_context = contex;
+}
+
+const WorldContext& ScriptEngine::world_context() const {
+    return m_world_context;
 }
 
 } // namespace serenkai

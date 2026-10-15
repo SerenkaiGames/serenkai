@@ -96,7 +96,7 @@ void SceneManager::pop() {
     }
     auto scene = std::move(m_scenes.top());
     m_scenes.pop();
-    scene->on_leave();
+    scene->on_leave(m_ctx);
     m_pending_delete_scene.push_back(std::move(scene));
 }
 

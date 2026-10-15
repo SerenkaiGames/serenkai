@@ -7,7 +7,7 @@
 #include <spdlog/spdlog.h>
 
 namespace serenkai {
-void register_lua_input(lua_State* L, InputManager* input_manager) {
+void bind_input_to_lua(lua_State* L, InputManager* input_manager) {
     if (!input_manager) {
         spdlog::error("Register lua input failed, input manager is nullptr");
         return;

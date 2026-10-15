@@ -11,5 +11,5 @@ namespace serenkai {
 /// log.error
 /// log.warn
 /// log.debug
-void register_lua_log(lua_State* L);
+void bind_log_to_lua(lua_State* L);
 } // namespace serenkai

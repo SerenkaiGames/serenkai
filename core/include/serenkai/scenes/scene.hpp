@@ -54,7 +54,7 @@ public:
     virtual void on_enter(AppContext*) {}
 
     /// @brief Called once when leaving the scene, used to clean up resources.
-    virtual void on_leave() {}
+    virtual void on_leave(AppContext*) {}
 
 protected:
     virtual bool handle_mouse_move_event(const MouseMoveEvent&) {

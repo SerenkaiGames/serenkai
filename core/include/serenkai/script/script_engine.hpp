@@ -1,5 +1,6 @@
 #pragma once
 
+#include "serenkai/game/world_context.hpp"
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/lua_header.hpp"
 #include "serenkai/script/script.hpp"
@@ -14,6 +15,7 @@ namespace serenkai {
 
 class AssetManager;
 class InputManager;
+
 struct ScriptEngineConfig {
     AssetManager* asset_manager = nullptr;
     InputManager* input_manager = nullptr;
@@ -33,8 +35,13 @@ public:
     std::optional<Script> create(std::string_view loc);
     std::optional<Script> create(const ResourceLocation& loc);
 
+    void set_active_world(const WorldContext& contex);
+
+    const WorldContext& world_context() const;
+
 private:
     AssetManager* m_asset_manager = nullptr;
+    WorldContext m_world_context;
     LuaState m_root;
 
     std::unordered_map<ResourceLocation, luabridge::LuaRef> m_module_cache;

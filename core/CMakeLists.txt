@@ -120,6 +120,8 @@ add_library(
     include/serenkai/script/bindings/bind_entity.hpp
     src/script/bindings/bind_entity.cpp
     include/serenkai/script/bindings/luau_prop.hpp
+    include/serenkai/game/world_context.hpp
+    include/serenkai/script/bindings/facade_wrapper.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

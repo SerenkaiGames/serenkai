@@ -10,3 +10,11 @@ declare log: {
 declare print: (...any) -> ()
 
 declare require: (string) -> any
+
+ export type World = {
+    Camera: WorldCamera,
+    Map: WorldMap,
+    Entities: WorldEntities,
+}
+
+declare World: World

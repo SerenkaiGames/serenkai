@@ -1,7 +1,9 @@
 #include "serenkai/scenes/game_scene.hpp"
 
 #include "serenkai/game/camera.hpp"
+#include "serenkai/game/entity_manager.hpp"
 #include "serenkai/game/map_manager.hpp"
+#include "serenkai/game/world_context.hpp"
 #include "serenkai/render/renderer.hpp"
 #include "serenkai/script/script.hpp"
 #include "serenkai/script/script_constants.hpp"
@@ -21,12 +23,18 @@ void GameScene::on_enter(AppContext* ctx) {
     }
     m_map_manager = std::make_unique<MapManager>(ctx->assets);
     m_camera = std::make_unique<Camera>();
+    m_entity_manager = std::make_unique<EntityManager>();
 
     if (ctx->script) {
+
+        // Enter the world and inject the related context.
+        ctx->script->set_active_world(WorldContext{
+            m_camera.get(), m_map_manager.get(), m_entity_manager.get()});
+
         auto s = ctx->script->create(GAME_SCENE_SCRIPT_LOC);
         if (s) {
             m_script = std::make_unique<Script>(std::move(*s));
-            m_script->call<>("on_enter", m_map_manager.get(), m_camera.get());
+            m_script->call<>("on_enter");
         }
     }
 }
@@ -54,9 +62,14 @@ void GameScene::render(RenderContext* ctx) {
     }
 }
 
-void GameScene::on_leave() {
+void GameScene::on_leave(AppContext* ctx) {
     if (m_script) {
         m_script->call<>("on_leave");
+    }
+    if (ctx && ctx->script) {
+
+        // Clear the corresponding context.
+        ctx->script->set_active_world(WorldContext{});
     }
 }
 

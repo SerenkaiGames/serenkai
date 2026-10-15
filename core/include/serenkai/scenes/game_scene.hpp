@@ -1,6 +1,8 @@
 #pragma once
 
+#include "serenkai/application/app_context.hpp"
 #include "serenkai/game/camera.hpp"
+#include "serenkai/game/entity_manager.hpp"
 #include "serenkai/game/map_manager.hpp"
 #include "serenkai/render/render_context.hpp"
 #include "serenkai/scenes/scene.hpp"
@@ -16,11 +18,12 @@ public:
 
     void render(RenderContext* ctx) override;
 
-    void on_leave() override;
+    void on_leave(AppContext* ctx) override;
 
 private:
     std::unique_ptr<MapManager> m_map_manager;
     std::unique_ptr<Camera> m_camera;
+    std::unique_ptr<EntityManager> m_entity_manager;
     std::unique_ptr<Script> m_script;
 };
 } // namespace serenkai

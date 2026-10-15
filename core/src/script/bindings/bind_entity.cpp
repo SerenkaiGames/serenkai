@@ -1,128 +1,72 @@
 #include "serenkai/script/bindings/bind_entity.hpp"
 
+#include "serenkai/game/entity.hpp"
 #include "serenkai/game/entity_manager.hpp"
+#include "serenkai/script/bindings/facade_wrapper.hpp"
 #include "serenkai/script/bindings/luau_prop.hpp"
 #include "serenkai/script/lua_header.hpp"
+#include "serenkai/script/script_engine.hpp"
+
+#define BIND(name, fn) addFunction(name, wrap_facade(get_subsystem, fn))
 
 namespace serenkai {
-namespace {
-int lua_entity_set_prop(lua_State* L) {
-    auto res_mgr = luabridge::Stack<EntityManager*>::get(L, 1);
-    if (!res_mgr) {
-        lua_pushboolean(L, 0);
-        return 1;
-    }
-    auto* mgr = *res_mgr;
 
-    const double id_num = luaL_checknumber(L, 2);
-    const EntityId id = static_cast<EntityId>(id_num);
+void bind_entity_to_lua(lua_State* L, ScriptEngine* engine) {
 
-    size_t len = 0;
-    const char* loc_str = luaL_checklstring(L, 3, &len);
-    const std::string_view loc{loc_str, len};
-
-    const int type = lua_type(L, 4);
-    PropValue val;
-    switch (type) {
-    case LUA_TNIL:
-        val = std::monostate{};
-        break;
-    case LUA_TBOOLEAN:
-        val = (lua_toboolean(L, 4) != 0);
-        break;
-    case LUA_TNUMBER: {
-        const double n = lua_tonumber(L, 4);
-
-        if (static_cast<double>(static_cast<int>(n)) == n) {
-            val = static_cast<int>(n);
-        } else {
-            val = static_cast<float>(n);
+    auto get_subsystem = [engine]() -> EntityManager* {
+        if (!engine) {
+            return nullptr;
         }
-        break;
-    }
-    case LUA_TSTRING: {
-        size_t str_len = 0;
-        const char* s = lua_tolstring(L, 4, &str_len);
-        val = std::string(s, str_len);
-        break;
-    }
-    case LUA_TVECTOR: {
+        return engine->world_context().entity_mgr;
+    };
 
-        const float* v = lua_tovector(L, 4);
-        val = glm::vec3(v[0], v[1], v[2]);
-        break;
-    }
-    default:
-        luaL_error(L, "Unsupported property value type: %s",
-                   lua_typename(L, type));
-        return 0;
-    }
-
-    const bool res = mgr->set_prop(id, loc, std::move(val));
-    lua_pushboolean(L, res ? 1 : 0);
-    return 1;
-}
-
-int lua_entity_get_prop(lua_State* L) {
-    auto res_mgr = luabridge::Stack<EntityManager*>::get(L, 1);
-    if (!res_mgr) {
-        lua_pushnil(L);
-        return 1;
-    }
-    auto* mgr = *res_mgr;
-
-    const double id_num = luaL_checknumber(L, 2);
-    const EntityId id = static_cast<EntityId>(id_num);
-
-    size_t len = 0;
-    const char* loc_str = luaL_checklstring(L, 3, &len);
-    const std::string_view loc{loc_str, len};
-
-    auto prop = mgr->get_prop(id, loc);
-    if (!prop.has_value()) {
-        lua_pushnil(L);
-        return 1;
-    }
-
-    push_property(L, *prop);
-    return 1;
-}
-
-} // namespace
-
-void register_lua_entity(lua_State* L) {
     luabridge::getGlobalNamespace(L)
-        .beginClass<EntityManager>("EntityManager")
-        .addStaticProperty("NULL_ID", &EntityManager::NULL_ID)
+        .beginNamespace("World")
+        .beginNamespace("Entities")
         .addProperty("NULL_ID",
-                     [](const EntityManager*) -> double {
+                     []() -> double {
                          return static_cast<double>(EntityManager::NULL_ID);
                      })
-        .addFunction("create",
-                     [](EntityManager* self) -> double {
-                         return static_cast<double>(self->create());
-                     })
-        .addFunction("destroy",
-                     [](EntityManager* self, double id) {
-                         self->destroy(static_cast<EntityId>(id));
-                     })
-        .addFunction("alive",
-                     [](EntityManager* self, double id) -> bool {
-                         return self->alive(static_cast<EntityId>(id));
-                     })
-        .addFunction(
-            "has_prop",
-            [](EntityManager* self, double id, std::string_view loc) -> bool {
-                return self->has_prop(static_cast<EntityId>(id), loc);
-            })
-        .addFunction(
-            "remove_prop",
-            [](EntityManager* self, double id, std::string_view loc) -> bool {
-                return self->remove_prop(static_cast<EntityId>(id), loc);
-            })
-        .addFunction("alive_size", &EntityManager::alive_size)
-        .addFunction("set_prop", &lua_entity_set_prop)
-        .addFunction("get_prop", &lua_entity_get_prop)
-        .endClass();
+        .BIND("create",
+              [](EntityManager* self) -> double {
+                  return static_cast<double>(self->create());
+              })
+        .BIND("destroy",
+              [](EntityManager* self, double id) {
+                  self->destroy(static_cast<EntityId>(id));
+              })
+        .BIND("alive",
+              [](EntityManager* self, double id) -> bool {
+                  return self->alive(static_cast<EntityId>(id));
+              })
+        .BIND("has_prop",
+              [](EntityManager* self, double id, std::string_view loc) -> bool {
+                  return self->has_prop(static_cast<EntityId>(id), loc);
+              })
+        .BIND("remove_prop",
+              [](EntityManager* self, double id, std::string_view loc) -> bool {
+                  return self->remove_prop(static_cast<EntityId>(id), loc);
+              })
+        .BIND("alive_size", &EntityManager::alive_size)
+        .BIND("set_prop",
+              [](EntityManager* self, double id, std::string_view loc,
+                 luabridge::LuaRef val) -> bool {
+                  return self->set_prop(static_cast<EntityId>(id), loc,
+                                        lua_ref_to_prop(val));
+              })
+        .BIND("get_prop",
+              [L](EntityManager* self, double id,
+                  std::string_view loc) -> std::optional<luabridge::LuaRef> {
+                  auto prop = self->get_prop(static_cast<EntityId>(id), loc);
+                  if (!prop.has_value()) {
+                      return std::nullopt;
+                  }
+                  push_property(L, *prop);
+                  auto ref = luabridge::LuaRef::fromStack(L, -1);
+                  lua_pop(L, 1);
+                  return ref;
+              })
+        .endNamespace()
+        .endNamespace();
 }
 } // namespace serenkai

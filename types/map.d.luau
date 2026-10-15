@@ -31,8 +31,8 @@ export type Map = {
 	get_spawn_point: (self: Map, name: string) -> vector?,
 }
 
-export type MapManager = {
-	switch_map: (self: MapManager, loc: string, spawn_point_name: string?) -> boolean,
-	current_map: (self: MapManager) -> Map?,
-	has_map: (self: MapManager) -> boolean,
+export type WorldMap = {
+	switch_map: (loc: string, spawn_point_name: string?) -> boolean,
+	current_map: () -> Map?,
+	has_map: () -> boolean,
 }

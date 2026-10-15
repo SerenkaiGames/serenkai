@@ -3,12 +3,16 @@
 #include "serenkai/game/map.hpp"
 #include "serenkai/game/map_data.hpp"
 #include "serenkai/game/map_manager.hpp"
+#include "serenkai/script/bindings/facade_wrapper.hpp"
 #include "serenkai/script/bindings/luau_glm.hpp"
 #include "serenkai/script/bindings/luau_prop.hpp"
 #include "serenkai/script/lua_header.hpp"
+#include "serenkai/script/script_engine.hpp"
 
 #include <optional>
 #include <string_view>
+
+#define BIND(name, fn) addFunction(name, wrap_facade(get_subsystem, fn))
 
 namespace serenkai {
 
@@ -40,8 +44,27 @@ int get_property(lua_State* L) {
 }
 } // namespace
 
-void register_lua_map(lua_State* L) {
+void bind_map_to_lua(lua_State* L, ScriptEngine* engine) {
+
+    auto get_subsystem = [engine]() -> MapManager* {
+        if (!engine) {
+            return nullptr;
+        }
+        return engine->world_context().map_mgr;
+    };
+
     luabridge::getGlobalNamespace(L)
+        .beginNamespace("World")
+        .beginNamespace("Map")
+        .BIND("switch_map",
+              [](MapManager* self, std::string_view loc,
+                 std::optional<std::string_view> spawn_point_name) {
+                  return self->switch_map(loc, spawn_point_name.value_or(""));
+              })
+        .BIND("current_map", &MapManager::current_map)
+        .BIND("has_map", &MapManager::has_map)
+        .endNamespace()
+        .endNamespace()
 
         .beginClass<Tile>("Tile")
         .addProperty("gid", &Tile::gid)
@@ -55,17 +78,6 @@ void register_lua_map(lua_State* L) {
         .addProperty("aabb", &MapObject::aabb)
         .addProperty("visible", &MapObject::visible)
         .addFunction("get_property", &get_property)
-        .endClass()
-        .beginClass<MapManager>("MapManager")
-        .addFunction("switch_map",
-                     [](MapManager* self, std::string_view loc,
-                        std::optional<std::string_view> spawn_point_name) {
-                         return self->switch_map(loc,
-                                                 spawn_point_name.value_or(""));
-                     })
-        .addFunction("current_map", &MapManager::current_map)
-        .addFunction("has_map", &MapManager::has_map)
-        //.addFunction("unload_current_map", &MapManager::unload_current_map)
         .endClass()
         .beginClass<Map>("Map")
         .addFunction("map_size", &Map::map_size)
