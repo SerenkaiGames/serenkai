@@ -80,23 +80,20 @@ TEST_CASE("MapRenderer null pointer and boundary safety",
     SECTION("Null SDL_Renderer instance is safe") {
         MapRenderer null_renderer(nullptr);
         // Calling render with null renderer should cleanly return without crash
-        auto _ =
-            null_renderer.render(&map, &texture_manager, {0.0f, 0.0f}, 1.0f);
+        null_renderer.render(&map, &texture_manager, {0.0f, 0.0f}, 1.0f);
     }
 
     SECTION("Null Map or TextureManager parameter is safe") {
         MapRenderer map_renderer(ctx.renderer);
-        auto _ =
-            map_renderer.render(nullptr, &texture_manager, {0.0f, 0.0f}, 1.0f);
-        _ = map_renderer.render(&map, nullptr, {0.0f, 0.0f}, 1.0f);
-        _ = map_renderer.render(nullptr, nullptr, {0.0f, 0.0f}, 1.0f);
+        map_renderer.render(nullptr, &texture_manager, {0.0f, 0.0f}, 1.0f);
+        map_renderer.render(&map, nullptr, {0.0f, 0.0f}, 1.0f);
+        map_renderer.render(nullptr, nullptr, {0.0f, 0.0f}, 1.0f);
     }
 
     SECTION("Invalid zoom values are safely guarded") {
         MapRenderer map_renderer(ctx.renderer);
-        auto _ =
-            map_renderer.render(&map, &texture_manager, {0.0f, 0.0f}, 0.0f);
-        _ = map_renderer.render(&map, &texture_manager, {0.0f, 0.0f}, -1.0f);
+        map_renderer.render(&map, &texture_manager, {0.0f, 0.0f}, 0.0f);
+        map_renderer.render(&map, &texture_manager, {0.0f, 0.0f}, -1.0f);
     }
 }
 
@@ -212,29 +209,25 @@ TEST_CASE("MapRenderer renders tile and image layers",
     Map map(std::move(data));
     MapRenderer renderer(ctx.renderer);
 
-    SECTION("Renders at default camera and zoom") {
-        auto _ = renderer.render(&map, &texture_manager, {0.0f, 0.0f}, 1.0f);
+    SECTION("Renders at default screen offset and zoom") {
+        renderer.render(&map, &texture_manager, {0.0f, 0.0f}, 1.0f);
     }
 
-    SECTION("Renders with 2x zoom and offset camera") {
-        auto _ = renderer.render(&map, &texture_manager, {16.0f, 16.0f}, 2.0f);
+    SECTION("Renders with 2x zoom and screen offset") {
+        renderer.render(&map, &texture_manager, {16.0f, 16.0f}, 2.0f);
     }
 
-    SECTION("Camera clamping with extreme values") {
-        // Negative coordinates clamp to 0
-        auto _ =
-            renderer.render(&map, &texture_manager, {-100.0f, -100.0f}, 1.0f);
-        // Exceeding world size clamps to upper bound
-        _ = renderer.render(&map, &texture_manager, {1000.0f, 1000.0f}, 1.0f);
+    SECTION("Renders with extreme screen offset values") {
+        renderer.render(&map, &texture_manager, {-100.0f, -100.0f}, 1.0f);
+        renderer.render(&map, &texture_manager, {1000.0f, 1000.0f}, 1.0f);
     }
 
-    SECTION("Small map clamping when map is smaller than viewport") {
+    SECTION("Renders small map with screen offset") {
         MapData small_data{};
         small_data.map_size = {1, 1};
         small_data.tile_size = {16, 16};
         Map small_map(std::move(small_data));
 
-        auto _ =
-            renderer.render(&small_map, &texture_manager, {10.0f, 10.0f}, 1.0f);
+        renderer.render(&small_map, &texture_manager, {10.0f, 10.0f}, 1.0f);
     }
 }
