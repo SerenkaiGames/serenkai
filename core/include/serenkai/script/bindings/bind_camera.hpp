@@ -3,5 +3,6 @@
 struct lua_State;
 
 namespace serenkai {
-void bind_camera_to_lua(lua_State* L);
-}
+class ScriptEngine;
+void bind_camera_to_lua(lua_State* L, ScriptEngine* engine);
+} // namespace serenkai
