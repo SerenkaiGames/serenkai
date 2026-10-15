@@ -2,7 +2,9 @@
 
 #include "serenkai/gui/color.hpp"
 #include "serenkai/render/map_renderer.hpp"
+#include "serenkai/render/sprite_renderer.hpp"
 #include "serenkai/render/text_renderer.hpp"
+#include "serenkai/resource/texture_manager.hpp"
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_hints.h>
@@ -195,6 +197,7 @@ Renderer::Renderer(const RendererConfig& config) : m_config(config) {
 
     m_text_renderer = std::make_unique<TextRenderer>(m_sdl_renderer);
     m_map_renderer = std::make_unique<MapRenderer>(m_sdl_renderer);
+    m_sprite_renderer = std::make_unique<SpriteRenderer>(m_sdl_renderer);
 }
 Renderer::~Renderer() {
     if (m_sdl_renderer) {
@@ -228,6 +231,13 @@ void Renderer::clear() {
     SDL_RenderClear(m_sdl_renderer);
 }
 
+glm::vec2 Renderer::render_size() const {
+
+    int w = 0, h = 0;
+    SDL_GetRenderOutputSize(m_sdl_renderer, &w, &h);
+    return {w, h};
+}
+
 void Renderer::draw_text(Font& font, std::string_view utf8, glm::ivec2 pos,
                          Color color, float scale) {
     m_text_renderer->draw_text(font, utf8, pos.x, pos.y, to_sdl_fcolor(color),
@@ -258,12 +268,28 @@ void Renderer::draw_image(SDL_Texture* texture, glm::ivec2 pos, glm::ivec2 size,
     SDL_RenderTexture(m_sdl_renderer, texture, nullptr, &dst);
 }
 
-glm::vec2 Renderer::draw_map(Map* map, TextureManager* texture_manager,
-                             glm::vec2 camera, float zoom) {
+void Renderer::draw_map(Map* map, TextureManager* texture_manager,
+                        glm::vec2 screen_offset, float zoom) {
     if (m_map_renderer) {
-        return m_map_renderer->render(map, texture_manager, camera, zoom);
+        m_map_renderer->render(map, texture_manager, screen_offset, zoom);
     }
-    return camera;
+}
+
+void Renderer::draw_sprite(std::string_view sprite_loc,
+                           TextureManager* texture_manager, glm::vec2 world_pos,
+                           glm::vec2 screen_offset, float zoom) {
+    if (!m_sprite_renderer || !texture_manager) {
+        return;
+    }
+
+    auto texture = texture_manager->get(sprite_loc);
+    if (!texture) {
+        return;
+    }
+    glm::vec2 size =
+        static_cast<glm::vec2>(texture_manager->measure_size(texture));
+    m_sprite_renderer->render_sprite(texture, world_pos, size, screen_offset,
+                                     zoom);
 }
 
 } // namespace serenkai

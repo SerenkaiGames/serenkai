@@ -2,6 +2,7 @@
 #include "serenkai/gui/color.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/render/map_renderer.hpp"
+#include "serenkai/render/sprite_renderer.hpp"
 #include "serenkai/render/text_renderer.hpp"
 
 #include <SDL3/SDL_render.h>
@@ -9,6 +10,7 @@
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
 #include <memory>
+#include <string_view>
 namespace serenkai {
 
 class GuiContext;
@@ -42,6 +44,8 @@ public:
     void clear();
     void present();
 
+    glm::vec2 render_size() const;
+
     /// @param pos  pos is in physical coordinates
     /// @param size size is the logical size
     /// @note Please pass physical coordinates, not logical coordinates.
@@ -57,16 +61,21 @@ public:
     void draw_image(SDL_Texture* texture, glm::ivec2 pos, glm::ivec2 size,
                     float scale);
 
-    [[nodiscard("Need to update the camera position.")]]
-    glm::vec2 draw_map(Map* map, TextureManager* texture_manager,
-                       glm::vec2 camera, float zoom);
+    void draw_map(Map* map, TextureManager* texture_manager,
+                  glm::vec2 screen_offset, float zoom);
+
+    void draw_sprite(std::string_view sprite_path,
+                     TextureManager* texture_manager, glm::vec2 world_pos,
+                     glm::vec2 screen_offset, float zoom);
 
 private:
     const RendererConfig m_config;
     SDL_Renderer* m_sdl_renderer{nullptr};
     SDL_Color m_clear_color = {0, 0, 0, SDL_ALPHA_OPAQUE};
+
     std::unique_ptr<TextRenderer> m_text_renderer;
     std::unique_ptr<MapRenderer> m_map_renderer;
+    std::unique_ptr<SpriteRenderer> m_sprite_renderer;
 
     /// @brief Print renderer and GPU information to log.
     void print_renderer_info() const;

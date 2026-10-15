@@ -55,10 +55,47 @@ void GameScene::render(RenderContext* ctx) {
     if (m_map_manager && m_camera) {
         auto map = m_map_manager->current_map();
         if (map) {
-            auto camera_pos = ctx->renderer->draw_map(
-                map.get(), ctx->textures, m_camera->pos(), m_camera->zoom());
-            m_camera->set_pos(camera_pos);
+            auto camera = m_camera->pos();
+            float zoom = m_camera->zoom();
+            auto size = ctx->renderer->render_size();
+            // Viewport size in world units.
+            const glm::vec2 view{static_cast<float>(size.x) / zoom,
+                                 static_cast<float>(size.y) / zoom};
+
+            const auto world = static_cast<glm::vec2>(map->pixel_size());
+            const glm::vec2 half = view * 0.5f;
+
+            // If the map is smaller than the viewport on an axis, center it on
+            // that axis; otherwise, clamp the viewport within the map's world
+            // bounds.
+            if (world.x < view.x) {
+                camera.x = world.x * 0.5f;
+            } else {
+                camera.x = std::clamp(camera.x, half.x, world.x - half.x);
+            }
+
+            if (world.y < view.y) {
+                camera.y = world.y * 0.5f;
+            } else {
+                camera.y = std::clamp(camera.y, half.y, world.y - half.y);
+            }
+
+            const glm::vec2 screen_center{static_cast<float>(size.x) * 0.5f,
+                                          static_cast<float>(size.y) * 0.5f};
+
+            // World space -> screen space.
+            // The camera is the observation point and lands at the window
+            // center: p_screen = (p_world - camera) * zoom + screen_center
+            // offset = screen_center - camera * zoom
+            // p_screen = p_world * zoom + offset
+            const glm::vec2 screen_offset{screen_center.x - camera.x * zoom,
+                                          screen_center.y - camera.y * zoom};
+            ctx->renderer->draw_map(map.get(), ctx->textures, screen_offset,
+                                    zoom);
+            m_camera->set_pos(camera);
         }
+    }
+    if (m_entity_manager && ctx->renderer) {
     }
 }
 

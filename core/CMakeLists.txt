@@ -122,6 +122,8 @@ add_library(
     include/serenkai/script/bindings/luau_prop.hpp
     include/serenkai/game/world_context.hpp
     include/serenkai/script/bindings/facade_wrapper.hpp
+    include/serenkai/render/sprite_renderer.hpp
+    src/render/sprite_renderer.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
