@@ -1,6 +1,7 @@
 #include "serenkai/scenes/game_scene.hpp"
 
 #include "serenkai/game/camera.hpp"
+#include "serenkai/game/entity.hpp"
 #include "serenkai/game/entity_manager.hpp"
 #include "serenkai/game/map_manager.hpp"
 #include "serenkai/game/world_context.hpp"
@@ -9,9 +10,11 @@
 #include "serenkai/script/script_constants.hpp"
 #include "serenkai/script/script_engine.hpp"
 
+#include <glm/ext/vector_float2.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace serenkai {
@@ -49,7 +52,7 @@ void GameScene::update(float dt) {
 }
 
 void GameScene::render(RenderContext* ctx) {
-    if (!ctx) {
+    if (!ctx || !ctx->renderer || !ctx->textures) {
         return;
     }
     if (m_map_manager && m_camera) {
@@ -80,6 +83,8 @@ void GameScene::render(RenderContext* ctx) {
                 camera.y = std::clamp(camera.y, half.y, world.y - half.y);
             }
 
+            m_camera->set_pos(camera);
+
             const glm::vec2 screen_center{static_cast<float>(size.x) * 0.5f,
                                           static_cast<float>(size.y) * 0.5f};
 
@@ -90,12 +95,32 @@ void GameScene::render(RenderContext* ctx) {
             // p_screen = p_world * zoom + offset
             const glm::vec2 screen_offset{screen_center.x - camera.x * zoom,
                                           screen_center.y - camera.y * zoom};
+
             ctx->renderer->draw_map(map.get(), ctx->textures, screen_offset,
                                     zoom);
-            m_camera->set_pos(camera);
+
+            if (m_entity_manager) {
+                m_entity_manager->for_each_alive(
+                    [screen_offset, ctx, zoom](EntityId, const Entity& e) {
+                        auto path = e.get_prop<std::string>(
+                            "serenkai:props/texture"_rl);
+
+                        if (!path) {
+                            return;
+                        }
+
+                        auto pos =
+                            e.get_prop<glm::vec2>("serenkai:props/pos"_rl);
+
+                        if (!pos) {
+                            return;
+                        }
+
+                        ctx->renderer->draw_sprite(*path, ctx->textures, *pos,
+                                                   screen_offset, zoom);
+                    });
+            }
         }
-    }
-    if (m_entity_manager && ctx->renderer) {
     }
 }
 
