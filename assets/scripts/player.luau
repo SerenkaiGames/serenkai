@@ -4,20 +4,15 @@ local id: EntityId
 
 local speed: number = 100
 
-local Event = require("serenkai:scripts/event.luau")
-
-local cleanups: { Cleanup } = {}
+local EntitySystem = require("serenkai:scripts/entity_system.luau")
 
 function on_init(e_id: EntityId)
 	id = e_id
 
-	local c1 = Event.on("serenkai:events/update_game", on_update)
-	local c2 = Event.on("serenkai:events/leave_game", function()
-		World.Entities.destroy(id)
+	EntitySystem.on(id, "serenkai:events/update_game", on_update)
+	EntitySystem.on(id, "serenkai:events/leave_game", function()
+		EntitySystem.destroy(id)
 	end)
-
-	table.insert(cleanups, c1)
-	table.insert(cleanups, c2)
 end
 
 function on_update(dt: number)
@@ -64,7 +59,5 @@ function update_zoom()
 end
 
 function on_destroy()
-	for _, f in cleanups do
-		pcall(f)
-	end
+	EntitySystem.cleanup(id)
 end

@@ -1,6 +1,4 @@
-export type Listener = (...any) -> ()
-
-local listeners: { [string]: { Listener } } = {}
+local listeners: { [string]: { EventListener } } = {}
 
 local Event = {}
 
@@ -10,7 +8,7 @@ local Event = {}
     Supported engine events for registration:
     serenkai:events/update: (number) -> () called once per frame
 ]]
-function Event.on(event: string, callback: Listener)
+function Event.on(event: string, callback: EventListener)
 	local list = listeners[event]
 	if not list then
 		list = {}

@@ -38,6 +38,7 @@ When implementing a new feature, add appropriate unit tests for the new function
 * Keep tests separate from the game source code.
 * Follow the existing test structure and conventions.
 * Run the relevant tests after making code changes.
+* Unit tests must strictly not include any game runtime resources.
 
 ## Comments
 
