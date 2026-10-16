@@ -1,10 +1,11 @@
 --!nolint FunctionUnused
 
 local Event = require("serenkai:scripts/event.luau")
+local EntitySystem = require("serenkai:scripts/entity_system.luau")
 
 function on_enter()
 	init_map()
-
+	init_player()
 	Event.emit("serenkai:events/enter_game")
 end
 
@@ -26,4 +27,8 @@ function init_map()
 			World.Camera.set_pos(point)
 		end
 	end
+end
+
+function init_player()
+	EntitySystem.create("serenkai:entites/player.json")
 end

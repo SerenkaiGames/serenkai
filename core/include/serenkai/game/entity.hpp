@@ -6,8 +6,9 @@
 #include <cstdint>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 namespace serenkai {
-
+class Script;
 // generation is in the upper 32 bits
 // idx is in the lower 32 bits
 using EntityId = std::uint64_t;
@@ -30,6 +31,8 @@ struct Entity {
     // Use ResourceLocation as the key to normalize properties while ensuring
     // good hash lookup performance.
     std::unordered_map<ResourceLocation, PropValue> props;
+
+    std::vector<Script> scripts;
 
     template <typename T> const T* get_prop(const ResourceLocation& loc) const {
         auto it = props.find(loc);

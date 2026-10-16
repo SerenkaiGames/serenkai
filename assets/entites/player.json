@@ -1,8 +1,8 @@
 {
-    "name": "serenkai:player",
     "props": {
-        "texture": "serenkai:player",
-        "pos": [
+        "props/name": "serenkai:player",
+        "props/texture": "serenkai:player",
+        "props/pos": [
             0,
             0,
             1

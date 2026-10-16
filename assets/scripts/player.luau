@@ -4,8 +4,17 @@ local id: EntityId
 
 local speed: number = 100
 
+local Event = require("serenkai:scripts/event.luau")
+
+local cleanups: { Cleanup } = {}
+
 function on_init(e_id: EntityId)
 	id = e_id
+
+	local c = Event.on("serenkai:events/update_game", on_update)
+	Event.on("serenkai:events/leave_game", World.Entities.destroy(id))
+
+	table.insert(cleanups, c)
 end
 
 function on_update(dt: number)
@@ -46,5 +55,11 @@ function update_zoom()
 
 	if Input.is_pressed(Input.Action["inputs/zoom_out"]) then
 		World.Camera.add_zoom(-1)
+	end
+end
+
+function on_destroy()
+	for _, f in cleanups do
+		pcall(f)
 	end
 end

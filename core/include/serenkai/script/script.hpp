@@ -22,18 +22,22 @@ namespace lua_detail {
 /// or std::nullopt on failure.
 template <typename... RetTypes, typename... Args>
 std::optional<std::tuple<RetTypes...>>
-call_function(const luabridge::LuaRef& func, Args&&... args) {
+call_function(bool log, const luabridge::LuaRef& func, Args&&... args) {
     using ReturnTuple = std::tuple<RetTypes...>;
 
     if (!func.isCallable()) {
-        spdlog::error("Lua object is not callable");
+        if (log) {
+            spdlog::error("Lua object is not callable");
+        }
         return std::nullopt;
     }
 
     auto result = func.call<ReturnTuple>(std::forward<Args>(args)...);
 
     if (!result) {
-        spdlog::error("Lua function call failed: {}", result.message());
+        if (log) {
+            spdlog::error("Lua function call failed: {}", result.message());
+        }
         return std::nullopt;
     }
 
@@ -56,6 +60,7 @@ public:
     Script(LuaState state, std::string_view script, std::string_view name);
     ~Script() = default;
 
+    /// @brief Call Luau function. Errors will be logged.
     template <typename... RetTypes, typename... Args>
     std::optional<std::tuple<RetTypes...>> call(std::string_view func,
                                                 Args&&... args) {
@@ -65,7 +70,20 @@ public:
         }
 
         return lua_detail::call_function<RetTypes...>(
-            *fun, std::forward<Args>(args)...);
+            true, *fun, std::forward<Args>(args)...);
+    }
+
+    /// @brief Call Luau function. Errors will be ignored.
+    template <typename... RetTypes, typename... Args>
+    std::optional<std::tuple<RetTypes...>> try_call(std::string_view func,
+                                                    Args&&... args) {
+        auto fun = get_global(func);
+        if (!fun) {
+            return std::nullopt;
+        }
+
+        return lua_detail::call_function<RetTypes...>(
+            false, *fun, std::forward<Args>(args)...);
     }
 
     /// @brief Get the global variable of the current script; if it is nil,

@@ -8,11 +8,18 @@
 #include <utility>
 #include <vector>
 namespace serenkai {
+class AssetManager;
+class ScriptEngine;
 
 class EntityManager {
 public:
+    EntityManager(AssetManager* asset_manager, ScriptEngine* engine);
+
     inline static constexpr EntityId NULL_ID = 0;
+
     EntityId create();
+    EntityId create_with_loc(std::string_view loc);
+
     void destroy(EntityId id);
     bool alive(EntityId id) const;
 
@@ -52,8 +59,8 @@ public:
     }
 
 private:
-    static EntityId pack(std::uint32_t index, std::uint32_t generation);
-    static std::pair<std::uint32_t, std::uint32_t> unpack(EntityId id);
+    AssetManager* m_asset_manager = nullptr;
+    ScriptEngine* m_script_engine = nullptr;
 
     /// @brief Get the entity; return nullptr if invalid.
     Entity* fetch(EntityId id);
@@ -61,5 +68,7 @@ private:
 
     std::vector<Entity> m_entities;
     std::vector<std::uint32_t> m_free_list;
+    static EntityId pack(std::uint32_t index, std::uint32_t generation);
+    static std::pair<std::uint32_t, std::uint32_t> unpack(EntityId id);
 };
 } // namespace serenkai
