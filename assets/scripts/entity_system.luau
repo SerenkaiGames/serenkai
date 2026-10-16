@@ -27,10 +27,10 @@ end
 function EntitySystem.cleanup(id: EntityId)
 	local list = cleanups_by_entity[id]
 	if list then
+		cleanups_by_entity[id] = nil
 		for _, unregister in list do
 			unregister()
 		end
-		cleanups_by_entity[id] = nil
 	end
 end
 
