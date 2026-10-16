@@ -11,17 +11,17 @@
 #include <cstdint>
 #include <glaze/core/reflect.hpp>
 #include <glaze/json/read.hpp>
-#include <map>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace serenkai {
 
 struct EntityData {
-    std::map<std::string, PropValue> props;
+    std::unordered_map<std::string, PropValue> props;
     std::vector<std::string> scripts;
 };
 
