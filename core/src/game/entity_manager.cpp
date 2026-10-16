@@ -113,7 +113,7 @@ EntityId EntityManager::create_with_loc(std::string_view loc) {
         if (!cur_e || !cur_e->alive || i >= cur_e->scripts.size()) {
             break;
         }
-        cur_e->scripts[i].call<>("on_init", id);
+        cur_e->scripts[i].call<>("on_init", static_cast<double>(id));
     }
 
     return id;

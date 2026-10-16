@@ -1115,6 +1115,10 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
             local get_res = World.Entities.get_prop(World.Entities.NULL_ID, "game:prop")
             return alive, set_res, rm_res, get_res
         end
+
+        function test_create_with_loc(loc: string): number
+            return World.Entities.create_with_loc(loc)
+        end
     )");
 
     ScriptEngine engine(
@@ -1122,7 +1126,7 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
     auto script = engine.create("test:entity_test.luau");
     REQUIRE(script.has_value());
 
-    EntityManager manager;
+    EntityManager manager(&env.asset_manager(), &engine);
     engine.set_active_world(WorldContext{.entity_mgr = &manager});
 
     SECTION("NULL_ID property") {
@@ -1213,5 +1217,12 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == 0.0);
         CHECK(std::get<1>(*res) == false);
+    }
+
+    SECTION("create_with_loc Lua binding") {
+        auto res = script->call<double>("test_create_with_loc",
+                                        "nonexistent:entity.json");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 0.0);
     }
 }
