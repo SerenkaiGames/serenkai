@@ -7,5 +7,5 @@
 #include <variant>
 namespace serenkai {
 using PropValue = std::variant<std::monostate, bool, int, float, std::string,
-                               glm::vec4, glm::vec2, glm::vec3>;
+                               glm::vec2, glm::vec3, glm::vec4>;
 }

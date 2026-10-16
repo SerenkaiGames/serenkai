@@ -1,0 +1,14 @@
+{
+    "props": {
+        "props/name": "serenkai:player",
+        "props/texture": "serenkai:entities/player.png",
+        "props/pos": [
+            0,
+            0,
+            1
+        ]
+    },
+    "scripts": [
+        "serenkai:scripts/player.luau"
+    ]
+}

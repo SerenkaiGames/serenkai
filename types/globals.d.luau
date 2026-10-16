@@ -11,10 +11,12 @@ declare print: (...any) -> ()
 
 declare require: (string) -> any
 
- export type World = {
+export type World = {
     Camera: WorldCamera,
     Map: WorldMap,
     Entities: WorldEntities,
 }
 
 declare World: World
+
+export type Cleanup = () -> ()

@@ -7,6 +7,8 @@
 #include "serenkai/script/lua_header.hpp"
 #include "serenkai/script/script_engine.hpp"
 
+#include <string_view>
+
 #define BIND(name, fn) addFunction(name, wrap_facade(get_subsystem, fn))
 
 namespace serenkai {
@@ -30,6 +32,10 @@ void bind_entity_to_lua(lua_State* L, ScriptEngine* engine) {
         .BIND("create",
               [](EntityManager* self) -> double {
                   return static_cast<double>(self->create());
+              })
+        .BIND("create_with_loc",
+              [](EntityManager* self, std::string_view loc) {
+                  return static_cast<double>(self->create_with_loc(loc));
               })
         .BIND("destroy",
               [](EntityManager* self, double id) {

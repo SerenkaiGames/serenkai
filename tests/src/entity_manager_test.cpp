@@ -1,15 +1,38 @@
 #include "serenkai/game/entity_manager.hpp"
+#include "serenkai/resource/asset_manager.hpp"
+#include "serenkai/resource/asset_source.hpp"
+#include "serenkai/resource/directory_source.hpp"
+#include "serenkai/script/script_engine.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <glm/vec3.hpp>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace serenkai;
 
+namespace {
+class MockEntityAssetSource : public AssetSource {
+public:
+    explicit MockEntityAssetSource(AssetFileMap files)
+        : m_files(std::move(files)) {}
+
+    AssetFileMap& get_asset_files() override { return m_files; }
+    std::string source_name() const override { return "MockEntityAssetSource"; }
+
+private:
+    AssetFileMap m_files;
+};
+} // namespace
+
 TEST_CASE("EntityManager creation and destruction lifecycle",
           "[game][entity]") {
-    EntityManager manager;
+    EntityManager manager(nullptr, nullptr);
 
     SECTION("Initial state") {
         CHECK(manager.alive_size() == 0);
@@ -58,7 +81,7 @@ TEST_CASE("EntityManager creation and destruction lifecycle",
 
 TEST_CASE("EntityManager generational indexing and ID reuse",
           "[game][entity]") {
-    EntityManager manager;
+    EntityManager manager(nullptr, nullptr);
 
     EntityId e1 = manager.create();
     CHECK(manager.alive(e1));
@@ -92,7 +115,7 @@ TEST_CASE("EntityManager generational indexing and ID reuse",
 
 TEST_CASE("EntityManager property access with ResourceLocation",
           "[game][entity]") {
-    EntityManager manager;
+    EntityManager manager(nullptr, nullptr);
     EntityId e = manager.create();
 
     const auto bool_key = *ResourceLocation::parse("game:is_active");
@@ -209,7 +232,7 @@ TEST_CASE("EntityManager property access with ResourceLocation",
 
 TEST_CASE("EntityManager property access with string_view overload",
           "[game][entity]") {
-    EntityManager manager;
+    EntityManager manager(nullptr, nullptr);
     EntityId e = manager.create();
 
     SECTION("Valid string locations") {
@@ -254,7 +277,7 @@ TEST_CASE("EntityManager property access with string_view overload",
 }
 
 TEST_CASE("EntityManager for_each_alive iteration", "[game][entity]") {
-    EntityManager manager;
+    EntityManager manager(nullptr, nullptr);
 
     EntityId e1 = manager.create();
     EntityId e2 = manager.create();
@@ -288,7 +311,7 @@ TEST_CASE("EntityManager for_each_alive iteration", "[game][entity]") {
 }
 
 TEST_CASE("Entity get_prop template helper", "[game][entity]") {
-    EntityManager manager;
+    EntityManager manager(nullptr, nullptr);
     EntityId e = manager.create();
 
     manager.set_prop(e, "speed", 5.5f);
@@ -321,4 +344,187 @@ TEST_CASE("Entity get_prop template helper", "[game][entity]") {
             entity.get_prop<int>(*ResourceLocation::parse("speed"));
         CHECK(wrong_type == nullptr);
     });
+}
+
+TEST_CASE("EntityManager create_with_loc", "[game][entity]") {
+    SECTION("Fails gracefully when AssetManager is null") {
+        EntityManager manager(nullptr, nullptr);
+        CHECK(manager.create_with_loc("serenkai:entities/player.json") ==
+              EntityManager::NULL_ID);
+    }
+
+    SECTION("Fails gracefully when asset is not found") {
+        AssetManager asset_manager;
+        EntityManager manager(&asset_manager, nullptr);
+        CHECK(manager.create_with_loc("serenkai:nonexistent.json") ==
+              EntityManager::NULL_ID);
+    }
+
+    SECTION("Fails gracefully when JSON is malformed") {
+        auto temp_dir =
+            std::filesystem::temp_directory_path() /
+            ("serenkai_test_entity_" +
+             std::to_string(
+                 std::chrono::steady_clock::now().time_since_epoch().count()));
+        std::filesystem::create_directories(temp_dir);
+
+        auto bad_json_path = temp_dir / "bad.json";
+        {
+            std::ofstream out(bad_json_path);
+            out << "{ invalid json :::";
+        }
+
+        AssetManager asset_manager;
+        AssetFileMap files;
+        auto loc = *ResourceLocation::parse("test:bad.json");
+        files.emplace(loc, bad_json_path.string());
+        asset_manager.merge_source(
+            std::make_shared<MockEntityAssetSource>(std::move(files)));
+
+        EntityManager manager(&asset_manager, nullptr);
+        CHECK(manager.create_with_loc("test:bad.json") ==
+              EntityManager::NULL_ID);
+
+        std::error_code ec;
+        std::filesystem::remove_all(temp_dir, ec);
+    }
+
+    SECTION("Successfully creates entity with properties from JSON") {
+        auto temp_dir =
+            std::filesystem::temp_directory_path() /
+            ("serenkai_test_entity_" +
+             std::to_string(
+                 std::chrono::steady_clock::now().time_since_epoch().count()));
+        std::filesystem::create_directories(temp_dir);
+
+        auto entity_json_path = temp_dir / "entity.json";
+        {
+            std::ofstream out(entity_json_path);
+            out << R"({
+                "props": {
+                    "props/name": "serenkai:player",
+                    "props/texture": "serenkai:player_tex",
+                    "props/pos": [10, 20, 1]
+                },
+                "scripts": []
+            })";
+        }
+
+        AssetManager asset_manager;
+        AssetFileMap files;
+        auto loc = *ResourceLocation::parse("test:entity.json");
+        files.emplace(loc, entity_json_path.string());
+        asset_manager.merge_source(
+            std::make_shared<MockEntityAssetSource>(std::move(files)));
+
+        EntityManager manager(&asset_manager, nullptr);
+        auto id = manager.create_with_loc("test:entity.json");
+        REQUIRE(id != EntityManager::NULL_ID);
+        CHECK(manager.alive(id));
+
+        auto name = manager.get_prop(id, "props/name");
+        REQUIRE(name.has_value());
+        CHECK(std::get<std::string>(*name) == "serenkai:player");
+
+        auto tex = manager.get_prop(id, "props/texture");
+        REQUIRE(tex.has_value());
+        CHECK(std::get<std::string>(*tex) == "serenkai:player_tex");
+
+        auto pos = manager.get_prop(id, "props/pos");
+        REQUIRE(pos.has_value());
+        CHECK(std::get<glm::vec3>(*pos) == glm::vec3(10.0f, 20.0f, 1.0f));
+
+        manager.destroy(id);
+        CHECK_FALSE(manager.alive(id));
+
+        std::error_code ec;
+        std::filesystem::remove_all(temp_dir, ec);
+    }
+
+    SECTION("Executes on_init and on_destroy script callbacks") {
+        auto temp_dir =
+            std::filesystem::temp_directory_path() /
+            ("serenkai_test_entity_" +
+             std::to_string(
+                 std::chrono::steady_clock::now().time_since_epoch().count()));
+        std::filesystem::create_directories(temp_dir);
+
+        auto script_path = temp_dir / "test_script.luau";
+        {
+            std::ofstream out(script_path);
+            out << R"(
+                function on_init(id)
+                    World.Entities.set_prop(id, "props/init_called", true)
+                end
+
+                function on_destroy()
+                end
+            )";
+        }
+
+        auto entity_json_path = temp_dir / "scripted_entity.json";
+        {
+            std::ofstream out(entity_json_path);
+            out << R"({
+                "props": {},
+                "scripts": [
+                    "test:test_script.luau"
+                ]
+            })";
+        }
+
+        AssetManager asset_manager;
+        AssetFileMap files;
+        files.emplace(*ResourceLocation::parse("test:test_script.luau"),
+                      script_path.string());
+        files.emplace(*ResourceLocation::parse("test:scripted_entity.json"),
+                      entity_json_path.string());
+        asset_manager.merge_source(
+            std::make_shared<MockEntityAssetSource>(std::move(files)));
+
+        ScriptEngine engine(
+            ScriptEngineConfig{.asset_manager = &asset_manager});
+        EntityManager manager(&asset_manager, &engine);
+        engine.set_active_world(WorldContext{.entity_mgr = &manager});
+
+        auto id = manager.create_with_loc("test:scripted_entity.json");
+        REQUIRE(id != EntityManager::NULL_ID);
+        CHECK(manager.alive(id));
+
+        auto prop = manager.get_prop(id, "props/init_called");
+        REQUIRE(prop.has_value());
+        CHECK(std::get<bool>(*prop) == true);
+
+        manager.destroy(id);
+        CHECK_FALSE(manager.alive(id));
+
+        std::error_code ec;
+        std::filesystem::remove_all(temp_dir, ec);
+    }
+
+    SECTION("Loads project player entity JSON if available") {
+#ifdef SERENKAI_TEST_ASSET_DIR
+        if (std::filesystem::exists(SERENKAI_TEST_ASSET_DIR)) {
+            AssetManager asset_manager;
+            asset_manager.merge_source(
+                std::make_shared<DirectorySource>(SERENKAI_TEST_ASSET_DIR));
+
+            EntityManager manager(&asset_manager, nullptr);
+            auto id = manager.create_with_loc("serenkai:entities/player.json");
+            REQUIRE(id != EntityManager::NULL_ID);
+            CHECK(manager.alive(id));
+
+            auto name = manager.get_prop(id, "props/name");
+            REQUIRE(name.has_value());
+            CHECK(std::get<std::string>(*name) == "serenkai:player");
+
+            auto pos = manager.get_prop(id, "props/pos");
+            REQUIRE(pos.has_value());
+            CHECK(std::get<glm::vec3>(*pos) == glm::vec3(0.0f, 0.0f, 1.0f));
+
+            manager.destroy(id);
+            CHECK_FALSE(manager.alive(id));
+        }
+#endif
+    }
 }

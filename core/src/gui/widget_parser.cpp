@@ -2,6 +2,7 @@
 
 #include "serenkai/base/assert.hpp"
 #include "serenkai/base/concepts.hpp"
+#include "serenkai/base/glm_parse.hpp"
 #include "serenkai/base/type_name.hpp"
 #include "serenkai/gui/anchor.hpp"
 #include "serenkai/gui/button.hpp"
@@ -71,11 +72,6 @@ struct ColumnData {
 };
 
 } // namespace serenkai
-
-template <> struct glz::meta<glm::ivec2> {
-    using T = glm::ivec2;
-    static constexpr auto value = glz::array(&T::x, &T::y); // NOLINT
-};
 
 template <> struct glz::meta<serenkai::ImageWidgetData> {
     static constexpr bool requires_key(std::string_view key, bool) {

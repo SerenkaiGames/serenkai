@@ -1,14 +1,35 @@
 #include "serenkai/game/entity_manager.hpp"
 
+#include "serenkai/base/glm_parse.hpp"
+#include "serenkai/game/property.hpp"
+#include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/resource_location.hpp"
+#include "serenkai/script/script.hpp"
+#include "serenkai/script/script_engine.hpp"
 
 #include <cstddef>
 #include <cstdint>
+#include <glaze/core/reflect.hpp>
+#include <glaze/json/read.hpp>
 #include <optional>
 #include <spdlog/spdlog.h>
+#include <string>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace serenkai {
+
+struct EntityData {
+    std::unordered_map<std::string, PropValue> props;
+    std::vector<std::string> scripts;
+};
+
+EntityManager::EntityManager(AssetManager* asset_manager, ScriptEngine* engine)
+    : m_asset_manager(asset_manager), m_script_engine(engine) {}
+
+EntityManager::~EntityManager() {}
+
 EntityId EntityManager::create() {
     std::uint32_t idx{0};
     if (!m_free_list.empty()) {
@@ -24,6 +45,80 @@ EntityId EntityManager::create() {
     return pack(idx, e.generation);
 }
 
+EntityId EntityManager::create_with_loc(std::string_view loc) {
+    if (!m_asset_manager) {
+        return NULL_ID;
+    }
+
+    auto path = m_asset_manager->get(loc);
+
+    if (!path) {
+        spdlog::error("Failed to get assets path {}", loc);
+        return NULL_ID;
+    }
+    EntityData data{};
+
+    auto ec = glz::read_file_json(data, *path, std::string{});
+
+    if (ec) {
+        spdlog::error("Failed to parse json {}, {}", loc,
+                      glz::format_error(ec));
+        return NULL_ID;
+    }
+
+    auto id = create();
+
+    auto e = fetch(id);
+
+    if (!e) {
+        return NULL_ID;
+    }
+
+    for (auto& [prop_loc, value] : data.props) {
+        auto key = ResourceLocation::parse(prop_loc);
+        if (!key) {
+            spdlog::error("Invalid resource location {}", prop_loc);
+            continue;
+        }
+        e->props.try_emplace(*key, value);
+    }
+
+    if (!m_script_engine) {
+        return id;
+    }
+
+    std::vector<Script> scripts;
+    scripts.reserve(data.scripts.size());
+
+    for (auto& script_loc : data.scripts) {
+        auto s = m_script_engine->create(script_loc);
+        if (!s) {
+            spdlog::error("Failed to load script {}", script_loc);
+            continue;
+        }
+        scripts.emplace_back(std::move(*s));
+    }
+
+    e = fetch(id);
+    if (!e) {
+        return NULL_ID;
+    }
+    e->scripts = std::move(scripts);
+
+    for (std::size_t i = 0;; ++i) {
+        // Update the pointer to prevent a dangling pointer caused by
+        // reallocation during init.
+        auto* cur_e = fetch(id);
+
+        if (!cur_e || !cur_e->alive || i >= cur_e->scripts.size()) {
+            break;
+        }
+        cur_e->scripts[i].call<>("on_init", static_cast<double>(id));
+    }
+
+    return id;
+}
+
 void EntityManager::destroy(EntityId id) {
 
     auto e = fetch(id);
@@ -33,6 +128,11 @@ void EntityManager::destroy(EntityId id) {
 
     auto [idx, _] = unpack(id);
 
+    for (auto& s : e->scripts) {
+        s.try_call<>("on_destroy");
+    }
+
+    e->scripts.clear();
     e->props.clear();
     e->alive = false;
     e->generation++;
@@ -133,6 +233,10 @@ Entity* EntityManager::fetch(EntityId id) {
 }
 
 const Entity* EntityManager::fetch(EntityId id) const {
+    if (id == NULL_ID) {
+        return nullptr;
+    }
+
     auto [idx, gen] = unpack(id);
     if (idx >= m_entities.size()) {
         return nullptr;

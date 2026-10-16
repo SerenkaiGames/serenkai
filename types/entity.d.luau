@@ -7,6 +7,8 @@ export type EntityPropertyValue = boolean | number | string | vector
 export type WorldEntities = {
 	NULL_ID: EntityId,
 	create: () -> EntityId,
+	create_with_loc: (loc: string) -> EntityId,
+
 	destroy: (id: EntityId) -> (),
 	alive: (id: EntityId) -> boolean,
 	alive_size: () -> number,
