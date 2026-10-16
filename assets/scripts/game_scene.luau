@@ -10,7 +10,7 @@ function on_enter()
 end
 
 function on_update(dt: number)
-	Event.emit("serenkai:events/update_game")
+	Event.emit("serenkai:events/update_game", dt)
 end
 
 function on_leave()
