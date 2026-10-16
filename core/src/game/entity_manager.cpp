@@ -28,6 +28,8 @@ struct EntityData {
 EntityManager::EntityManager(AssetManager* asset_manager, ScriptEngine* engine)
     : m_asset_manager(asset_manager), m_script_engine(engine) {}
 
+EntityManager::~EntityManager() {}
+
 EntityId EntityManager::create() {
     std::uint32_t idx{0};
     if (!m_free_list.empty()) {
@@ -72,10 +74,10 @@ EntityId EntityManager::create_with_loc(std::string_view loc) {
         return NULL_ID;
     }
 
-    for (auto& [loc, value] : data.props) {
-        auto key = ResourceLocation::parse(loc);
+    for (auto& [prop_loc, value] : data.props) {
+        auto key = ResourceLocation::parse(prop_loc);
         if (!key) {
-            spdlog::error("Invalid resource location {}", loc);
+            spdlog::error("Invalid resource location {}", prop_loc);
             continue;
         }
         e->props.try_emplace(*key, value);
@@ -85,15 +87,35 @@ EntityId EntityManager::create_with_loc(std::string_view loc) {
         return id;
     }
 
-    for (auto& loc : data.scripts) {
-        auto s = m_script_engine->create(loc);
+    std::vector<Script> scripts;
+    scripts.reserve(data.scripts.size());
+
+    for (auto& script_loc : data.scripts) {
+        auto s = m_script_engine->create(script_loc);
         if (!s) {
-            spdlog::error("Failed to load script {}", loc);
+            spdlog::error("Failed to load script {}", script_loc);
             continue;
         }
-        s->call<>("on_init", id);
-        e->scripts.emplace_back(std::move(*s));
+        scripts.emplace_back(std::move(*s));
     }
+
+    e = fetch(id);
+    if (!e) {
+        return NULL_ID;
+    }
+    e->scripts = std::move(scripts);
+
+    for (std::size_t i = 0;; ++i) {
+        // Update the pointer to prevent a dangling pointer caused by
+        // reallocation during init.
+        auto* cur_e = fetch(id);
+
+        if (!cur_e || !cur_e->alive || i >= cur_e->scripts.size()) {
+            break;
+        }
+        cur_e->scripts[i].call<>("on_init", id);
+    }
+
     return id;
 }
 

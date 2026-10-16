@@ -1,3 +1,5 @@
+#pragma once
+// IWYU pragma: always_keep
 #include <glaze/glaze.hpp>
 #include <glm/glm.hpp>
 

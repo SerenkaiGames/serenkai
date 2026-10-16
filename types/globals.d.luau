@@ -19,4 +19,4 @@ export type World = {
 
 declare World: World
 
-export type Cleanup = {() -> ()}
+export type Cleanup = () -> ()

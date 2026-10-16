@@ -30,5 +30,5 @@ function init_map()
 end
 
 function init_player()
-	EntitySystem.create("serenkai:entites/player.json")
+	EntitySystem.create("serenkai:entities/player.json")
 end

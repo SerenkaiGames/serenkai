@@ -14,7 +14,7 @@ class ScriptEngine;
 class EntityManager {
 public:
     EntityManager(AssetManager* asset_manager, ScriptEngine* engine);
-
+    ~EntityManager();
     inline static constexpr EntityId NULL_ID = 0;
 
     EntityId create();
@@ -63,6 +63,8 @@ private:
     ScriptEngine* m_script_engine = nullptr;
 
     /// @brief Get the entity; return nullptr if invalid.
+    ///
+    /// @warning If the vector reallocates, the pointer will be invalidated.
     Entity* fetch(EntityId id);
     const Entity* fetch(EntityId id) const;
 

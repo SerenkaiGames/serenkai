@@ -11,10 +11,13 @@ local cleanups: { Cleanup } = {}
 function on_init(e_id: EntityId)
 	id = e_id
 
-	local c = Event.on("serenkai:events/update_game", on_update)
-	Event.on("serenkai:events/leave_game", World.Entities.destroy(id))
+	local c1 = Event.on("serenkai:events/update_game", on_update)
+	local c2 = Event.on("serenkai:events/leave_game", function()
+		World.Entities.destroy(id)
+	end)
 
-	table.insert(cleanups, c)
+	table.insert(cleanups, c1)
+	table.insert(cleanups, c2)
 end
 
 function on_update(dt: number)
@@ -43,7 +46,8 @@ function update_move(dt: number)
 	end
 
 	if dx ~= 0 or dy ~= 0 then
-		World.Entities.set_prop(id, "props/pos", vector.create(dx, dy, 1)) -- z = 1 means on the ground.
+		local current_pos = World.Entities.get_prop(id, "props/pos") or vector.create(0, 0, 1) -- z = 1 means on the ground.
+		World.Entities.set_prop(id, "props/pos", current_pos + vector.create(dx, dy, 0))
 		World.Camera.move(vector.create(dx, dy, 0))
 	end
 end

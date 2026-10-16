@@ -30,7 +30,8 @@ void GameScene::on_enter(AppContext* ctx) {
     }
     m_map_manager = std::make_unique<MapManager>(ctx->assets);
     m_camera = std::make_unique<Camera>();
-    m_entity_manager = std::make_unique<EntityManager>();
+    m_entity_manager =
+        std::make_unique<EntityManager>(ctx->assets, ctx->script);
 
     if (ctx->script) {
 
