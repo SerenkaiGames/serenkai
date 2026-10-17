@@ -155,30 +155,28 @@ TEST_CASE("MapRenderer renders tile and image layers",
     visible_tiles.visible = true;
 
     // Tile 0: normal
-    visible_tiles.tiles.emplace_back(1, Tile::FlipFlag::None, 0, 0);
+    visible_tiles.tiles.emplace_back(1, FlipFlag::None, 0, 0);
     // Tile 1: empty
     visible_tiles.tiles.emplace_back();
     // Tile 2: horizontal flip
-    visible_tiles.tiles.emplace_back(1, Tile::FlipFlag::Horizontal, 0, 0);
+    visible_tiles.tiles.emplace_back(1, FlipFlag::Horizontal, 0, 0);
     // Tile 3: vertical flip
-    visible_tiles.tiles.emplace_back(1, Tile::FlipFlag::Vertical, 0, 0);
+    visible_tiles.tiles.emplace_back(1, FlipFlag::Vertical, 0, 0);
     // Tile 4: diagonal flip
-    visible_tiles.tiles.emplace_back(1, Tile::FlipFlag::Diagonal, 0, 0);
+    visible_tiles.tiles.emplace_back(1, FlipFlag::Diagonal, 0, 0);
     // Tile 5: diagonal + horizontal flip (90 deg CW in Tiled)
     visible_tiles.tiles.emplace_back(
-        1, Tile::FlipFlag::Diagonal | Tile::FlipFlag::Horizontal, 0, 0);
+        1, FlipFlag::Diagonal | FlipFlag::Horizontal, 0, 0);
     // Tile 6: diagonal + vertical flip (270 deg CW in Tiled)
-    visible_tiles.tiles.emplace_back(
-        1, Tile::FlipFlag::Diagonal | Tile::FlipFlag::Vertical, 0, 0);
-    // Tile 7: diagonal + horizontal + vertical flip
-    visible_tiles.tiles.emplace_back(1,
-                                     Tile::FlipFlag::Diagonal |
-                                         Tile::FlipFlag::Horizontal |
-                                         Tile::FlipFlag::Vertical,
+    visible_tiles.tiles.emplace_back(1, FlipFlag::Diagonal | FlipFlag::Vertical,
                                      0, 0);
+    // Tile 7: diagonal + horizontal + vertical flip
+    visible_tiles.tiles.emplace_back(
+        1, FlipFlag::Diagonal | FlipFlag::Horizontal | FlipFlag::Vertical, 0,
+        0);
     // Fill remaining tiles
     while (visible_tiles.tiles.size() < 16) {
-        visible_tiles.tiles.emplace_back(2, Tile::FlipFlag::None, 0, 1);
+        visible_tiles.tiles.emplace_back(2, FlipFlag::None, 0, 1);
     }
     data.layers.push_back(std::move(visible_tiles));
 

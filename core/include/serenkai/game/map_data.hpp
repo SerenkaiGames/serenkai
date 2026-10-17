@@ -2,6 +2,7 @@
 
 #include "serenkai/base/aabb.hpp"
 #include "serenkai/game/property.hpp"
+#include "serenkai/render/flip_flag.hpp"
 #include "serenkai/resource/resource_location.hpp"
 
 #include <cstdint>
@@ -17,17 +18,11 @@
 namespace serenkai {
 
 struct Tile {
-    enum class FlipFlag : std::uint8_t {
-        None = 0,
-        Horizontal = 1 << 0,
-        Vertical = 1 << 1,
-        Diagonal = 1 << 2,
-    };
 
     // Global gid with the flag bits removed.
     std::uint32_t gid{0};
     // Flip information.
-    FlipFlag flag{Tile::FlipFlag::None};
+    FlipFlag flag{FlipFlag::None};
     // Tileset index
     std::uint16_t tileset{0};
     std::uint16_t local_id{0};
@@ -51,28 +46,6 @@ struct Tile {
         return has_flip(FlipFlag::Diagonal);
     }
 };
-
-constexpr Tile::FlipFlag operator|(Tile::FlipFlag a,
-                                   Tile::FlipFlag b) noexcept {
-    return static_cast<Tile::FlipFlag>(static_cast<std::uint8_t>(a) |
-                                       static_cast<std::uint8_t>(b));
-}
-
-constexpr Tile::FlipFlag operator&(Tile::FlipFlag a,
-                                   Tile::FlipFlag b) noexcept {
-    return static_cast<Tile::FlipFlag>(static_cast<std::uint8_t>(a) &
-                                       static_cast<std::uint8_t>(b));
-}
-
-constexpr Tile::FlipFlag& operator|=(Tile::FlipFlag& a,
-                                     Tile::FlipFlag b) noexcept {
-    a = a | b;
-    return a;
-}
-
-constexpr Tile::FlipFlag operator~(Tile::FlipFlag a) noexcept {
-    return static_cast<Tile::FlipFlag>(~static_cast<std::uint8_t>(a));
-}
 
 struct MapProperty {
     std::string name;
