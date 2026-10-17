@@ -75,4 +75,42 @@ TEST_CASE("SpriteRenderer safety and rendering", "[render][sprite_renderer]") {
         SDL_DestroyTexture(texture);
         SDL_DestroySurface(surface);
     }
+
+    SECTION("Valid texture renders with src_rect") {
+        SpriteRenderer renderer(ctx.renderer);
+        SDL_Surface* surface =
+            SDL_CreateSurface(32, 32, SDL_PIXELFORMAT_RGBA32);
+        REQUIRE(surface != nullptr);
+        SDL_Texture* texture =
+            SDL_CreateTextureFromSurface(ctx.renderer, surface);
+        REQUIRE(texture != nullptr);
+
+        renderer.render_sprite(texture, {5.0f, 10.0f}, {16.0f, 16.0f},
+                               {100.0f, 50.0f}, 1.0f,
+                               glm::vec4{0.0f, 0.0f, 16.0f, 16.0f});
+
+        SDL_DestroyTexture(texture);
+        SDL_DestroySurface(surface);
+    }
+
+    SECTION("Valid texture renders with flip flags") {
+        SpriteRenderer renderer(ctx.renderer);
+        SDL_Surface* surface =
+            SDL_CreateSurface(32, 32, SDL_PIXELFORMAT_RGBA32);
+        REQUIRE(surface != nullptr);
+        SDL_Texture* texture =
+            SDL_CreateTextureFromSurface(ctx.renderer, surface);
+        REQUIRE(texture != nullptr);
+
+        renderer.render_sprite(texture, {5.0f, 10.0f}, {32.0f, 32.0f},
+                               {0.0f, 0.0f}, 1.0f, std::nullopt,
+                               FlipFlag::Horizontal | FlipFlag::Vertical);
+
+        renderer.render_sprite(
+            texture, {5.0f, 10.0f}, {32.0f, 32.0f}, {0.0f, 0.0f}, 1.0f,
+            glm::vec4{0.0f, 0.0f, 16.0f, 16.0f}, FlipFlag::Diagonal);
+
+        SDL_DestroyTexture(texture);
+        SDL_DestroySurface(surface);
+    }
 }
