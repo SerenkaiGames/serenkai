@@ -15,7 +15,7 @@ struct FlipTransform {
 /// based on FlipFlag, and adjust the destination rectangle dst when performing
 /// a diagonal flip.
 inline FlipTransform resolve_flip_transform(FlipFlag flip,
-                                            SDL_FRect& dst) noexcept {
+                                            SDL_FRect& in_out_dst) noexcept {
     FlipTransform result{};
     if (flip == FlipFlag::None) {
         return result;
@@ -37,11 +37,11 @@ inline FlipTransform resolve_flip_transform(FlipFlag flip,
     } else {
         // Diagonal flip swaps width and height while keeping the tile center
         // invariant.
-        const float cx = dst.x + dst.w * 0.5f;
-        const float cy = dst.y + dst.h * 0.5f;
-        std::swap(dst.w, dst.h);
-        dst.x = cx - dst.w * 0.5f;
-        dst.y = cy - dst.h * 0.5f;
+        const float cx = in_out_dst.x + in_out_dst.w * 0.5f;
+        const float cy = in_out_dst.y + in_out_dst.h * 0.5f;
+        std::swap(in_out_dst.w, in_out_dst.h);
+        in_out_dst.x = cx - in_out_dst.w * 0.5f;
+        in_out_dst.y = cy - in_out_dst.h * 0.5f;
 
         if (!h && !v) {
             result.angle = 90.0;
