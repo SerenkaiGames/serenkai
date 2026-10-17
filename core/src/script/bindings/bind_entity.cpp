@@ -2,12 +2,16 @@
 
 #include "serenkai/game/entity.hpp"
 #include "serenkai/game/entity_manager.hpp"
+#include "serenkai/game/map_manager.hpp"
 #include "serenkai/script/bindings/facade_wrapper.hpp"
 #include "serenkai/script/bindings/luau_prop.hpp"
 #include "serenkai/script/lua_header.hpp"
 #include "serenkai/script/script_engine.hpp"
 
+#include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <string_view>
+#include <variant>
 
 #define BIND(name, fn) addFunction(name, wrap_facade(get_subsystem, fn))
 
@@ -71,6 +75,47 @@ void bind_entity_to_lua(lua_State* L, ScriptEngine* engine) {
                   auto ref = luabridge::LuaRef::fromStack(L, -1);
                   lua_pop(L, 1);
                   return ref;
+              })
+        .BIND("move",
+              [engine](EntityManager* self, double id, glm::vec3 dist) {
+                  if (!engine) {
+                      return;
+                  }
+                  auto ctx = engine->world_context();
+                  if (!ctx.map_mgr) {
+                      return;
+                  }
+                  auto map = ctx.map_mgr->current_map();
+
+                  EntityId e = static_cast<EntityId>(id);
+                  auto cur_pos = self->get_prop_by_loc(e, "props/pos"_rl);
+                  if (!cur_pos) {
+                      return;
+                  }
+                  auto size = self->get_prop_by_loc(e, "props/size"_rl);
+                  if (!size) {
+                      return;
+                  }
+                  auto p = std::get_if<glm::vec3>(&cur_pos.value());
+                  if (!p) {
+                      return;
+                  }
+                  auto s = std::get_if<glm::vec2>(&size.value());
+                  auto new_pos = *p;
+                  new_pos.x += dist.x;
+                  if (map->check_collision(
+                          AABB{glm::vec2{new_pos.x, new_pos.y}, *s})) {
+                      new_pos.x -= dist.x;
+                  }
+
+                  new_pos.y += dist.y;
+
+                  if (map->check_collision(
+                          AABB{glm::vec2{new_pos.x, new_pos.y}, *s})) {
+                      new_pos.y -= dist.y;
+                  }
+
+                  self->set_prop_by_loc(id, "props/pos"_rl, new_pos);
               })
         .endNamespace()
         .endNamespace();

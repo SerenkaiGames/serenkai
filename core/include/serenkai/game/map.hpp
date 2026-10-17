@@ -65,9 +65,11 @@ public:
 
     void set_layer_visible(std::string_view name, bool visible);
 
-    bool is_solid(glm::ivec2 tile_pos) const; // todo
+    /// @brief Determine whether the gid is 0 via the collision tile layer; if
+    /// it is not 0, it is blocking.
+    bool is_solid(glm::ivec2 tile_pos) const;
 
-    bool check_collision(const AABB& aabb) const; // todo
+    bool check_collision(const AABB& aabb) const;
 
     bool is_tile_dirty() const;
     bool is_object_dirty() const;
