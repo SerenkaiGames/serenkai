@@ -157,6 +157,36 @@ void Map::set_layer_visible(std::string_view name, bool visible) {
                m_data.layers[it->second]);
 }
 
+bool Map::is_solid(glm::ivec2 tile_pos) const {
+    if (!is_in_bounds(tile_pos)) {
+        return true;
+    }
+    auto tile = get_tile("collision", tile_pos);
+    return tile.has_value() && !tile->is_empty();
+}
+
+bool Map::check_collision(const AABB& aabb) const {
+    if (aabb.width() <= 0.0f || aabb.height() <= 0.0f) {
+        return false;
+    }
+
+    constexpr float epsilon = 0.001f;
+
+    glm::ivec2 min_tile = world_to_tile(aabb.min());
+    glm::ivec2 max_tile =
+        world_to_tile(aabb.max() - glm::vec2(epsilon, epsilon));
+
+    for (int y = min_tile.y; y <= max_tile.y; ++y) {
+        for (int x = min_tile.x; x <= max_tile.x; ++x) {
+            if (is_solid({x, y})) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool Map::is_tile_dirty() const { return m_tile_dirty; }
 bool Map::is_object_dirty() const { return m_object_dirty; }
 

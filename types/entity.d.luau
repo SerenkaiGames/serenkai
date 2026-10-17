@@ -17,4 +17,6 @@ export type WorldEntities = {
 	get_prop: (id: EntityId, loc: string) -> EntityPropertyValue?,
 	has_prop: (id: EntityId, loc: string) -> boolean,
 	remove_prop: (id: EntityId, loc: string) -> boolean,
+
+	move: (id: EntityId, dist: vector) -> (),
 }

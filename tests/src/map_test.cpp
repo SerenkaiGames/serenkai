@@ -258,6 +258,101 @@ TEST_CASE("Map dirty flags and update lifecycle", "[game][map]") {
     }
 }
 
+TEST_CASE("Map collision detection and solid queries",
+          "[game][map][collision]") {
+    MapData data{};
+    data.map_size = {3, 3};
+    data.tile_size = {16, 16};
+
+    TileLayer col_layer{};
+    col_layer.name = "collision";
+    col_layer.size = {3, 3};
+    col_layer.visible = true;
+
+    // Grid layout (x from 0 to 2, y from 0 to 2):
+    // Row 0: empty(0), empty(0), solid(1)
+    // Row 1: empty(0), solid(2), empty(0)
+    // Row 2: empty(0), empty(0), empty(0)
+    const std::vector<std::uint32_t> gids = {0, 0, 1, 0, 2, 0, 0, 0, 0};
+    for (std::uint32_t gid : gids) {
+        Tile t{};
+        t.gid = gid;
+        col_layer.tiles.push_back(t);
+    }
+    data.layers.emplace_back(std::move(col_layer));
+    Map map(std::move(data));
+
+    SECTION("is_solid checks for in-bounds and out-of-bounds tiles") {
+        // In-bounds empty tiles
+        CHECK_FALSE(map.is_solid({0, 0}));
+        CHECK_FALSE(map.is_solid({1, 0}));
+        CHECK_FALSE(map.is_solid({0, 1}));
+        CHECK_FALSE(map.is_solid({2, 1}));
+        CHECK_FALSE(map.is_solid({0, 2}));
+        CHECK_FALSE(map.is_solid({1, 2}));
+        CHECK_FALSE(map.is_solid({2, 2}));
+
+        // In-bounds solid tiles
+        CHECK(map.is_solid({2, 0}));
+        CHECK(map.is_solid({1, 1}));
+
+        // Out-of-bounds queries should be solid (treated as boundary walls)
+        CHECK(map.is_solid({-1, 0}));
+        CHECK(map.is_solid({0, -1}));
+        CHECK(map.is_solid({3, 0}));
+        CHECK(map.is_solid({0, 3}));
+        CHECK(map.is_solid({100, 100}));
+    }
+
+    SECTION("check_collision with degenerate AABB returns false") {
+        CHECK_FALSE(map.check_collision(
+            AABB{glm::vec2{0.0f, 0.0f}, glm::vec2{0.0f, 0.0f}}));
+        CHECK_FALSE(map.check_collision(
+            AABB{glm::vec2{16.0f, 16.0f}, glm::vec2{-10.0f, 10.0f}}));
+        CHECK_FALSE(map.check_collision(
+            AABB{glm::vec2{16.0f, 16.0f}, glm::vec2{10.0f, -5.0f}}));
+    }
+
+    SECTION("check_collision inside empty area returns false") {
+        // Tile (0, 0) is [0, 16) x [0, 16)
+        AABB box{glm::vec2{2.0f, 2.0f}, glm::vec2{12.0f, 12.0f}};
+        CHECK_FALSE(map.check_collision(box));
+    }
+
+    SECTION("check_collision overlapping solid tile returns true") {
+        // Tile (1, 1) is [16, 32) x [16, 32) (solid)
+        AABB box_inside{glm::vec2{18.0f, 18.0f}, glm::vec2{10.0f, 10.0f}};
+        CHECK(map.check_collision(box_inside));
+
+        // Straddling from empty tile (0, 1) into solid tile (1, 1)
+        AABB box_straddling{glm::vec2{10.0f, 18.0f}, glm::vec2{10.0f, 10.0f}};
+        CHECK(map.check_collision(box_straddling));
+    }
+
+    SECTION("check_collision with map boundary returns true") {
+        // Touching outside left
+        AABB box_left{glm::vec2{-2.0f, 5.0f}, glm::vec2{10.0f, 10.0f}};
+        CHECK(map.check_collision(box_left));
+
+        // Touching outside right
+        AABB box_right{glm::vec2{40.0f, 5.0f}, glm::vec2{10.0f, 10.0f}};
+        CHECK(map.check_collision(box_right));
+    }
+
+    SECTION("Map without collision layer treats in-bounds as non-solid") {
+        MapData empty_data{};
+        empty_data.map_size = {2, 2};
+        empty_data.tile_size = {16, 16};
+        Map empty_map(std::move(empty_data));
+
+        CHECK_FALSE(empty_map.is_solid({0, 0}));
+        CHECK_FALSE(empty_map.is_solid({1, 1}));
+        CHECK(empty_map.is_solid({-1, 0}));
+        CHECK_FALSE(empty_map.check_collision(
+            AABB{glm::vec2{0.0f, 0.0f}, glm::vec2{16.0f, 16.0f}}));
+    }
+}
+
 TEST_CASE("StringHash and StringEqual transparent operations",
           "[base][string_hash]") {
     StringHash hasher;

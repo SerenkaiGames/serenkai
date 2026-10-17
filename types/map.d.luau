@@ -29,6 +29,8 @@ export type Map = {
 	find_object: (self: Map, name: string) -> { MapObject },
 	find_objects_by_type: (self: Map, type: string) -> { MapObject },
 	get_spawn_point: (self: Map, name: string) -> vector?,
+	is_solid: (self: Map, tile_pos: vector) -> boolean,
+	check_collision: (self: Map, aabb: AABB) -> boolean,
 }
 
 export type WorldMap = {

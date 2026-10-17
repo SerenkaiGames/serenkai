@@ -91,6 +91,8 @@ void bind_map_to_lua(lua_State* L, ScriptEngine* engine) {
         .addFunction("find_object", &Map::find_object)
         .addFunction("find_objects_by_type", &Map::find_objects_by_type)
         .addFunction("get_spawn_point", &Map::get_spawn_point)
+        .addFunction("is_solid", &Map::is_solid)
+        .addFunction("check_collision", &Map::check_collision)
         .endClass();
 }
 } // namespace serenkai
