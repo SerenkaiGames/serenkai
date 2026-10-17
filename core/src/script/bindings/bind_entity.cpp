@@ -13,7 +13,8 @@
 #include <string_view>
 #include <variant>
 
-#define BIND(name, fn) addFunction(name, wrap_facade(get_subsystem, fn))
+#define BIND(name, ...)                                                        \
+    addFunction(name, wrap_facade(get_subsystem, __VA_ARGS__))
 
 namespace serenkai {
 
@@ -86,36 +87,51 @@ void bind_entity_to_lua(lua_State* L, ScriptEngine* engine) {
                       return;
                   }
                   auto map = ctx.map_mgr->current_map();
-
+                  if (!map) {
+                      return;
+                  }
                   EntityId e = static_cast<EntityId>(id);
                   auto cur_pos = self->get_prop_by_loc(e, "props/pos"_rl);
                   if (!cur_pos) {
                       return;
                   }
-                  auto size = self->get_prop_by_loc(e, "props/size"_rl);
-                  if (!size) {
-                      return;
-                  }
+
                   auto p = std::get_if<glm::vec3>(&cur_pos.value());
                   if (!p) {
                       return;
                   }
-                  auto s = std::get_if<glm::vec2>(&size.value());
+
+                  auto col_prop = self->get_prop_by_loc(e, "props/collider"_rl);
+
+                  glm::vec2 offset{0.0f};
+                  glm::vec2 box_size{16.0f, 16.0f};
+
+                  if (!col_prop) {
+                      return;
+                  }
+
+                  if (auto* c = std::get_if<glm::vec4>(&col_prop.value())) {
+                      offset = {c->x, c->y};
+                      box_size = {c->z, c->w};
+                  }
+
+                  auto get_world_aabb = [&](const glm::vec3& p) {
+                      return AABB{glm::vec2{p.x + offset.x, p.y + offset.y},
+                                  box_size};
+                  };
+
                   auto new_pos = *p;
                   new_pos.x += dist.x;
-                  if (map->check_collision(
-                          AABB{glm::vec2{new_pos.x, new_pos.y}, *s})) {
+                  if (map->check_collision(get_world_aabb(new_pos))) {
                       new_pos.x -= dist.x;
                   }
 
                   new_pos.y += dist.y;
-
-                  if (map->check_collision(
-                          AABB{glm::vec2{new_pos.x, new_pos.y}, *s})) {
+                  if (map->check_collision(get_world_aabb(new_pos))) {
                       new_pos.y -= dist.y;
                   }
 
-                  self->set_prop_by_loc(id, "props/pos"_rl, new_pos);
+                  self->set_prop_by_loc(e, "props/pos"_rl, new_pos);
               })
         .endNamespace()
         .endNamespace();

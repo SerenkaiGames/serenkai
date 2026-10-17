@@ -41,7 +41,7 @@ function update_move(dt: number)
 	end
 
 	if dx ~= 0 or dy ~= 0 then
-		World.Entities.move(id, vector.create(dx, dy, 1)) -- z = 1 means on the ground.
+		World.Entities.move(id, vector.create(dx, dy, 0))
 		local player_pos = World.Entities.get_prop(id, "props/pos")
 		World.Camera.set_pos(vector.create(player_pos.x, player_pos.y, 0))
 	end
