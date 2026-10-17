@@ -38,7 +38,7 @@ TEST_CASE("Tile and FlipFlag operations", "[game][map_data]") {
         Tile tile{};
         CHECK(tile.is_empty());
         CHECK(tile.gid == 0);
-        CHECK(tile.flag == Tile::FlipFlag::None);
+        CHECK(tile.flag == FlipFlag::None);
         CHECK(tile.tileset == 0);
         CHECK(tile.local_id == 0);
         CHECK_FALSE(tile.flip_horizontal());
@@ -51,27 +51,24 @@ TEST_CASE("Tile and FlipFlag operations", "[game][map_data]") {
         tile.gid = 12;
         CHECK_FALSE(tile.is_empty());
 
-        tile.flag |= Tile::FlipFlag::Horizontal;
+        tile.flag |= FlipFlag::Horizontal;
         CHECK(tile.flip_horizontal());
         CHECK_FALSE(tile.flip_vertical());
         CHECK_FALSE(tile.flip_diagonal());
 
-        tile.flag |= Tile::FlipFlag::Vertical;
+        tile.flag |= FlipFlag::Vertical;
         CHECK(tile.flip_horizontal());
         CHECK(tile.flip_vertical());
         CHECK_FALSE(tile.flip_diagonal());
 
-        tile.flag |= Tile::FlipFlag::Diagonal;
+        tile.flag |= FlipFlag::Diagonal;
         CHECK(tile.flip_horizontal());
         CHECK(tile.flip_vertical());
         CHECK(tile.flip_diagonal());
 
-        CHECK((tile.flag & Tile::FlipFlag::Horizontal) ==
-              Tile::FlipFlag::Horizontal);
-        CHECK((tile.flag & Tile::FlipFlag::Vertical) ==
-              Tile::FlipFlag::Vertical);
-        CHECK((tile.flag & Tile::FlipFlag::Diagonal) ==
-              Tile::FlipFlag::Diagonal);
+        CHECK((tile.flag & FlipFlag::Horizontal) == FlipFlag::Horizontal);
+        CHECK((tile.flag & FlipFlag::Vertical) == FlipFlag::Vertical);
+        CHECK((tile.flag & FlipFlag::Diagonal) == FlipFlag::Diagonal);
     }
 }
 

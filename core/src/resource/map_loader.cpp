@@ -155,16 +155,16 @@ void load_tile_layer(MapData& data, const tmx::TileLayer& layer,
         }
 
         std::uint8_t flags = tile.flipFlags;
-        Tile::FlipFlag f = Tile::FlipFlag::None;
+        FlipFlag f = FlipFlag::None;
 
         if (flags & tmx::TileLayer::FlipFlag::Horizontal) {
-            f |= Tile::FlipFlag::Horizontal;
+            f |= FlipFlag::Horizontal;
         }
         if (flags & tmx::TileLayer::FlipFlag::Vertical) {
-            f |= Tile::FlipFlag::Vertical;
+            f |= FlipFlag::Vertical;
         }
         if (flags & tmx::TileLayer::FlipFlag::Diagonal) {
-            f |= Tile::FlipFlag::Diagonal;
+            f |= FlipFlag::Diagonal;
         }
 
         auto idx = find_tileset_index(tilesets, gid);
