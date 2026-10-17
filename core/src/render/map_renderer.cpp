@@ -2,11 +2,11 @@
 
 #include "serenkai/game/map.hpp"
 #include "serenkai/game/map_data.hpp"
+#include "serenkai/render/render_utils.hpp"
 #include "serenkai/resource/texture_manager.hpp"
 
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
-#include <algorithm>
 #include <glm/ext/vector_float2.hpp>
 #include <span>
 #include <variant>
@@ -101,47 +101,7 @@ void MapRenderer::render_tile_layer(const TileLayer* layer,
 
 void MapRenderer::render_tile(SDL_Texture* texture, const SDL_FRect* src,
                               SDL_FRect dst, const Tile& tile) {
-    double angle = 0.0;
-    SDL_FlipMode sdl_flip = SDL_FLIP_NONE;
-
-    bool d = tile.flip_diagonal();
-    bool h = tile.flip_horizontal();
-    bool v = tile.flip_vertical();
-
-    if (!d) {
-        if (h) {
-            sdl_flip =
-                static_cast<SDL_FlipMode>(sdl_flip | SDL_FLIP_HORIZONTAL);
-        }
-        if (v) {
-            sdl_flip = static_cast<SDL_FlipMode>(sdl_flip | SDL_FLIP_VERTICAL);
-        }
-    } else {
-        // Diagonal flip swaps width and height while keeping the tile center
-        // invariant.
-        float cx = dst.x + dst.w * 0.5f;
-        float cy = dst.y + dst.h * 0.5f;
-        std::swap(dst.w, dst.h);
-        dst.x = cx - dst.w * 0.5f;
-        dst.y = cy - dst.h * 0.5f;
-
-        if (!h && !v) {
-            angle = 90.0;
-            sdl_flip = SDL_FLIP_VERTICAL;
-        } else if (h && !v) {
-            // Most common case in Tiled: 90 degrees clockwise rotation.
-            angle = 90.0;
-            sdl_flip = SDL_FLIP_NONE;
-        } else if (!h && v) {
-            // 270 degrees clockwise (90 degrees counter-clockwise).
-            angle = 270.0;
-            sdl_flip = SDL_FLIP_NONE;
-        } else {
-            // h && v: 90 degrees + horizontal flip (anti-diagonal reflection).
-            angle = 90.0;
-            sdl_flip = SDL_FLIP_HORIZONTAL;
-        }
-    }
+    auto [angle, sdl_flip] = resolve_flip_transform(tile.flag, dst);
 
     SDL_RenderTextureRotated(m_renderer, texture, src, &dst, angle, nullptr,
                              sdl_flip);
