@@ -6,19 +6,17 @@ This is a game project. See `README.md` for details.
 
 ## Collaboration
 
-Work with the human.
+Work with the human. By default, remain in **discussion mode** (read-only; do not create branches or modify files).
 
 Before making changes:
-
 1. Explain what you plan to change.
 2. Explain why the changes are needed.
-3. Wait for confirmation.
+3. Wait for explicit confirmation (do not treat questions or design requests as approval).
 
-Do not make changes without approval.
-
-Never make changes directly on the `main` branch.
-
-Create a dedicated branch for changes, such as `feat/<name>`, `fix/<name>`, or another appropriate branch type.
+### Write Restrictions
+- **Inside `core/`**: NEVER write to disk. Even if requested, you may only output code in markdown blocks in the chat.
+- **Outside `core/`**: Write only upon explicit human instruction.
+- **Git**: Never commit or edit on `main`. Create dedicated branches (`feat/<name>`, `fix/<name>`) only after approval.
 
 ## Code Style
 
