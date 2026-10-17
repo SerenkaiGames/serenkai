@@ -54,14 +54,15 @@ public:
         fs::remove_all(m_temp_dir, ec);
     }
 
-    void register_script(std::string_view loc_str, const std::string& content) {
+    void register_file(std::string_view loc_str, const std::string& content,
+                       std::string_view ext = ".luau") {
         auto loc = ResourceLocation::parse(loc_str);
         if (!loc) {
             return;
         }
 
         auto file_name = std::string(loc->ns()) + "_" +
-                         std::to_string(m_counter++) + ".luau";
+                         std::to_string(m_counter++) + std::string(ext);
         auto file_path = m_temp_dir / file_name;
         {
             std::ofstream out(file_path);
@@ -72,6 +73,10 @@ public:
         files.emplace(*loc, file_path.string());
         m_asset_manager.merge_source(
             std::make_shared<MockScriptSource>(std::move(files)));
+    }
+
+    void register_script(std::string_view loc_str, const std::string& content) {
+        register_file(loc_str, content, ".luau");
     }
 
     AssetManager& asset_manager() { return m_asset_manager; }
@@ -672,6 +677,15 @@ TEST_CASE("Script Map and Luau vector bindings", "[script][map]") {
             m:set_layer_visible(layer_name, false)
             return has, true
         end
+
+        function test_is_solid(m: any, x: number, y: number): boolean
+            return m:is_solid(vector.create(x, y, 0))
+        end
+
+        function test_check_collision(m: any, x: number, y: number, w: number, h: number): boolean
+            local box = AABB.new(x, y, w, h)
+            return m:check_collision(box)
+        end
     )");
 
     ScriptEngine engine(
@@ -685,6 +699,13 @@ TEST_CASE("Script Map and Luau vector bindings", "[script][map]") {
     TileLayer layer{};
     layer.name = "Ground";
     data.layers.push_back(layer);
+
+    TileLayer col_layer{};
+    col_layer.name = "collision";
+    col_layer.size = {10, 8};
+    col_layer.tiles.resize(80);
+    col_layer.tiles[1 * 10 + 1].gid = 1; // (1, 1) is solid
+    data.layers.push_back(std::move(col_layer));
 
     Map map(std::move(data));
 
@@ -725,6 +746,29 @@ TEST_CASE("Script Map and Luau vector bindings", "[script][map]") {
             script->call<bool, bool>("test_layer_visibility", &map, "Ground");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
+    }
+
+    SECTION("is_solid and check_collision Lua bindings") {
+        auto solid_hit = script->call<bool>("test_is_solid", &map, 1, 1);
+        REQUIRE(solid_hit.has_value());
+        CHECK(std::get<0>(*solid_hit) == true);
+
+        auto solid_miss = script->call<bool>("test_is_solid", &map, 0, 0);
+        REQUIRE(solid_miss.has_value());
+        CHECK(std::get<0>(*solid_miss) == false);
+
+        // Tile (1, 1) is [16, 32) x [16, 32). AABB at (18, 18, 10, 10) overlaps
+        // it.
+        auto col_hit = script->call<bool>("test_check_collision", &map, 18.0f,
+                                          18.0f, 10.0f, 10.0f);
+        REQUIRE(col_hit.has_value());
+        CHECK(std::get<0>(*col_hit) == true);
+
+        // AABB at (2, 2, 10, 10) is inside empty tile (0, 0).
+        auto col_miss = script->call<bool>("test_check_collision", &map, 2.0f,
+                                           2.0f, 10.0f, 10.0f);
+        REQUIRE(col_miss.has_value());
+        CHECK(std::get<0>(*col_miss) == false);
     }
 }
 
@@ -1224,5 +1268,132 @@ TEST_CASE("Script EntityManager bindings", "[script][entity]") {
                                         "nonexistent:entity.json");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == 0.0);
+    }
+}
+
+TEST_CASE("Script Entity movement and collision",
+          "[script][entity][collision]") {
+    TestScriptEnv env;
+    env.register_file("test:maps/collision_map.tmx",
+                      R"(<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="4" height="4" tilewidth="16" tileheight="16" infinite="0">
+ <tileset firstgid="1" name="col_tileset" tilewidth="16" tileheight="16" tilecount="4" columns="2">
+  <image source="col.png" width="32" height="32"/>
+ </tileset>
+ <layer id="1" name="collision" width="4" height="4">
+  <data encoding="csv">
+0,0,0,0,
+0,0,1,0,
+0,0,0,0,
+0,0,0,0
+</data>
+ </layer>
+</map>)",
+                      ".tmx");
+
+    env.register_script("test:move_test.luau", R"(
+        function move_entity(id: number, dx: number, dy: number)
+            World.Entities.move(id, vector.create(dx, dy, 0))
+        end
+
+        function get_entity_pos(id: number): (number, number, number)
+            local p = World.Entities.get_prop(id, "props/pos")
+            if not p then
+                return -1, -1, -1
+            end
+            return p.x, p.y, p.z
+        end
+    )");
+
+    ScriptEngine engine(
+        ScriptEngineConfig{.asset_manager = &env.asset_manager()});
+    auto script = engine.create("test:move_test.luau");
+    REQUIRE(script.has_value());
+
+    MapManager map_manager(&env.asset_manager());
+    EntityManager entity_manager(&env.asset_manager(), &engine);
+    engine.set_active_world(WorldContext{
+        .map_mgr = &map_manager,
+        .entity_mgr = &entity_manager,
+    });
+
+    SECTION("Entity moves freely when no collision is encountered") {
+        REQUIRE(map_manager.switch_map("test:maps/collision_map.tmx"));
+        EntityId e = entity_manager.create();
+        entity_manager.set_prop(e, "props/pos", glm::vec3{0.0f, 0.0f, 1.0f});
+        entity_manager.set_prop(e, "props/collider",
+                                glm::vec4{2.0f, 2.0f, 12.0f, 12.0f});
+
+        auto res =
+            script->call<>("move_entity", static_cast<double>(e), 5.0, 6.0);
+        REQUIRE(res.has_value());
+
+        auto pos_res = script->call<double, double, double>(
+            "get_entity_pos", static_cast<double>(e));
+        REQUIRE(pos_res.has_value());
+        CHECK(std::get<0>(*pos_res) == 5.0);
+        CHECK(std::get<1>(*pos_res) == 6.0);
+        CHECK(std::get<2>(*pos_res) == 1.0);
+    }
+
+    SECTION("Collision blocks movement on obstructed axis while allowing "
+            "sliding on free axis") {
+        REQUIRE(map_manager.switch_map("test:maps/collision_map.tmx"));
+        EntityId e = entity_manager.create();
+        // Tile (2, 1) is solid, world pos [32, 48) x [16, 32).
+        // Place entity at x = 16.0, y = 16.0, collider = [2, 2, 12, 12].
+        // Current AABB = [18, 18] -> [30, 30].
+        entity_manager.set_prop(e, "props/pos", glm::vec3{16.0f, 16.0f, 1.0f});
+        entity_manager.set_prop(e, "props/collider",
+                                glm::vec4{2.0f, 2.0f, 12.0f, 12.0f});
+
+        // Try to move right by +10.0 (x would be 26, collider max.x = 26 + 14 =
+        // 40 > 32, hitting solid tile). Simultaneously move down by +4.0 (y
+        // would be 20, collider in [22, 34], tile 2,1 is at x=32 so y is free).
+        auto res =
+            script->call<>("move_entity", static_cast<double>(e), 10.0, 4.0);
+        REQUIRE(res.has_value());
+
+        auto pos_res = script->call<double, double, double>(
+            "get_entity_pos", static_cast<double>(e));
+        REQUIRE(pos_res.has_value());
+        // X movement should be blocked (stays 16.0), Y movement succeeds (16 +
+        // 4 = 20.0)
+        CHECK(std::get<0>(*pos_res) == 16.0);
+        CHECK(std::get<1>(*pos_res) == 20.0);
+    }
+
+    SECTION("Entity without props/collider does not move") {
+        REQUIRE(map_manager.switch_map("test:maps/collision_map.tmx"));
+        EntityId e = entity_manager.create();
+        entity_manager.set_prop(e, "props/pos", glm::vec3{0.0f, 0.0f, 1.0f});
+
+        auto res =
+            script->call<>("move_entity", static_cast<double>(e), 5.0, 5.0);
+        REQUIRE(res.has_value());
+
+        auto pos_res = script->call<double, double, double>(
+            "get_entity_pos", static_cast<double>(e));
+        REQUIRE(pos_res.has_value());
+        CHECK(std::get<0>(*pos_res) == 0.0);
+        CHECK(std::get<1>(*pos_res) == 0.0);
+    }
+
+    SECTION("move is safe when map is not loaded") {
+        EntityId e = entity_manager.create();
+        entity_manager.set_prop(e, "props/pos", glm::vec3{0.0f, 0.0f, 1.0f});
+        entity_manager.set_prop(e, "props/collider",
+                                glm::vec4{2.0f, 2.0f, 12.0f, 12.0f});
+
+        // map_manager has no map loaded
+        auto res =
+            script->call<>("move_entity", static_cast<double>(e), 5.0, 5.0);
+        REQUIRE(res.has_value());
+
+        auto pos_res = script->call<double, double, double>(
+            "get_entity_pos", static_cast<double>(e));
+        REQUIRE(pos_res.has_value());
+        CHECK(std::get<0>(*pos_res) == 0.0);
+        CHECK(std::get<1>(*pos_res) == 0.0);
     }
 }
