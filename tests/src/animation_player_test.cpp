@@ -45,21 +45,23 @@ SpriteAnimationData create_test_animation_data() {
         .mode = PlaybackMode::Pingpong,
     };
 
+    const auto pingpong_rev = AnimationClip{
+        .name = "anim/pingpong_reverse",
+        .from = 0,
+        .to = 2,
+        .mode = PlaybackMode::PingpongReverse,
+    };
     data.clips[*ResourceLocation::parse("test:anim/pingpong_reverse")] =
-        AnimationClip{
-            .name = "anim/pingpong_reverse",
-            .from = 0,
-            .to = 2,
-            .mode = PlaybackMode::PingpongReverse,
-    };
+        pingpong_rev;
 
-    data.clips[*ResourceLocation::parse("test:anim/single_frame")] =
-        AnimationClip{
-            .name = "anim/single_frame",
-            .from = 1,
-            .to = 1,
-            .mode = PlaybackMode::Forward,
+    const auto single_frame = AnimationClip{
+        .name = "anim/single_frame",
+        .from = 1,
+        .to = 1,
+        .mode = PlaybackMode::Forward,
     };
+    data.clips[*ResourceLocation::parse("test:anim/single_frame")] =
+        single_frame;
 
     return data;
 }
@@ -258,13 +260,13 @@ TEST_CASE("AnimationPlayer edge cases and protection",
         zero_data.frames.push_back(SpriteFrame{.duration = 0.0f});
         zero_data.frames.push_back(SpriteFrame{.duration = 0.0f});
 
-        zero_data.clips[*ResourceLocation::parse("test:anim/zero")] =
-            AnimationClip{
-                .name = "anim/zero",
-                .from = 0,
-                .to = 1,
-                .mode = PlaybackMode::Forward,
+        const auto zero_clip = AnimationClip{
+            .name = "anim/zero",
+            .from = 0,
+            .to = 1,
+            .mode = PlaybackMode::Forward,
         };
+        zero_data.clips[*ResourceLocation::parse("test:anim/zero")] = zero_clip;
 
         REQUIRE(
             player.play(zero_data, *ResourceLocation::parse("test:anim/zero")));
