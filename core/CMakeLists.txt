@@ -132,6 +132,10 @@ add_library(
     src/resource/animation_loader.cpp
     include/serenkai/resource/resource_utils.hpp
     src/resource/resource_utils.cpp
+    include/serenkai/game/animation_player.hpp
+    src/game/animation_player.cpp
+    include/serenkai/resource/animation_manager.hpp
+    src/resource/animation_manager.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

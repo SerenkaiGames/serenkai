@@ -296,4 +296,23 @@ void Renderer::draw_sprite(std::string_view sprite_loc,
                                      zoom);
 }
 
+void Renderer::draw_sprite_frame(const ResourceLocation& image,
+                                 TextureManager* texture_manager,
+                                 glm::vec2 world_pos, glm::vec4 src,
+                                 glm::vec2 screen_offset, float zoom) {
+    if (zoom <= 0.0f) {
+        zoom = 1.0f;
+    }
+    if (!m_sprite_renderer || !texture_manager) {
+        return;
+    }
+    auto* texture = texture_manager->get(image);
+    if (!texture) {
+        return;
+    }
+    const glm::vec2 draw_size{src.z, src.w};
+    m_sprite_renderer->render_sprite(texture, world_pos, draw_size,
+                                     screen_offset, zoom, src);
+}
+
 } // namespace serenkai

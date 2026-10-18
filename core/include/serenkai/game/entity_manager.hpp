@@ -1,10 +1,14 @@
 #pragma once
 
+#include "serenkai/game/animation_player.hpp"
 #include "serenkai/game/entity.hpp"
+#include "serenkai/resource/animation_manager.hpp"
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 namespace serenkai {
@@ -37,7 +41,13 @@ public:
     bool remove_prop_by_loc(EntityId id, const ResourceLocation& key);
     bool remove_prop(EntityId id, std::string_view loc);
 
+    bool play_animation(EntityId id, std::string_view clip_loc);
+    void stop_animation(EntityId id);
+    const AnimationPlayer* animation_player(EntityId id) const;
+
     std::size_t alive_size() const;
+
+    void update(float dt);
 
     /// @brief Perform an operation for each alive entity.
     ///
@@ -62,6 +72,8 @@ private:
     AssetManager* m_asset_manager = nullptr;
     ScriptEngine* m_script_engine = nullptr;
 
+    std::unique_ptr<AnimationManager> m_animation_mgr;
+    std::unordered_map<EntityId, AnimationPlayer> m_animation_players;
     /// @brief Get the entity; return nullptr if invalid.
     ///
     /// @warning If the vector reallocates, the pointer will be invalidated.
