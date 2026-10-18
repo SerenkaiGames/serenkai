@@ -86,10 +86,8 @@ struct AsepriteData {
 namespace {
 
 std::optional<SpriteAnimationData>
-convert_aseprite(const AsepriteData& raw, std::string_view parent_path,
-                 const ResourceLocation& anim_loc) {
-    auto image_loc = resolve_relative_resource_location(raw.meta.image,
-                                                        parent_path, anim_loc);
+convert_aseprite(const AsepriteData& raw, const ResourceLocation& anim_loc) {
+    auto image_loc = convert_aseprite_to_location(raw.meta.image, anim_loc);
     if (!image_loc) {
         spdlog::error("Failed to resolve image location '{}' for animation {}",
                       raw.meta.image, anim_loc.str());
@@ -173,7 +171,7 @@ AnimationLoader::load(const ResourceLocation& loc) {
         return std::nullopt;
     }
 
-    return convert_aseprite(data, *path, loc);
+    return convert_aseprite(data, loc);
 }
 
 std::optional<SpriteAnimationData> AnimationLoader::load(std::string_view loc) {

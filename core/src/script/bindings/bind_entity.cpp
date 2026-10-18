@@ -65,6 +65,20 @@ void bind_entity_to_lua(lua_State* L, ScriptEngine* engine) {
                   return self->set_prop(static_cast<EntityId>(id), loc,
                                         lua_ref_to_prop(val));
               })
+        .BIND("play_animation",
+              [](EntityManager* self, double id, std::string_view clip) {
+                  return self->play_animation(static_cast<EntityId>(id), clip,
+                                              true);
+              })
+        .BIND("play_animation_once",
+              [](EntityManager* self, double id, std::string_view clip) {
+                  return self->play_animation(static_cast<EntityId>(id), clip,
+                                              false);
+              })
+        .BIND("stop_animation",
+              [](EntityManager* self, double id) {
+                  return self->stop_animation(static_cast<EntityId>(id));
+              })
         .BIND("get_prop",
               [L](EntityManager* self, double id,
                   std::string_view loc) -> std::optional<luabridge::LuaRef> {

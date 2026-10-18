@@ -222,7 +222,8 @@ bool EntityManager::remove_prop(EntityId id, std::string_view loc) {
     return remove_prop_by_loc(id, *res);
 }
 
-bool EntityManager::play_animation(EntityId id, std::string_view clip_loc) {
+bool EntityManager::play_animation(EntityId id, std::string_view clip_loc,
+                                   bool loop) {
     auto* e = fetch(id);
     if (!e) {
         return false;
@@ -250,13 +251,13 @@ bool EntityManager::play_animation(EntityId id, std::string_view clip_loc) {
     auto it = m_animation_players.find(id);
     if (it == m_animation_players.end()) {
         AnimationPlayer player;
-        if (!player.play(*data, *clip)) {
+        if (!player.play(*data, *clip, loop)) {
             return false;
         }
         m_animation_players.emplace(id, std::move(player));
         return true;
     }
-    return it->second.play(*data, *clip);
+    return it->second.play(*data, *clip, loop);
 }
 
 void EntityManager::stop_animation(EntityId id) {

@@ -18,5 +18,9 @@ export type WorldEntities = {
 	has_prop: (id: EntityId, loc: string) -> boolean,
 	remove_prop: (id: EntityId, loc: string) -> boolean,
 
+	play_animation: (id: EntityId, clip: string) -> boolean,
+	play_animation_once: (id: EntityId, clip: string) -> boolean,
+	stop_animation: (id: EntityId) -> (),
+
 	move: (id: EntityId, dist: vector) -> (),
 }

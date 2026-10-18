@@ -177,8 +177,8 @@ void load_image_layer(MapData& data, const tmx::ImageLayer& layer,
     image.name = layer.getName();
     image.visible = layer.getVisible();
 
-    auto img_loc = resolve_relative_resource_location(layer.getImagePath(),
-                                                      map_path, map_loc);
+    auto img_loc =
+        convert_tmx_to_location(layer.getImagePath(), map_path, map_loc);
     if (img_loc) {
         image.loc = *img_loc;
     } else {
@@ -248,8 +248,8 @@ std::optional<MapData> MapLoader::load(std::string_view loc) const {
         Tileset set{};
         set.name = tileset.getName();
 
-        auto img_loc = resolve_relative_resource_location(
-            tileset.getImagePath(), *map_path, *map_loc);
+        auto img_loc = convert_tmx_to_location(tileset.getImagePath(),
+                                               *map_path, *map_loc);
         if (!img_loc) {
             spdlog::error("Tileset '{}' has invalid image path '{}'",
                           tileset.getName(), tileset.getImagePath());

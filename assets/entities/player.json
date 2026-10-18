@@ -1,7 +1,7 @@
 {
     "props": {
         "props/name": "serenkai:player",
-        "props/texture": "serenkai:entities/player.png",
+        "props/animation": "serenkai:entities/player_sheet.json",
         "props/pos": [
             0,
             0,

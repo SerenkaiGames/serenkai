@@ -4,10 +4,15 @@ local id: EntityId
 
 local speed: number = 100
 
+type Direction = "up" | "down" | "left" | "right"
+local facing: Direction = "down"
+
 local EntitySystem = require("serenkai:scripts/entity_system.luau")
 
 function on_init(e_id: EntityId)
 	id = e_id
+
+	World.Entities.play_animation(id, "player/idle_down")
 
 	EntitySystem.on(id, "serenkai:events/update_game", on_update)
 	EntitySystem.on(id, "serenkai:events/leave_game", function()
@@ -41,9 +46,23 @@ function update_move(dt: number)
 	end
 
 	if dx ~= 0 or dy ~= 0 then
+		if dy < 0 then
+			facing = "up"
+		elseif dy > 0 then
+			facing = "down"
+		elseif dx < 0 then
+			facing = "left"
+		elseif dx > 0 then
+			facing = "right"
+		end
+
+		World.Entities.play_animation(id, "player/walk_" .. facing)
+
 		World.Entities.move(id, vector.create(dx, dy, 0))
 		local player_pos = World.Entities.get_prop(id, "props/pos")
 		World.Camera.set_pos(vector.create(player_pos.x, player_pos.y, 0))
+	else
+		World.Entities.play_animation(id, "player/idle_" .. facing)
 	end
 end
 
