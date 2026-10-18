@@ -99,3 +99,41 @@ TEST_CASE("resolve_relative_resource_location resolves absolute disk paths",
         CHECK(result->str() == "serenkai:maps/tileset.png");
     }
 }
+
+TEST_CASE(
+    "resolve_relative_resource_location resolves relative disk paths with "
+    "prefix directories",
+    "[resource][resource_utils]") {
+    const auto parent_loc =
+        *ResourceLocation::parse("serenkai:maps/tea_house.tmx");
+    const std::string parent_disk_path = "../seassets/maps/tea_house.tmx";
+
+    SECTION("Resolves sibling directory path without leaking asset directory "
+            "prefix") {
+        auto result = resolve_relative_resource_location(
+            "../seassets/collision/collision.png", parent_disk_path,
+            parent_loc);
+        REQUIRE(result.has_value());
+        CHECK(result->str() == "serenkai:collision/collision.png");
+    }
+
+    SECTION("Resolves deeply nested tileset path without leaking asset "
+            "directory prefix") {
+        auto result = resolve_relative_resource_location(
+            "../seassets/Ninja_Adventure-Asset_Pack/Backgrounds/Tilesets/"
+            "Interior/TilesetInteriorFloor.png",
+            parent_disk_path, parent_loc);
+        REQUIRE(result.has_value());
+        CHECK(result->str() ==
+              "serenkai:Ninja_Adventure-Asset_Pack/Backgrounds/Tilesets/"
+              "Interior/TilesetInteriorFloor.png");
+    }
+
+    SECTION("Resolves sibling path when root folder has no dot-dot prefix") {
+        const std::string direct_parent_disk = "seassets/maps/tea_house.tmx";
+        auto result = resolve_relative_resource_location(
+            "seassets/collision/collision.png", direct_parent_disk, parent_loc);
+        REQUIRE(result.has_value());
+        CHECK(result->str() == "serenkai:collision/collision.png");
+    }
+}
