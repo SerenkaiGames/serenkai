@@ -8,8 +8,10 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
 #include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float4.hpp>
 #include <glm/ext/vector_int2.hpp>
 #include <memory>
+#include <optional>
 #include <string_view>
 namespace serenkai {
 
@@ -66,7 +68,8 @@ public:
 
     void draw_sprite(std::string_view sprite_path,
                      TextureManager* texture_manager, glm::vec2 world_pos,
-                     glm::vec2 screen_offset, float zoom);
+                     glm::vec2 screen_offset, float zoom,
+                     std::optional<glm::vec4> src_rect = std::nullopt);
 
 private:
     const RendererConfig m_config;

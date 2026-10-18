@@ -277,7 +277,8 @@ void Renderer::draw_map(Map* map, TextureManager* texture_manager,
 
 void Renderer::draw_sprite(std::string_view sprite_loc,
                            TextureManager* texture_manager, glm::vec2 world_pos,
-                           glm::vec2 screen_offset, float zoom) {
+                           glm::vec2 screen_offset, float zoom,
+                           std::optional<glm::vec4> src_rect) {
     if (zoom <= 0.0f) {
         zoom = 1.0f;
     }
@@ -293,7 +294,7 @@ void Renderer::draw_sprite(std::string_view sprite_loc,
     glm::vec2 size =
         static_cast<glm::vec2>(texture_manager->measure_size(texture));
     m_sprite_renderer->render_sprite(texture, world_pos, size, screen_offset,
-                                     zoom);
+                                     zoom, src_rect);
 }
 
 } // namespace serenkai
