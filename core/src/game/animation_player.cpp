@@ -96,6 +96,13 @@ void AnimationPlayer::advance() {
     const int from = m_clip->from;
     const int to = m_clip->to;
 
+    if (from == to) {
+        if (!m_loop) {
+            m_state = PlayState::Completed;
+        }
+        return;
+    }
+
     switch (m_clip->mode) {
     case PlaybackMode::Forward:
         if (m_frame >= to) {
@@ -153,7 +160,7 @@ bool AnimationPlayer::playing() const { return m_state == PlayState::Playing; }
 PlayState AnimationPlayer::state() const { return m_state; }
 
 const SpriteFrame* AnimationPlayer::frame() const {
-    if (!playing()) {
+    if (m_state == PlayState::Stopped) {
         return nullptr;
     }
     if (m_frame < 0 || m_frame >= static_cast<int>(m_data->frames.size())) {

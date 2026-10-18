@@ -6,7 +6,7 @@
 #include <string_view>
 
 namespace serenkai {
-/// @brief Convert the absolute path or relative path of an image in the map to
+/// @brief Convert the filesystem path of an image in the map to
 /// a ResourceLocation
 ///
 /// @warning image path is a filesystem path
