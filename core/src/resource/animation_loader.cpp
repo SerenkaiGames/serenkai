@@ -73,14 +73,14 @@ struct AsepriteFrameTag {
     PlaybackMode direction = PlaybackMode::Forward;
 };
 
-struct AsperiteMeta {
+struct AsepriteMeta {
     std::string image;
     std::vector<AsepriteFrameTag> frameTags; // NOLINT
 };
 
 struct AsepriteData {
     std::vector<AsepriteFrame> frames;
-    AsperiteMeta meta;
+    AsepriteMeta meta;
 };
 
 namespace {

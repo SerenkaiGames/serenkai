@@ -25,7 +25,7 @@
 #include <tmxlite/Types.hpp>
 #include <utility>
 #include <vector>
-namespace fs = std::filesystem;
+
 namespace serenkai {
 
 namespace {

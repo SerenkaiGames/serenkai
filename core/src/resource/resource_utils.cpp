@@ -22,7 +22,9 @@ resolve_relative_resource_location(std::string_view target_path,
 
         std::error_code ec;
 
-        fs::path rel_path = fs::relative(target_p, parent_dir, ec);
+        fs::path rel_path = target_p.is_relative()
+                                ? target_p
+                                : fs::relative(target_p, parent_dir, ec);
 
         if (ec || rel_path.empty()) {
             rel_path = target_p.lexically_relative(parent_dir);

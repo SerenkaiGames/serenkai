@@ -7,6 +7,7 @@
 #include <magic_enum/magic_enum.hpp>
 #include <string>
 #include <unordered_map>
+#include <vector>
 namespace serenkai {
 
 enum class PlaybackMode {

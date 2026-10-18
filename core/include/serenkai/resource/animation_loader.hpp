@@ -9,7 +9,7 @@ namespace serenkai {
 class AssetManager;
 class AnimationLoader {
 public:
-    AnimationLoader(AssetManager* asset_manager);
+    explicit AnimationLoader(AssetManager* asset_manager);
 
     std::optional<SpriteAnimationData> load(std::string_view loc);
     std::optional<SpriteAnimationData> load(const ResourceLocation& loc);
