@@ -3,6 +3,9 @@
 #include "serenkai/resource/animation_data.hpp"
 #include "serenkai/resource/resource_location.hpp"
 namespace serenkai {
+/// @brief State machine for animation playback
+///
+/// Internally plays and maintains animation playback.
 class AnimationPlayer {
 public:
     bool play(const SpriteAnimationData& data, const ResourceLocation& clip);

@@ -65,7 +65,7 @@ void AnimationPlayer::update(float dt) {
         return;
     }
     if (m_clip->from == m_clip->to) {
-        return;
+        return; // Single-frame animation.
     }
 
     m_elapsed += dt;
