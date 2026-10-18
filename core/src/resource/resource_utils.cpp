@@ -20,14 +20,21 @@ resolve_relative_resource_location(std::string_view target_path,
         fs::path parent_dir = fs::path(parent_disk_path).parent_path();
         fs::path target_p(target_path);
 
-        std::error_code ec;
+        fs::path rel_path;
+        if (target_p.is_absolute()) {
+            std::error_code ec;
+            rel_path = fs::relative(target_p, parent_dir, ec);
+            if (ec || rel_path.empty()) {
+                rel_path = target_p.lexically_relative(parent_dir);
+            }
+        } else {
 
-        fs::path rel_path = target_p.is_relative()
-                                ? target_p
-                                : fs::relative(target_p, parent_dir, ec);
-
-        if (ec || rel_path.empty()) {
-            rel_path = target_p.lexically_relative(parent_dir);
+            fs::path lex_rel = target_p.lexically_relative(parent_dir);
+            if (!lex_rel.empty() && !lex_rel.string().starts_with("..")) {
+                rel_path = lex_rel;
+            } else {
+                rel_path = target_p;
+            }
         }
 
         fs::path parent_loc_dir = fs::path(parent_loc.path()).parent_path();
