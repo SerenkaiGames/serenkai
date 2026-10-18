@@ -1,5 +1,3 @@
-#pragma once
-
 #include "serenkai/game/animation_player.hpp"
 
 #include <spdlog/spdlog.h>
@@ -42,7 +40,7 @@ bool AnimationPlayer::play(const SpriteAnimationData& data,
     case PlaybackMode::Reverse:
     case PlaybackMode::PingpongReverse:
         m_frame = m_clip->to;
-        m_step = 1;
+        m_step = -1;
         break;
     }
     return true;
@@ -71,6 +69,10 @@ void AnimationPlayer::update(float dt) {
     m_elapsed += dt;
 
     for (int steps = 0; steps < MAX_FRAME_STEPS; ++steps) {
+        if (m_frame < 0 || m_frame >= static_cast<int>(m_data->frames.size())) {
+            break;
+        }
+
         const float duration = m_data->frames[m_frame].duration;
 
         if (m_elapsed < duration) {

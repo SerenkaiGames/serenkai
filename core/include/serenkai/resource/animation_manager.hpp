@@ -14,7 +14,7 @@ class AssetManager;
 /// Internally caches animation resources that have already been loaded.
 class AnimationManager {
 public:
-    AnimationManager(AssetManager* asset_manager);
+    explicit AnimationManager(AssetManager* asset_manager);
 
     SpriteAnimationData* get(std::string_view loc);
     SpriteAnimationData* get(const ResourceLocation& loc);

@@ -14,7 +14,7 @@ AnimationManager::AnimationManager(AssetManager* asset_manager)
 
 SpriteAnimationData* AnimationManager::get(std::string_view loc) {
     auto res = ResourceLocation::parse(loc);
-    if (res) {
+    if (!res) {
         spdlog::error("Invalid resource location {}", loc);
         return nullptr;
     }
@@ -31,7 +31,7 @@ SpriteAnimationData* AnimationManager::get(const ResourceLocation& loc) {
     auto data = m_loader.load(loc);
 
     if (!data) {
-        spdlog::error("Failed to loader animation {}", loc.str());
+        spdlog::error("Failed to loader animation: {}", loc.str());
         m_datas.try_emplace(loc, nullptr); // Prevent repeated loading.
         return nullptr;
     }

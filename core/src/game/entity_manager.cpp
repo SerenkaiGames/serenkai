@@ -243,7 +243,7 @@ bool EntityManager::play_animation(EntityId id, std::string_view clip_loc) {
     auto clip = ResourceLocation::parse(clip_loc);
 
     if (!clip) {
-        spdlog::error("Invalid clip loc {}", clip_loc);
+        spdlog::error("Invalid clip location {}", clip_loc);
         return false;
     }
 

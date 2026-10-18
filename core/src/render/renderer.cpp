@@ -303,6 +303,9 @@ void Renderer::draw_sprite_frame(const ResourceLocation& image,
     if (zoom <= 0.0f) {
         zoom = 1.0f;
     }
+    if (!m_sprite_renderer || !texture_manager) {
+        return;
+    }
     auto* texture = texture_manager->get(image);
     if (!texture) {
         return;
