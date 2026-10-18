@@ -80,14 +80,18 @@ TEST_CASE("AnimationPlayer initial and stop state",
     auto data = create_test_animation_data();
     auto clip_loc = *ResourceLocation::parse("test:anim/forward");
 
-    REQUIRE(player.play(data, clip_loc));
+    REQUIRE(player.play(data, clip_loc, true));
     CHECK(player.playing());
+    CHECK_FALSE(player.finished());
+    CHECK(player.state() == PlayState::Playing);
     CHECK(player.frame() != nullptr);
     CHECK(player.image() != nullptr);
     CHECK(player.data() != nullptr);
 
     player.stop();
     CHECK_FALSE(player.playing());
+    CHECK_FALSE(player.finished());
+    CHECK(player.state() == PlayState::Stopped);
     CHECK(player.frame() == nullptr);
     CHECK(player.image() == nullptr);
     CHECK(player.data() == nullptr);
@@ -100,17 +104,18 @@ TEST_CASE("AnimationPlayer clip selection and matching",
 
     SECTION("Non-existent clip returns false") {
         auto invalid_clip = *ResourceLocation::parse("test:anim/missing");
-        CHECK_FALSE(player.play(data, invalid_clip));
+        CHECK_FALSE(player.play(data, invalid_clip, true));
         CHECK_FALSE(player.playing());
+        CHECK(player.state() == PlayState::Stopped);
     }
 
     SECTION("Replaying same clip preserves playback progress") {
         auto clip_loc = *ResourceLocation::parse("test:anim/forward");
-        REQUIRE(player.play(data, clip_loc));
+        REQUIRE(player.play(data, clip_loc, true));
         player.update(0.15f);
         const auto* frame_before = player.frame();
 
-        REQUIRE(player.play(data, clip_loc));
+        REQUIRE(player.play(data, clip_loc, true));
         CHECK(player.frame() == frame_before);
     }
 }
@@ -121,7 +126,7 @@ TEST_CASE("AnimationPlayer forward playback and looping",
     auto data = create_test_animation_data();
     auto clip_loc = *ResourceLocation::parse("test:anim/forward");
 
-    REQUIRE(player.play(data, clip_loc));
+    REQUIRE(player.play(data, clip_loc, true));
     CHECK(player.frame() == &data.frames[0]);
 
     // Partial elapsed time does not advance frame
@@ -149,7 +154,7 @@ TEST_CASE("AnimationPlayer reverse playback", "[game][animation_player]") {
     auto data = create_test_animation_data();
     auto clip_loc = *ResourceLocation::parse("test:anim/reverse");
 
-    REQUIRE(player.play(data, clip_loc));
+    REQUIRE(player.play(data, clip_loc, true));
     // Starts at 'to' frame (frame 3)
     CHECK(player.frame() == &data.frames[3]);
 
@@ -172,7 +177,7 @@ TEST_CASE("AnimationPlayer pingpong playback", "[game][animation_player]") {
     auto data = create_test_animation_data();
     auto clip_loc = *ResourceLocation::parse("test:anim/pingpong");
 
-    REQUIRE(player.play(data, clip_loc));
+    REQUIRE(player.play(data, clip_loc, true));
     // Frames sequence: 0 -> 1 -> 2 -> 1 -> 0 -> 1 -> 2 ...
     CHECK(player.frame() == &data.frames[0]);
 
@@ -203,7 +208,7 @@ TEST_CASE("AnimationPlayer pingpong reverse playback",
     auto data = create_test_animation_data();
     auto clip_loc = *ResourceLocation::parse("test:anim/pingpong_reverse");
 
-    REQUIRE(player.play(data, clip_loc));
+    REQUIRE(player.play(data, clip_loc, true));
     // Frames sequence: 2 -> 1 -> 0 -> 1 -> 2 -> 1 -> 0 ...
     CHECK(player.frame() == &data.frames[2]);
 
@@ -233,18 +238,40 @@ TEST_CASE("AnimationPlayer edge cases and protection",
     AnimationPlayer player;
     auto data = create_test_animation_data();
 
-    SECTION("Single-frame animation does not advance") {
+    SECTION("Single-frame animation with loop=true stays at frame") {
         auto clip_loc = *ResourceLocation::parse("test:anim/single_frame");
-        REQUIRE(player.play(data, clip_loc));
+        REQUIRE(player.play(data, clip_loc, true));
         CHECK(player.frame() == &data.frames[1]);
+        CHECK(player.state() == PlayState::Playing);
 
         player.update(1.0f);
+        CHECK(player.frame() == &data.frames[1]);
+        CHECK(player.state() == PlayState::Playing);
+    }
+
+    SECTION(
+        "Single-frame animation with loop=false completes and holds frame") {
+        auto clip_loc = *ResourceLocation::parse("test:anim/single_frame");
+        REQUIRE(player.play(data, clip_loc, false));
+        CHECK(player.frame() == &data.frames[1]);
+        CHECK(player.state() == PlayState::Playing);
+
+        // Before duration expires
+        player.update(0.05f);
+        CHECK(player.frame() == &data.frames[1]);
+        CHECK(player.state() == PlayState::Playing);
+
+        // Cross duration (0.1f)
+        player.update(0.06f);
+        CHECK(player.finished());
+        CHECK_FALSE(player.playing());
+        CHECK(player.state() == PlayState::Completed);
         CHECK(player.frame() == &data.frames[1]);
     }
 
     SECTION("Non-positive dt does not advance") {
         auto clip_loc = *ResourceLocation::parse("test:anim/forward");
-        REQUIRE(player.play(data, clip_loc));
+        REQUIRE(player.play(data, clip_loc, true));
         CHECK(player.frame() == &data.frames[0]);
 
         player.update(0.0f);
@@ -268,10 +295,88 @@ TEST_CASE("AnimationPlayer edge cases and protection",
         };
         zero_data.clips[*ResourceLocation::parse("test:anim/zero")] = zero_clip;
 
-        REQUIRE(
-            player.play(zero_data, *ResourceLocation::parse("test:anim/zero")));
+        REQUIRE(player.play(zero_data,
+                            *ResourceLocation::parse("test:anim/zero"), true));
         // Must return in bounded time without hanging
         player.update(0.1f);
         CHECK(player.playing());
+    }
+}
+
+TEST_CASE("AnimationPlayer one-shot completion and state tracking",
+          "[game][animation_player]") {
+    AnimationPlayer player;
+    auto data = create_test_animation_data();
+
+    SECTION("Forward one-shot completes and holds final frame") {
+        auto clip_loc = *ResourceLocation::parse("test:anim/forward");
+        REQUIRE(player.play(data, clip_loc, false));
+        CHECK(player.state() == PlayState::Playing);
+
+        // Advance frames 0 -> 1 -> 2 -> 3
+        player.update(0.31f);
+        CHECK(player.frame() == &data.frames[3]);
+        CHECK(player.state() == PlayState::Playing);
+
+        // Cross end of frame 3
+        player.update(0.1f);
+        CHECK(player.finished());
+        CHECK_FALSE(player.playing());
+        CHECK(player.state() == PlayState::Completed);
+        CHECK(player.frame() == &data.frames[3]);
+
+        // Further update does not change state or frame
+        player.update(1.0f);
+        CHECK(player.finished());
+        CHECK(player.frame() == &data.frames[3]);
+
+        // Replaying same clip restarts playback
+        REQUIRE(player.play(data, clip_loc, false));
+        CHECK(player.state() == PlayState::Playing);
+        CHECK_FALSE(player.finished());
+        CHECK(player.frame() == &data.frames[0]);
+    }
+
+    SECTION("Reverse one-shot completes and holds final frame") {
+        auto clip_loc = *ResourceLocation::parse("test:anim/reverse");
+        REQUIRE(player.play(data, clip_loc, false));
+        CHECK(player.frame() == &data.frames[3]);
+
+        // Advance 3 -> 2 -> 1 -> 0
+        player.update(0.31f);
+        CHECK(player.frame() == &data.frames[0]);
+        CHECK(player.state() == PlayState::Playing);
+
+        // Cross end of frame 0
+        player.update(0.1f);
+        CHECK(player.finished());
+        CHECK(player.state() == PlayState::Completed);
+        CHECK(player.frame() == &data.frames[0]);
+    }
+
+    SECTION("Pingpong one-shot completes after return pass") {
+        auto clip_loc = *ResourceLocation::parse("test:anim/pingpong");
+        REQUIRE(player.play(data, clip_loc, false));
+        // Frames: 0 -> 1 -> 2 -> 1 -> 0 -> Completed holding 0
+        CHECK(player.frame() == &data.frames[0]);
+
+        player.update(0.1f);
+        CHECK(player.frame() == &data.frames[1]);
+
+        player.update(0.1f);
+        CHECK(player.frame() == &data.frames[2]);
+
+        player.update(0.1f);
+        CHECK(player.frame() == &data.frames[1]);
+
+        player.update(0.1f);
+        CHECK(player.frame() == &data.frames[0]);
+        CHECK(player.state() == PlayState::Playing);
+
+        // Return pass completes
+        player.update(0.1f);
+        CHECK(player.finished());
+        CHECK(player.state() == PlayState::Completed);
+        CHECK(player.frame() == &data.frames[0]);
     }
 }

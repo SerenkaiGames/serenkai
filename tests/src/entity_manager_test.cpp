@@ -586,7 +586,7 @@ TEST_CASE("EntityManager animation playback and lifecycle", "[game][entity]") {
     REQUIRE(e != EntityManager::NULL_ID);
 
     SECTION("Playing animation on entity without animation property fails") {
-        CHECK_FALSE(manager.play_animation(e, "test:anim/walk"));
+        CHECK_FALSE(manager.play_animation(e, "test:anim/walk", true));
         CHECK(manager.animation_player(e) == nullptr);
     }
 
@@ -596,10 +596,10 @@ TEST_CASE("EntityManager animation playback and lifecycle", "[game][entity]") {
                          std::string{"test:animations/sample.json"});
 
         // Non-existent clip fails
-        CHECK_FALSE(manager.play_animation(e, "test:anim/missing"));
+        CHECK_FALSE(manager.play_animation(e, "test:anim/missing", true));
 
         // Valid clip succeeds
-        REQUIRE(manager.play_animation(e, "test:anim/walk"));
+        REQUIRE(manager.play_animation(e, "test:anim/walk", true));
         const auto* player = manager.animation_player(e);
         REQUIRE(player != nullptr);
         CHECK(player->playing());
@@ -617,10 +617,29 @@ TEST_CASE("EntityManager animation playback and lifecycle", "[game][entity]") {
         CHECK(manager.animation_player(e) == nullptr);
     }
 
+    SECTION("Playing one-shot animation completes and keeps final frame") {
+        manager.set_prop(e, "serenkai:props/animation",
+                         std::string{"test:animations/sample.json"});
+
+        REQUIRE(manager.play_animation(e, "test:anim/walk", false));
+        const auto* player = manager.animation_player(e);
+        REQUIRE(player != nullptr);
+        CHECK(player->playing());
+
+        // Update past both frames (0.1s + 0.1s)
+        manager.update(0.25f);
+        player = manager.animation_player(e);
+        REQUIRE(player != nullptr);
+        CHECK(player->finished());
+        CHECK_FALSE(player->playing());
+        REQUIRE(player->frame() != nullptr);
+        CHECK(player->frame()->src.x == 16.0f);
+    }
+
     SECTION("Destroying entity cleans up animation player") {
         manager.set_prop(e, "serenkai:props/animation",
                          std::string{"test:animations/sample.json"});
-        REQUIRE(manager.play_animation(e, "test:anim/walk"));
+        REQUIRE(manager.play_animation(e, "test:anim/walk", true));
         CHECK(manager.animation_player(e) != nullptr);
 
         manager.destroy(e);
