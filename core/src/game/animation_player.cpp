@@ -125,4 +125,6 @@ const ResourceLocation* AnimationPlayer::image() const {
     return &m_data->image;
 }
 
+const SpriteAnimationData* AnimationPlayer::data() const { return m_data; }
+
 } // namespace serenkai

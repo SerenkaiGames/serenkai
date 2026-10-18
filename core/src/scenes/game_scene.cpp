@@ -14,6 +14,7 @@
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <string>
@@ -50,6 +51,9 @@ void GameScene::on_enter(AppContext* ctx) {
 void GameScene::update(float dt) {
     if (m_map_manager) {
         m_map_manager->update(dt);
+    }
+    if (m_entity_manager) {
+        m_entity_manager->update(dt);
     }
     if (m_script) {
         m_script->call<>("on_update", dt);
@@ -105,39 +109,70 @@ void GameScene::render(RenderContext* ctx) {
                                     zoom);
 
             if (m_entity_manager) {
+                struct SpriteDraw {
+                    glm::vec3 pos{0.0f};
 
-                std::vector<std::pair<std::string, glm::vec3>> pending_sprites;
+                    std::optional<std::string> texture;
+
+                    const SpriteAnimationData* animation = nullptr;
+                    const SpriteFrame* frame = nullptr;
+                };
+                std::vector<SpriteDraw> pending_sprites;
 
                 m_entity_manager->for_each_alive(
-                    [&pending_sprites](EntityId, const Entity& e) {
-                        auto path = e.get_prop<std::string>(
-                            "serenkai:props/texture"_rl);
-
-                        if (!path) {
-                            return;
-                        }
-
-                        auto pos =
+                    [&pending_sprites, this](EntityId id, const Entity& e) {
+                        auto* pos =
                             e.get_prop<glm::vec3>("serenkai:props/pos"_rl);
-
                         if (!pos) {
                             return;
                         }
-                        pending_sprites.emplace_back(*path, *pos);
+                        const AnimationPlayer* player =
+                            m_entity_manager->animation_player(id);
+                        if (player != nullptr && player->frame() != nullptr) {
+                            pending_sprites.push_back(
+                                SpriteDraw{.pos = *pos,
+                                           .texture = std::nullopt,
+                                           .animation = player->data(),
+                                           .frame = player->frame()});
+                            return;
+                        }
+                        auto* texture = e.get_prop<std::string>(
+                            "serenkai:props/texture"_rl);
+                        if (!texture) {
+                            return;
+                        }
+
+                        pending_sprites.push_back(SpriteDraw{
+                            .pos = *pos,
+                            .texture = *texture,
+                        });
                     });
 
                 std::sort(pending_sprites.begin(), pending_sprites.end(),
                           [](const auto& a, const auto& b) {
-                              if (a.second.z != b.second.z) {
-                                  return a.second.z < b.second.z;
+                              if (a.pos.z != b.pos.z) {
+                                  return a.pos.z < b.pos.z;
                               }
-                              return a.second.y < b.second.y;
+                              return a.pos.y < b.pos.y;
                           });
 
-                for (auto& [path, pos] : pending_sprites) {
-                    ctx->renderer->draw_sprite(path, ctx->textures,
-                                               {pos.x, pos.y}, screen_offset,
-                                               zoom);
+                for (auto& sprite : pending_sprites) {
+                    if (sprite.animation != nullptr &&
+                        sprite.frame != nullptr) {
+
+                        const glm::vec2 draw_pos{
+                            sprite.pos.x + sprite.frame->offset.x,
+                            sprite.pos.y + sprite.frame->offset.y};
+
+                        ctx->renderer->draw_sprite_frame(
+                            sprite.animation->image, ctx->textures, draw_pos,
+                            sprite.frame->src, screen_offset, zoom);
+                    }
+                    if (sprite.texture) {
+                        ctx->renderer->draw_sprite(
+                            sprite.texture.value(), ctx->textures,
+                            {sprite.pos.x, sprite.pos.y}, screen_offset, zoom);
+                    }
                 }
             }
         }

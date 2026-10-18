@@ -16,6 +16,8 @@ public:
 
     const SpriteFrame* frame() const;
     const ResourceLocation* image() const;
+    const SpriteAnimationData* data() const;
+
     bool playing() const;
 
 private:

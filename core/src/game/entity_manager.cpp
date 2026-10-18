@@ -2,6 +2,7 @@
 
 #include "serenkai/base/glm_parse.hpp"
 #include "serenkai/game/property.hpp"
+#include "serenkai/resource/animation_manager.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/script.hpp"
@@ -11,6 +12,7 @@
 #include <cstdint>
 #include <glaze/core/reflect.hpp>
 #include <glaze/json/read.hpp>
+#include <memory>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -26,7 +28,8 @@ struct EntityData {
 };
 
 EntityManager::EntityManager(AssetManager* asset_manager, ScriptEngine* engine)
-    : m_asset_manager(asset_manager), m_script_engine(engine) {}
+    : m_asset_manager(asset_manager), m_script_engine(engine),
+      m_animation_mgr(std::make_unique<AnimationManager>(asset_manager)) {}
 
 EntityManager::~EntityManager() {}
 
@@ -136,6 +139,7 @@ void EntityManager::destroy(EntityId id) {
     e->props.clear();
     e->alive = false;
     e->generation++;
+    m_animation_players.erase(id);
     m_free_list.emplace_back(idx);
 }
 
@@ -218,6 +222,52 @@ bool EntityManager::remove_prop(EntityId id, std::string_view loc) {
     return remove_prop_by_loc(id, *res);
 }
 
+bool EntityManager::play_animation(EntityId id, std::string_view clip_loc) {
+    auto* e = fetch(id);
+    if (!e) {
+        return false;
+    }
+
+    auto* anim_loc = e->get_prop<std::string>("serenkai:props/animation"_rl);
+    if (!anim_loc) {
+        spdlog::warn("Entity {} has no animation", id);
+        return false;
+    }
+
+    const auto* data = m_animation_mgr->get(*anim_loc);
+
+    if (!data) {
+        return false;
+    }
+
+    auto clip = ResourceLocation::parse(clip_loc);
+
+    if (!clip) {
+        spdlog::error("Invalid clip loc {}", clip_loc);
+        return false;
+    }
+
+    auto it = m_animation_players.find(id);
+    if (it == m_animation_players.end()) {
+        AnimationPlayer player;
+        if (!player.play(*data, *clip)) {
+            return false;
+        }
+        m_animation_players.emplace(id, std::move(player));
+        return true;
+    }
+    return it->second.play(*data, *clip);
+}
+
+void EntityManager::stop_animation(EntityId id) {
+    m_animation_players.erase(id);
+}
+
+const AnimationPlayer* EntityManager::animation_player(EntityId id) const {
+    auto it = m_animation_players.find(id);
+    return it == m_animation_players.end() ? nullptr : &it->second;
+}
+
 std::size_t EntityManager::alive_size() const {
     std::size_t count = 0;
     for (auto& e : m_entities) {
@@ -226,6 +276,12 @@ std::size_t EntityManager::alive_size() const {
         }
     }
     return count;
+}
+
+void EntityManager::update(float dt) {
+    for (auto& entry : m_animation_players) {
+        entry.second.update(dt);
+    }
 }
 
 Entity* EntityManager::fetch(EntityId id) {

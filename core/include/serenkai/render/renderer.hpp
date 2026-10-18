@@ -4,6 +4,7 @@
 #include "serenkai/render/map_renderer.hpp"
 #include "serenkai/render/sprite_renderer.hpp"
 #include "serenkai/render/text_renderer.hpp"
+#include "serenkai/resource/resource_location.hpp"
 
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
@@ -68,8 +69,11 @@ public:
 
     void draw_sprite(std::string_view sprite_path,
                      TextureManager* texture_manager, glm::vec2 world_pos,
-                     glm::vec2 screen_offset, float zoom,
-                     std::optional<glm::vec4> src_rect = std::nullopt);
+                     glm::vec2 screen_offset, float zoom);
+
+    void draw_sprite_frame(const ResourceLocation& image,
+                           TextureManager* texture_manager, glm::vec2 world_pos,
+                           glm::vec4 src, glm::vec2 screen_offset, float zoom);
 
 private:
     const RendererConfig m_config;
