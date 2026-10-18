@@ -4,9 +4,8 @@
 #include "serenkai/game/map_data.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/resource_location.hpp"
+#include "serenkai/resource/resource_utils.hpp"
 
-#include <exception>
-#include <filesystem>
 #include <fmt/format.h>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -26,64 +25,12 @@
 #include <tmxlite/Types.hpp>
 #include <utility>
 #include <vector>
-namespace fs = std::filesystem;
+
 namespace serenkai {
 
 namespace {
 glm::ivec2 to_ivec2(const tmx::Vector2u& t) { return {t.x, t.y}; }
 glm::vec2 to_vec(const tmx::Vector2f& t) { return {t.x, t.y}; }
-
-/// @brief Convert the absolute path or relative path of an image in the map to
-/// a ResourceLocation
-/// @param image_path The image path parsed by tmxlite (may be an absolute or
-/// relative path)
-/// @param map_path The actual path of the map on disk
-/// (e.g.,"/home/.../assets/maps/level1.tmx")
-/// @param map_loc The resource location of the map (e.g.,
-/// "serenkai:maps/level1.tmx")
-std::optional<ResourceLocation>
-convert_to_resource_location(std::string_view image_path,
-                             std::string_view map_path,
-                             const ResourceLocation& map_loc) {
-    if (image_path.empty()) {
-        return std::nullopt;
-    }
-
-    try {
-        fs::path map_dir = fs::path(map_path).parent_path();
-        fs::path img_p(image_path);
-
-        std::error_code ec;
-        fs::path rel_path = fs::relative(img_p, map_dir, ec);
-        if (ec || rel_path.empty()) {
-            rel_path = img_p.lexically_relative(map_dir);
-        }
-
-        fs::path map_loc_dir = fs::path(map_loc.path()).parent_path();
-
-        fs::path normalized_res_path =
-            (map_loc_dir / rel_path).lexically_normal();
-
-        std::string full_loc_str = fmt::format(
-            "{}:{}", map_loc.ns(), normalized_res_path.generic_string());
-
-        auto rl = ResourceLocation::parse(full_loc_str);
-        if (!rl) {
-            spdlog::error("Failed to parse resource location for image: '{}'",
-                          full_loc_str);
-            return std::nullopt;
-        }
-
-        return rl;
-
-    } catch (const std::exception& e) {
-        spdlog::error(
-            "Failed to convert image path '{}' to resource location: {}",
-            image_path, e.what());
-
-        return std::nullopt;
-    }
-}
 
 std::ptrdiff_t find_tileset_index(const std::vector<tmx::Tileset>& tilesets,
                                   uint32_t gid) {
@@ -230,8 +177,8 @@ void load_image_layer(MapData& data, const tmx::ImageLayer& layer,
     image.name = layer.getName();
     image.visible = layer.getVisible();
 
-    auto img_loc =
-        convert_to_resource_location(layer.getImagePath(), map_path, map_loc);
+    auto img_loc = resolve_relative_resource_location(layer.getImagePath(),
+                                                      map_path, map_loc);
     if (img_loc) {
         image.loc = *img_loc;
     } else {
@@ -301,8 +248,8 @@ std::optional<MapData> MapLoader::load(std::string_view loc) const {
         Tileset set{};
         set.name = tileset.getName();
 
-        auto img_loc = convert_to_resource_location(tileset.getImagePath(),
-                                                    *map_path, *map_loc);
+        auto img_loc = resolve_relative_resource_location(
+            tileset.getImagePath(), *map_path, *map_loc);
         if (!img_loc) {
             spdlog::error("Tileset '{}' has invalid image path '{}'",
                           tileset.getName(), tileset.getImagePath());

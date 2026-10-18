@@ -127,6 +127,11 @@ add_library(
     include/serenkai/base/glm_parse.hpp
     include/serenkai/render/flip_flag.hpp
     include/serenkai/render/render_utils.hpp
+    include/serenkai/resource/animation_data.hpp
+    include/serenkai/resource/animation_loader.hpp
+    src/resource/animation_loader.cpp
+    include/serenkai/resource/resource_utils.hpp
+    src/resource/resource_utils.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
