@@ -251,7 +251,7 @@ bool EntityManager::play_animation(EntityId id, std::string_view clip_loc,
     auto it = m_animation_players.find(id);
     if (it == m_animation_players.end()) {
         AnimationPlayer player;
-        if (!player.play(*data, *clip)) {
+        if (!player.play(*data, *clip, loop)) {
             return false;
         }
         m_animation_players.emplace(id, std::move(player));

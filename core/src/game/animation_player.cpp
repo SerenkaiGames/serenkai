@@ -21,20 +21,19 @@ bool AnimationPlayer::play(const SpriteAnimationData& data,
         return false;
     }
 
-    if (m_clip == &it->second && !finished()) {
+    // If already playing the same clip and not completed, just update loop
+    // flag.
+    if (m_clip == &it->second && m_state == PlayState::Playing) {
         m_loop = loop;
         return true;
     }
 
     m_data = &data;
-
     m_clip = &it->second;
-
     m_elapsed = 0.0f;
-
     m_loop = loop;
-    m_finished = false;
     m_bounces = 0;
+    m_state = PlayState::Playing;
 
     switch (m_clip->mode) {
     case PlaybackMode::Forward:
@@ -54,32 +53,18 @@ bool AnimationPlayer::play(const SpriteAnimationData& data,
 void AnimationPlayer::stop() {
     m_data = nullptr;
     m_clip = nullptr;
+    m_state = PlayState::Stopped;
     m_frame = 0;
     m_step = 1;
     m_elapsed = 0.0f;
     m_loop = false;
-    m_finished = false;
     m_bounces = 0;
-}
-
-bool AnimationPlayer::playing() const {
-    return m_data != nullptr && m_clip != nullptr;
 }
 
 void AnimationPlayer::update(float dt) {
 
-    if (finished()) {
+    if (m_state != PlayState::Playing || dt <= 0.0f || !m_data || !m_clip) {
         return;
-    }
-
-    if (!m_data || !m_clip || dt <= 0.0f) {
-        return;
-    }
-    if (m_clip->from == m_clip->to) {
-        if (!m_loop) {
-            finish();
-        }
-        return; // Single-frame animation.
     }
 
     m_elapsed += dt;
@@ -98,6 +83,12 @@ void AnimationPlayer::update(float dt) {
         m_elapsed -= duration;
 
         advance();
+
+        // If advance caused completion, stop processing immediately.
+        if (m_state != PlayState::Playing) {
+            m_elapsed = 0.0f;
+            break;
+        }
     }
 }
 
@@ -111,7 +102,7 @@ void AnimationPlayer::advance() {
             if (m_loop) {
                 m_frame = from;
             } else {
-                finish();
+                m_state = PlayState::Completed;
             }
         } else {
             ++m_frame;
@@ -122,7 +113,7 @@ void AnimationPlayer::advance() {
             if (m_loop) {
                 m_frame = to;
             } else {
-                finish();
+                m_state = PlayState::Completed;
             }
         } else {
             --m_frame;
@@ -135,7 +126,7 @@ void AnimationPlayer::advance() {
             // A one-shot ping-pong finishes after the return pass.
             if (!m_loop && ++m_bounces >= 2) {
                 m_frame = to;
-                finish();
+                m_state = PlayState::Completed;
             } else {
                 m_frame = to - 1;
                 m_step = -1;
@@ -143,7 +134,7 @@ void AnimationPlayer::advance() {
         } else if (m_frame < from) {
             if (!m_loop && ++m_bounces >= 2) {
                 m_frame = from;
-                finish();
+                m_state = PlayState::Completed;
             } else {
                 m_frame = from + 1;
                 m_step = 1;
@@ -153,12 +144,13 @@ void AnimationPlayer::advance() {
     }
 }
 
-void AnimationPlayer::finish() {
-    m_finished = true;
-    m_elapsed = 0.0f;
+bool AnimationPlayer::finished() const {
+    return m_state == PlayState::Completed;
 }
 
-bool AnimationPlayer::finished() const { return m_finished; }
+bool AnimationPlayer::playing() const { return m_state == PlayState::Playing; }
+
+PlayState AnimationPlayer::state() const { return m_state; }
 
 const SpriteFrame* AnimationPlayer::frame() const {
     if (!playing()) {
