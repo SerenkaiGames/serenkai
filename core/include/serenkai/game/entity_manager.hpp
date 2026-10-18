@@ -41,7 +41,8 @@ public:
     bool remove_prop_by_loc(EntityId id, const ResourceLocation& key);
     bool remove_prop(EntityId id, std::string_view loc);
 
-    bool play_animation(EntityId id, std::string_view clip_loc);
+    bool play_animation(EntityId id, std::string_view clip_loc,
+                        bool loop = false);
     void stop_animation(EntityId id);
     const AnimationPlayer* animation_player(EntityId id) const;
 

@@ -13,7 +13,7 @@ constexpr int MAX_FRAME_STEPS = 1024;
 
 namespace serenkai {
 bool AnimationPlayer::play(const SpriteAnimationData& data,
-                           const ResourceLocation& clip_loc) {
+                           const ResourceLocation& clip_loc, bool loop) {
     auto it = data.clips.find(clip_loc);
 
     if (it == data.clips.end()) {
@@ -21,7 +21,8 @@ bool AnimationPlayer::play(const SpriteAnimationData& data,
         return false;
     }
 
-    if (m_clip == &it->second) {
+    if (m_clip == &it->second && !finished()) {
+        m_loop = loop;
         return true;
     }
 
@@ -30,6 +31,8 @@ bool AnimationPlayer::play(const SpriteAnimationData& data,
     m_clip = &it->second;
 
     m_elapsed = 0.0f;
+
+    m_loop = loop;
 
     switch (m_clip->mode) {
     case PlaybackMode::Forward:
@@ -52,6 +55,9 @@ void AnimationPlayer::stop() {
     m_frame = 0;
     m_step = 1;
     m_elapsed = 0.0f;
+    m_loop = false;
+    m_finished = false;
+    m_bounces = 0;
 }
 
 bool AnimationPlayer::playing() const {
@@ -59,10 +65,18 @@ bool AnimationPlayer::playing() const {
 }
 
 void AnimationPlayer::update(float dt) {
+
+    if (finished()) {
+        return;
+    }
+
     if (!m_data || !m_clip || dt <= 0.0f) {
         return;
     }
     if (m_clip->from == m_clip->to) {
+        if (m_loop) {
+            finish();
+        }
         return; // Single-frame animation.
     }
 
@@ -91,24 +105,58 @@ void AnimationPlayer::advance() {
 
     switch (m_clip->mode) {
     case PlaybackMode::Forward:
-        m_frame = (m_frame >= to) ? from : m_frame + 1;
+        if (m_frame >= to) {
+            if (m_loop) {
+                m_frame = from;
+            } else {
+                finish();
+            }
+        } else {
+            ++m_frame;
+        }
         break;
     case PlaybackMode::Reverse:
-        m_frame = (m_frame <= from) ? to : m_frame - 1;
+        if (m_frame <= from) {
+            if (m_loop) {
+                m_frame = to;
+            } else {
+                finish();
+            }
+        } else {
+            --m_frame;
+        }
         break;
     case PlaybackMode::Pingpong:
     case PlaybackMode::PingpongReverse:
         m_frame += m_step;
         if (m_frame > to) {
-            m_frame = to - 1;
-            m_step = -1;
+            // A one-shot ping-pong finishes after the return pass.
+            if (!m_loop && ++m_bounces >= 2) {
+                m_frame = to;
+                finish();
+            } else {
+                m_frame = to - 1;
+                m_step = -1;
+            }
         } else if (m_frame < from) {
-            m_frame = from + 1;
-            m_step = 1;
+            if (!m_loop && ++m_bounces >= 2) {
+                m_frame = from;
+                finish();
+            } else {
+                m_frame = from + 1;
+                m_step = 1;
+            }
         }
         break;
     }
 }
+
+void AnimationPlayer::finish() {
+    m_finished = true;
+    m_elapsed = 0.0f;
+}
+
+bool AnimationPlayer::finished() const { return m_finished; }
 
 const SpriteFrame* AnimationPlayer::frame() const {
     if (!playing()) {

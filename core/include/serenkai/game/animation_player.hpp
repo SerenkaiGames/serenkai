@@ -8,11 +8,15 @@ namespace serenkai {
 /// Internally plays and maintains animation playback.
 class AnimationPlayer {
 public:
-    bool play(const SpriteAnimationData& data, const ResourceLocation& clip);
+    bool play(const SpriteAnimationData& data, const ResourceLocation& clip,
+              bool loop = false);
 
     void stop();
 
     void update(float dt);
+
+    /// @brief Returns true when a non-looping clip has reached its end.
+    bool finished() const;
 
     const SpriteFrame* frame() const;
     const ResourceLocation* image() const;
@@ -26,7 +30,11 @@ private:
     int m_frame = 0;
     int m_step = 1;
     float m_elapsed = 0.0f;
+    bool m_loop = false;
+    bool m_finished = false;
+    int m_bounces = 0;
 
+    void finish();
     void advance();
 };
 

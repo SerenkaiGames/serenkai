@@ -67,7 +67,13 @@ void bind_entity_to_lua(lua_State* L, ScriptEngine* engine) {
               })
         .BIND("play_animation",
               [](EntityManager* self, double id, std::string_view clip) {
-                  return self->play_animation(static_cast<EntityId>(id), clip);
+                  return self->play_animation(static_cast<EntityId>(id), clip,
+                                              true);
+              })
+        .BIND("play_animation_once",
+              [](EntityManager* self, double id, std::string_view clip) {
+                  return self->play_animation(static_cast<EntityId>(id), clip,
+                                              false);
               })
         .BIND("stop_animation",
               [](EntityManager* self, double id) {
