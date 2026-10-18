@@ -9,7 +9,7 @@ local EntitySystem = require("serenkai:scripts/entity_system.luau")
 function on_init(e_id: EntityId)
 	id = e_id
 
-	World.Entities.play_animation(id, "player/front")
+	World.Entities.play_animation(id, "player/idle_down")
 
 	EntitySystem.on(id, "serenkai:events/update_game", on_update)
 	EntitySystem.on(id, "serenkai:events/leave_game", function()
@@ -28,22 +28,22 @@ function update_move(dt: number)
 
 	if Input.is_down(Input.Action["inputs/move_up"]) then
 		dy -= dt * speed
-		World.Entities.play_animation(id, "player/back")
+		World.Entities.play_animation(id, "player/idle_up")
 	end
 
 	if Input.is_down(Input.Action["inputs/move_down"]) then
 		dy += dt * speed
-		World.Entities.play_animation(id, "player/front")
+		World.Entities.play_animation(id, "player/idle_down")
 	end
 
 	if Input.is_down(Input.Action["inputs/move_left"]) then
 		dx -= dt * speed
-		World.Entities.play_animation(id, "player/left")
+		World.Entities.play_animation(id, "player/idle_left")
 	end
 
 	if Input.is_down(Input.Action["inputs/move_right"]) then
 		dx += dt * speed
-		World.Entities.play_animation(id, "player/right")
+		World.Entities.play_animation(id, "player/idle_right")
 	end
 
 	if dx ~= 0 or dy ~= 0 then

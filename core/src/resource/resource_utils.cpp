@@ -1,70 +1,96 @@
 #include "serenkai/resource/resource_utils.hpp"
 
+#include "serenkai/resource/resource_location.hpp"
+
 #include <filesystem>
 #include <fmt/format.h>
+#include <optional>
 #include <spdlog/spdlog.h>
 
 namespace fs = std::filesystem;
 
 namespace serenkai {
 
+/// @brief Convert the absolute path or relative path of an image in the map to
+/// a ResourceLocation
+/// @param image_path The image path parsed by tmxlite (may be an absolute or
+/// relative path)
+/// @param map_path The actual path of the map on disk
+/// (e.g.,"/home/.../assets/maps/level1.tmx")
+/// @param map_loc The resource location of the map (e.g.,
+/// "serenkai:maps/level1.tmx")
 std::optional<ResourceLocation>
-resolve_relative_resource_location(std::string_view target_path,
-                                   std::string_view parent_disk_path,
-                                   const ResourceLocation& parent_loc) {
-    if (target_path.empty()) {
+convert_tmx_to_location(std::string_view image_path, std::string_view map_path,
+                        const ResourceLocation& map_loc) {
+    if (image_path.empty()) {
         return std::nullopt;
     }
 
     try {
-        fs::path parent_dir = fs::path(parent_disk_path).parent_path();
-        fs::path target_p(target_path);
-        fs::path parent_loc_dir = fs::path(parent_loc.path()).parent_path();
+        fs::path map_dir = fs::path(map_path).parent_path();
+        fs::path img_p(image_path);
 
-        fs::path rel_path;
-
-        if (target_p.is_absolute()) {
-            rel_path = target_p.lexically_relative(parent_dir);
-        } else {
-
-            bool share_root = false;
-            if (!parent_dir.empty()) {
-                auto t_it = target_p.begin();
-                auto p_it = parent_dir.begin();
-                if (t_it != target_p.end() && p_it != parent_dir.end() &&
-                    *t_it == *p_it) {
-                    share_root = true;
-                }
-            }
-
-            if (share_root) {
-                rel_path = target_p.lexically_relative(parent_dir);
-            } else {
-                rel_path = target_p;
-            }
+        std::error_code ec;
+        fs::path rel_path = fs::relative(img_p, map_dir, ec);
+        if (ec || rel_path.empty()) {
+            rel_path = img_p.lexically_relative(map_dir);
         }
 
-        fs::path normalized = (parent_loc_dir / rel_path).lexically_normal();
-        std::string norm_str = normalized.generic_string();
+        fs::path map_loc_dir = fs::path(map_loc.path()).parent_path();
 
-        if (norm_str.starts_with("..") || norm_str.starts_with("/")) {
-            return std::nullopt;
-        }
+        fs::path normalized_res_path =
+            (map_loc_dir / rel_path).lexically_normal();
 
-        std::string full_loc_str =
-            fmt::format("{}:{}", parent_loc.ns(), norm_str);
+        std::string full_loc_str = fmt::format(
+            "{}:{}", map_loc.ns(), normalized_res_path.generic_string());
 
         auto rl = ResourceLocation::parse(full_loc_str);
         if (!rl) {
-            spdlog::error("Failed to parse resource location for '{}'",
+            spdlog::error("Failed to parse resource location for image: '{}'",
+                          full_loc_str);
+            return std::nullopt;
+        }
+
+        return rl;
+
+    } catch (const std::exception& e) {
+        spdlog::error(
+            "Failed to convert image path '{}' to resource location: {}",
+            image_path, e.what());
+
+        return std::nullopt;
+    }
+}
+
+std::optional<ResourceLocation>
+convert_aseprite_to_location(std::string_view image_file_name,
+                             const ResourceLocation& json_loc) {
+    if (image_file_name.empty()) {
+        return std::nullopt;
+    }
+    try {
+        fs::path json_p = fs::path(json_loc.path()).lexically_normal();
+        fs::path parent = json_p.parent_path();
+
+        fs::path normalized_res_path =
+            (parent / image_file_name).lexically_normal();
+
+        std::string full_loc_str = fmt::format(
+            "{}:{}", json_loc.ns(), normalized_res_path.generic_string());
+
+        auto rl = ResourceLocation::parse(full_loc_str);
+        if (!rl) {
+            spdlog::error("Failed to parse resource location for image: '{}'",
                           full_loc_str);
             return std::nullopt;
         }
 
         return rl;
     } catch (const std::exception& e) {
-        spdlog::error("Failed to convert path '{}' to resource location: {}",
-                      target_path, e.what());
+        spdlog::error(
+            "Failed to convert image file '{}' to resource location: {}",
+            image_file_name, e.what());
+
         return std::nullopt;
     }
 }
