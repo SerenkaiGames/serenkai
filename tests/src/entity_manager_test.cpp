@@ -1,3 +1,4 @@
+#include "serenkai/base/raii.hpp"
 #include "serenkai/game/entity_manager.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/asset_source.hpp"
@@ -526,5 +527,104 @@ TEST_CASE("EntityManager create_with_loc", "[game][entity]") {
             CHECK_FALSE(manager.alive(id));
         }
 #endif
+    }
+}
+
+TEST_CASE("EntityManager animation playback and lifecycle", "[game][entity]") {
+    namespace fs = std::filesystem;
+    fs::path temp_dir = fs::temp_directory_path() / "serenkai_test_entity_anim";
+    fs::create_directories(temp_dir);
+    RaiiGuard cleanup_guard([]() {},
+                            [&temp_dir]() {
+                                std::error_code ec;
+                                fs::remove_all(temp_dir, ec);
+                            });
+
+    fs::path anim_path = temp_dir / "anim.json";
+    {
+        std::ofstream out(anim_path);
+        out << R"({
+  "frames": [
+    {
+      "filename": "f0",
+      "frame": {"x": 0, "y": 0, "w": 16, "h": 16},
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 16, "h": 16},
+      "sourceSize": {"w": 16, "h": 16},
+      "duration": 100
+    },
+    {
+      "filename": "f1",
+      "frame": {"x": 16, "y": 0, "w": 16, "h": 16},
+      "trimmed": false,
+      "spriteSourceSize": {"x": 0, "y": 0, "w": 16, "h": 16},
+      "sourceSize": {"w": 16, "h": 16},
+      "duration": 100
+    }
+  ],
+  "meta": {
+    "image": "anim.png",
+    "format": "RGBA8888",
+    "size": {"w": 32, "h": 16},
+    "scale": "1",
+    "frameTags": [
+      {"name": "test:anim/walk", "from": 0, "to": 1, "direction": "forward"}
+    ]
+  }
+})";
+    }
+
+    AssetManager asset_manager;
+    auto loc = *ResourceLocation::parse("test:animations/sample.json");
+    AssetFileMap files;
+    files.emplace(loc, anim_path.string());
+    asset_manager.merge_source(
+        std::make_shared<MockEntityAssetSource>(std::move(files)));
+
+    EntityManager manager(&asset_manager, nullptr);
+    auto e = manager.create();
+    REQUIRE(e != EntityManager::NULL_ID);
+
+    SECTION("Playing animation on entity without animation property fails") {
+        CHECK_FALSE(manager.play_animation(e, "test:anim/walk"));
+        CHECK(manager.animation_player(e) == nullptr);
+    }
+
+    SECTION(
+        "Playing animation on entity with valid animation property succeeds") {
+        manager.set_prop(e, "serenkai:props/animation",
+                         std::string{"test:animations/sample.json"});
+
+        // Non-existent clip fails
+        CHECK_FALSE(manager.play_animation(e, "test:anim/missing"));
+
+        // Valid clip succeeds
+        REQUIRE(manager.play_animation(e, "test:anim/walk"));
+        const auto* player = manager.animation_player(e);
+        REQUIRE(player != nullptr);
+        CHECK(player->playing());
+        CHECK(player->frame() != nullptr);
+        CHECK(player->frame()->src.x == 0.0f);
+
+        // Update advances frame
+        manager.update(0.12f);
+        player = manager.animation_player(e);
+        REQUIRE(player != nullptr);
+        CHECK(player->frame()->src.x == 16.0f);
+
+        // stop_animation clears player
+        manager.stop_animation(e);
+        CHECK(manager.animation_player(e) == nullptr);
+    }
+
+    SECTION("Destroying entity cleans up animation player") {
+        manager.set_prop(e, "serenkai:props/animation",
+                         std::string{"test:animations/sample.json"});
+        REQUIRE(manager.play_animation(e, "test:anim/walk"));
+        CHECK(manager.animation_player(e) != nullptr);
+
+        manager.destroy(e);
+        CHECK_FALSE(manager.alive(e));
+        CHECK(manager.animation_player(e) == nullptr);
     }
 }
