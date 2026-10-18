@@ -33,6 +33,8 @@ bool AnimationPlayer::play(const SpriteAnimationData& data,
     m_elapsed = 0.0f;
 
     m_loop = loop;
+    m_finished = false;
+    m_bounces = 0;
 
     switch (m_clip->mode) {
     case PlaybackMode::Forward:
@@ -74,7 +76,7 @@ void AnimationPlayer::update(float dt) {
         return;
     }
     if (m_clip->from == m_clip->to) {
-        if (m_loop) {
+        if (!m_loop) {
             finish();
         }
         return; // Single-frame animation.
