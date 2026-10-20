@@ -18,7 +18,7 @@ struct PoEntry {
 
 struct PoData {
     Language lang = Language::en_US;
-    int nplurals = 2;
+    int nplurals = 2; // todo
     std::vector<PoEntry> entires;
 };
 

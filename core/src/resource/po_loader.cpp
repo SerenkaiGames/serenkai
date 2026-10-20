@@ -1,11 +1,13 @@
 #include "serenkai/resource/po_loader.hpp"
 
+#include "serenkai/base/language.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/po_data.hpp"
 #include "serenkai/resource/resource_location.hpp"
 
 #include <cstddef>
 #include <fstream>
+#include <magic_enum/magic_enum.hpp>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -19,6 +21,15 @@ std::string_view trim_right(std::string_view line) {
         return {};
     }
     return std::string_view(line.data() + pos, line.size() - pos);
+}
+
+std::string_view trim(std::string_view line) {
+    auto start = line.find_first_not_of(" \t");
+    if (start == std::string_view::npos) {
+        return {};
+    }
+    auto end = line.find_last_not_of(" \t");
+    return line.substr(start, end - start + 1);
 }
 
 std::string_view parse_quoted(std::string_view s, size_t pos) {
@@ -58,6 +69,30 @@ std::optional<PoData> PoLoader::parse(std::string_view loc) {
     }
 
     return parse(*res);
+}
+
+bool parse_header(std::string_view header, PoData& data) {
+    auto p_lang = header.find("Language:");
+    if (p_lang == std::string_view::npos) {
+        spdlog::error("Missing language field");
+        return false;
+    }
+    auto end = header.find_first_of('"', p_lang);
+    if (end == std::string_view::npos) {
+        spdlog::error("Invalid language filed {}", p_lang);
+        return false;
+    }
+
+    auto raw_lang = header.substr(p_lang + 9, end - p_lang - 9 + 1);
+    auto lang_str = trim(raw_lang);
+    auto lang =
+        magic_enum::enum_cast<Language>(lang_str, magic_enum::case_insensitive);
+    if (!lang) {
+        spdlog::error("Language {} not supported", lang_str);
+        return false;
+    }
+    data.lang = *lang;
+    return true;
 }
 
 std::optional<PoData> PoLoader::parse(const ResourceLocation& loc) {
@@ -144,6 +179,11 @@ std::optional<PoData> PoLoader::parse(const ResourceLocation& loc) {
             }
         }
     }
+
+    if (!parse_header(header, data)) {
+        return std::nullopt;
+    }
+
     return data;
 }
 
