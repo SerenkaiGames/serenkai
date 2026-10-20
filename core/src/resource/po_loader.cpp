@@ -102,7 +102,7 @@ std::optional<PoData> PoLoader::parse(const ResourceLocation& loc) {
 
         // The project strictly requires msgctext to be present for semantic
         // keys.
-        if (l.starts_with("msgctxt")) {
+        else if (l.starts_with("msgctxt")) {
             field = MsgField::Msgctxt;
             if (!parsed_header) {
                 parsed_header = true;
@@ -118,30 +118,30 @@ std::optional<PoData> PoLoader::parse(const ResourceLocation& loc) {
             }
             cur_entry = PoEntry{};
             cur_msgctxt += parse_quoted(l, 7);
-        }
-
-        if (l.starts_with("msgid")) {
+        } else if (l.starts_with("msgid")) {
             if (!parsed_header) {
                 field = MsgField::Header;
             } else {
                 field = MsgField::Msgid;
             }
-        }
-
-        switch (field) {
-        case MsgField::Msgctxt:
-            cur_msgctxt += parse_quoted(l, 7);
-            break;
-        case MsgField::Msgid:
-            break;
-        case MsgField::Msgstr:
+        } else if (l.starts_with("msgstr")) {
             cur_entry.msgstr += parse_quoted(l, 6);
-            break;
-        case MsgField::Header:
-            if (!parsed_header) {
-                header += parse_quoted(l, 5);
+        } else {
+            switch (field) {
+            case MsgField::Msgctxt:
+                cur_msgctxt += parse_quoted(l, 7);
+                break;
+            case MsgField::Msgid:
+                break;
+            case MsgField::Msgstr:
+                cur_entry.msgstr += parse_quoted(l, 6);
+                break;
+            case MsgField::Header:
+                if (!parsed_header) {
+                    header += parse_quoted(l, 5);
+                }
+                break;
             }
-            break;
         }
     }
     return data;
