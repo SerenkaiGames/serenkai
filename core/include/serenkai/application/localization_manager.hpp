@@ -7,6 +7,7 @@
 
 #include <fmt/format.h>
 #include <functional>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 namespace serenkai {
@@ -38,22 +39,45 @@ public:
 
     Language current_language() const;
 
+    void set_fallback_language(Language lang);
+
+    Language fallback_language() const;
+
     /// @brief Check whether the key exists; if it is missing in the current
     /// language, check the fallback language.
     bool has(const ResourceLocation& key) const;
 
     bool has(std::string_view key) const;
 
-    template <typename T> FormatArg arg(std::string_view name, T&& value) {
+    template <typename T>
+    static FormatArg arg(std::string_view name, T&& value) {
         return {std::string(name), fmt::format("{}", std::forward<T>(value))};
     }
 
     template <typename... Args>
     std::string translate(std::string_view key, Args&&... args) {
-        if constexpr (sizeof...(Args) == 0) {
-            return std::string{lookup(key)};
+        auto s = lookup(key);
+        if (!s) {
+            return std::string(key);
         }
-        std::string fmt{lookup(key)};
+        if constexpr (sizeof...(Args) == 0) {
+            return std::string(*s);
+        }
+        std::string fmt{*s};
+        (replace_all(fmt, "{" + args.name + "}", args.value), ...);
+        return fmt;
+    }
+
+    template <typename... Args>
+    std::string translate(const ResourceLocation& key, Args&&... args) {
+        auto s = lookup(key);
+        if (!s) {
+            return key.to_string();
+        }
+        if constexpr (sizeof...(Args) == 0) {
+            return std::string(*s);
+        }
+        std::string fmt{*s};
         (replace_all(fmt, "{" + args.name + "}", args.value), ...);
         return fmt;
     }
@@ -61,7 +85,7 @@ public:
 private:
     using TranslationTable = std::unordered_map<ResourceLocation, std::string>;
 
-    PoLoader m_loder;
+    PoLoader m_loader;
 
     Language m_current_lang = Language::en_US;
     Language m_fallback_lang = Language::en_US;
@@ -69,16 +93,15 @@ private:
     // Cache translations per language: Language -> (Key -> Translated Text)
     std::unordered_map<Language, TranslationTable> m_tables;
 
-    void add(Language lang, const PoData& data);
+    bool add(Language lang, const PoData& data);
 
     /// @brief Look up the corresponding text by key; does not process {}.
-    /// @warning Ensure that the key is not a temporary variable.
-    std::string_view lookup(const ResourceLocation& key) const;
+    std::optional<std::string_view> lookup(const ResourceLocation& key) const;
 
-    std::string_view lookup(std::string_view key_str) const;
+    std::optional<std::string_view> lookup(std::string_view key_str) const;
 
-    /// @warning Ensure that the key is not a temporary variable.
-    std::string_view lookup_fallback(const ResourceLocation& key) const;
+    std::optional<std::string_view>
+    lookup_fallback(const ResourceLocation& key) const;
 
     void replace_all(std::string& str, std::string_view from,
                      std::string_view to);

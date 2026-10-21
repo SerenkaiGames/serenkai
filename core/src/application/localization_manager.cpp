@@ -4,41 +4,41 @@
 #include "serenkai/resource/resource_location.hpp"
 
 #include <magic_enum/magic_enum.hpp>
+#include <optional>
 #include <spdlog/spdlog.h>
+#include <string>
 #include <string_view>
 
 namespace serenkai {
 LocalizationManager::LocalizationManager(AssetManager* asset_manager)
-    : m_loder(asset_manager) {}
+    : m_loader(asset_manager) {}
 
 bool LocalizationManager::load_language(Language lang,
                                         const ResourceLocation& po_loc) {
-    auto data = m_loder.load(po_loc);
+    auto data = m_loader.load(po_loc);
     if (!data) {
         return false;
     }
 
-    add(lang, *data);
-    return true;
+    return add(lang, *data);
 }
 
 bool LocalizationManager::load_language(Language lang,
                                         std::string_view po_loc) {
-    auto data = m_loder.load(po_loc);
+    auto data = m_loader.load(po_loc);
     if (!data) {
         return false;
     }
 
-    add(lang, *data);
-    return true;
+    return add(lang, *data);
 }
 
-void LocalizationManager::add(Language lang, const PoData& data) {
+bool LocalizationManager::add(Language lang, const PoData& data) {
     if (data.lang != lang) {
-        spdlog::error("Target language {} is unequal with loaded language {}",
+        spdlog::error("Target language {} does not match loaded language {}",
                       magic_enum::enum_name(lang),
                       magic_enum::enum_name(data.lang));
-        return;
+        return false;
     }
 
     for (const auto& [key, value] : data.entries) {
@@ -48,6 +48,7 @@ void LocalizationManager::add(Language lang, const PoData& data) {
             spdlog::debug("Duplicate key {}", key.str());
         }
     }
+    return true;
 }
 
 void LocalizationManager::set_language(Language lang) { m_current_lang = lang; }
@@ -56,11 +57,19 @@ Language LocalizationManager::current_language() const {
     return m_current_lang;
 }
 
-std::string_view
+void LocalizationManager::set_fallback_language(Language lang) {
+    m_fallback_lang = lang;
+}
+
+Language LocalizationManager::fallback_language() const {
+    return m_fallback_lang;
+}
+
+std::optional<std::string_view>
 LocalizationManager::lookup(const ResourceLocation& key) const {
     auto table = m_tables.find(m_current_lang);
     if (table == m_tables.end()) {
-        spdlog::debug("Language {} not load",
+        spdlog::debug("Language {} is not loaded",
                       magic_enum::enum_name(m_current_lang));
         return lookup_fallback(key);
     }
@@ -73,28 +82,29 @@ LocalizationManager::lookup(const ResourceLocation& key) const {
     return s->second;
 }
 
-std::string_view LocalizationManager::lookup(std::string_view key_str) const {
+std::optional<std::string_view>
+LocalizationManager::lookup(std::string_view key_str) const {
     auto key = ResourceLocation::parse(key_str);
     if (!key) {
         spdlog::error("Invalid key {}", key_str);
-        return key_str;
+        return std::nullopt;
     }
 
     return lookup(*key);
 }
 
-std::string_view
+std::optional<std::string_view>
 LocalizationManager::lookup_fallback(const ResourceLocation& key) const {
-    auto table = m_tables.find(m_current_lang);
+    auto table = m_tables.find(m_fallback_lang);
     if (table == m_tables.end()) {
         spdlog::debug("Language {} not load",
-                      magic_enum::enum_name(m_current_lang));
-        return key.str();
+                      magic_enum::enum_name(m_fallback_lang));
+        return std::nullopt;
     }
 
     auto s = table->second.find(key);
     if (s == table->second.end()) {
-        return key.str();
+        return std::nullopt;
     }
 
     return s->second;
@@ -115,7 +125,17 @@ bool LocalizationManager::has(const ResourceLocation& key) const {
         return fallback->second.contains(key);
     }
 
-    return table->second.contains(key);
+    if (table->second.contains(key)) {
+        return true;
+    }
+    auto fallback = m_tables.find(m_fallback_lang);
+    if (fallback == m_tables.end()) {
+        spdlog::debug("Language {} not load",
+                      magic_enum::enum_name(m_fallback_lang));
+        return false;
+    }
+
+    return fallback->second.contains(key);
 }
 
 bool LocalizationManager::has(std::string_view key_str) const {
