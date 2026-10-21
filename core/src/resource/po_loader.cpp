@@ -5,7 +5,7 @@
 #include "serenkai/resource/po_data.hpp"
 #include "serenkai/resource/resource_location.hpp"
 
-#include <cstddef>
+#include <algorithm>
 #include <fstream>
 #include <magic_enum/magic_enum.hpp>
 #include <optional>
@@ -15,7 +15,7 @@
 #include <utility>
 
 namespace {
-std::string_view trim_right(std::string_view line) {
+std::string_view trim_left(std::string_view line) {
     auto pos = line.find_first_not_of(" \t");
     if (pos == std::string_view::npos) {
         return {};
@@ -32,25 +32,50 @@ std::string_view trim(std::string_view line) {
     return line.substr(start, end - start + 1);
 }
 
-std::string_view parse_quoted(std::string_view s, size_t pos) {
-    while (pos < s.size() && s[pos] != '"') {
-        ++pos;
-    }
-
-    if (pos >= s.size()) {
+std::string_view parse_quoted(std::string_view s) {
+    auto first = s.find('"');
+    auto last = s.rfind('"');
+    if (first == std::string_view::npos || last == std::string_view::npos ||
+        first >= last) {
         return {};
     }
+    return s.substr(first + 1, last - first - 1);
+}
 
-    auto begin = pos + 1;
+std::string unescape(std::string_view s) {
+    std::string result;
+    result.reserve(s.size());
 
-    // Find the position of the first " scanning from right to left.
-    auto end = s.rfind('"');
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '\\' && i + 1 < s.size()) {
+            ++i;
+            switch (s[i]) {
+            case 'n':
+                result.push_back('\n');
+                break;
+            case 't':
+                result.push_back('\t');
+                break;
+            case 'r':
+                result.push_back('\r');
+                break;
+            case '"':
+                result.push_back('"');
+                break;
+            case '\\':
+                result.push_back('\\');
+                break;
+            default:
 
-    if (end == std::string_view::npos) {
-        return {};
+                result.push_back('\\');
+                result.push_back(s[i]);
+                break;
+            }
+        } else {
+            result.push_back(s[i]);
+        }
     }
-
-    return std::string_view(s.data() + begin, end - begin);
+    return result;
 }
 
 enum class MsgField { Msgid, Msgctxt, Msgstr, Header };
@@ -61,14 +86,14 @@ namespace serenkai {
 PoLoader::PoLoader(AssetManager* asset_manager)
     : m_asset_manager(asset_manager) {}
 
-std::optional<PoData> PoLoader::parse(std::string_view loc) {
+std::optional<PoData> PoLoader::load(std::string_view loc) {
     auto res = ResourceLocation::parse(loc);
     if (!res) {
         spdlog::error("Invalid resource location {}", loc);
         return std::nullopt;
     }
 
-    return parse(*res);
+    return load(*res);
 }
 
 bool parse_header(std::string_view header, PoData& data) {
@@ -77,16 +102,17 @@ bool parse_header(std::string_view header, PoData& data) {
         spdlog::error("Missing language field");
         return false;
     }
-    auto end = header.find_first_of('"', p_lang);
-    if (end == std::string_view::npos) {
-        spdlog::error("Invalid language filed {}", p_lang);
-        return false;
-    }
-
-    auto raw_lang = header.substr(p_lang + 9, end - p_lang - 9 + 1);
+    auto val_start = p_lang + 9;
+    auto val_end = header.find_first_of("\r\n\\;\"", val_start);
+    auto raw_lang = (val_end == std::string_view::npos)
+                        ? header.substr(val_start)
+                        : header.substr(val_start, val_end - val_start);
     auto lang_str = trim(raw_lang);
-    auto lang =
-        magic_enum::enum_cast<Language>(lang_str, magic_enum::case_insensitive);
+    std::string normalized{lang_str};
+    std::ranges::replace(normalized, '-', '_');
+    auto lang = magic_enum::enum_cast<Language>(normalized,
+                                                magic_enum::case_insensitive);
+
     if (!lang) {
         spdlog::error("Language {} not supported", lang_str);
         return false;
@@ -95,7 +121,7 @@ bool parse_header(std::string_view header, PoData& data) {
     return true;
 }
 
-std::optional<PoData> PoLoader::parse(const ResourceLocation& loc) {
+std::optional<PoData> PoLoader::load(const ResourceLocation& loc) {
     if (!m_asset_manager) {
         spdlog::debug("AssetManager is nullptr");
         return std::nullopt;
@@ -128,8 +154,23 @@ std::optional<PoData> PoLoader::parse(const ResourceLocation& loc) {
 
     MsgField field = MsgField::Header;
 
+    auto commit_entry = [&]() {
+        if (parsed_header && !cur_msgctxt.empty()) {
+            auto res = ResourceLocation::parse(cur_msgctxt);
+            if (res) {
+                cur_entry.msgctxt = *res;
+                cur_entry.msgstr = unescape(cur_entry.msgstr);
+                data.entries.emplace_back(std::move(cur_entry));
+            } else {
+                spdlog::error("Invalid key {}", cur_msgctxt);
+            }
+        }
+        cur_entry = PoEntry{};
+        cur_msgctxt.clear();
+    };
+
     while (std::getline(file, line)) {
-        auto l = trim_right(line);
+        auto l = trim_left(line);
 
         if (l.empty() || l.starts_with("#")) {
             continue;
@@ -142,43 +183,40 @@ std::optional<PoData> PoLoader::parse(const ResourceLocation& loc) {
             if (!parsed_header) {
                 parsed_header = true;
             } else {
-                auto res = ResourceLocation::parse(cur_msgctxt);
-                if (!res) {
-                    spdlog::error("Invalid key {}", cur_msgctxt);
-
-                } else {
-                    cur_entry.msgctxt = *res;
-                    data.entires.emplace_back(std::move(cur_entry));
-                }
+                commit_entry();
             }
-            cur_entry = PoEntry{};
-            cur_msgctxt += parse_quoted(l, 7);
+            cur_msgctxt += parse_quoted(l);
         } else if (l.starts_with("msgid")) {
+            field = parsed_header ? MsgField::Msgid : MsgField::Header;
+        } else if (l.starts_with("msgstr")) {
             if (!parsed_header) {
                 field = MsgField::Header;
+                header += parse_quoted(l);
             } else {
-                field = MsgField::Msgid;
+                field = MsgField::Msgstr;
+                cur_entry.msgstr += parse_quoted(l);
             }
-        } else if (l.starts_with("msgstr")) {
-            cur_entry.msgstr += parse_quoted(l, 6);
         } else {
             switch (field) {
             case MsgField::Msgctxt:
-                cur_msgctxt += parse_quoted(l, 7);
+                cur_msgctxt += parse_quoted(l);
                 break;
             case MsgField::Msgid:
                 break;
             case MsgField::Msgstr:
-                cur_entry.msgstr += parse_quoted(l, 6);
+                cur_entry.msgstr += parse_quoted(l);
                 break;
             case MsgField::Header:
                 if (!parsed_header) {
-                    header += parse_quoted(l, 5);
+                    header += parse_quoted(l);
                 }
                 break;
             }
         }
     }
+
+    // The last one.
+    commit_entry();
 
     if (!parse_header(header, data)) {
         return std::nullopt;

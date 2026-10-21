@@ -19,7 +19,7 @@ struct PoEntry {
 struct PoData {
     Language lang = Language::en_US;
     int nplurals = 2; // todo
-    std::vector<PoEntry> entires;
+    std::vector<PoEntry> entries;
 };
 
 } // namespace serenkai
