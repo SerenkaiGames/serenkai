@@ -140,6 +140,8 @@ add_library(
     include/serenkai/resource/po_data.hpp
     include/serenkai/base/language.hpp
     src/resource/po_loader.cpp
+    include/serenkai/application/localization_manager.hpp
+    src/application/localization_manager.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})
