@@ -36,6 +36,7 @@ add_executable(serenkai_tests
     src/animation_loader_test.cpp
     src/animation_player_test.cpp
     src/animation_manager_test.cpp
+    src/po_loader_test.cpp
 )
 target_link_libraries(serenkai_tests PRIVATE
     serenkai::core
