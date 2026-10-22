@@ -1,0 +1,35 @@
+[project]
+name = "serenkai-tools"
+version = "0.1.0"
+description = "Build tools for Serenkai"
+readme = "README.md"
+authors = [
+    { name = "zhenyan121", email = "104683324+zhenyan121@users.noreply.github.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "polib>=1.2.0",
+]
+
+[tool.uv]
+package = false
+
+[build-system]
+requires = ["uv_build>=0.13.4,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.ruff]
+extend-exclude = ["vcpkg"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests/tools"]
+addopts = "-p no:cacheprovider"
+
+

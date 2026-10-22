@@ -1,0 +1,51 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "tools/**"
+      - "tests/tools/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - ".github/workflows/python.yml"
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "tools/**"
+      - "tests/tools/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - ".github/workflows/python.yml"
+
+jobs:
+  python-lint-and-test:
+    name: Python Lint, Format & Test (uv)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Check formatting (ruff format)
+        run: uv run ruff format --check
+
+      - name: Lint code (ruff check)
+        run: uv run ruff check
+
+      - name: Run unit tests (pytest)
+        run: uv run pytest
