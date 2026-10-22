@@ -9,7 +9,7 @@
 namespace serenkai {
 void bind_input_to_lua(lua_State* L, InputManager* input_manager) {
     if (!input_manager) {
-        spdlog::error("Register lua input failed, input manager is nullptr");
+        spdlog::debug("Failed to bind input, input manager is nullptr");
         return;
     }
 

@@ -148,6 +148,32 @@ bool LocalizationManager::has(std::string_view key_str) const {
     return has(*key);
 }
 
+std::string LocalizationManager::translate(std::string_view key,
+                                           std::span<const FormatArg> args) {
+    auto s = lookup(key);
+    if (!s) {
+        return std::string(key);
+    }
+    std::string fmt{*s};
+    for (auto& arg : args) {
+        replace_all(fmt, "{" + arg.name + "}", arg.value);
+    }
+    return fmt;
+}
+
+std::string LocalizationManager::translate(const ResourceLocation& key,
+                                           std::span<const FormatArg> args) {
+    auto s = lookup(key);
+    if (!s) {
+        return key.to_string();
+    }
+    std::string fmt{*s};
+    for (auto& arg : args) {
+        replace_all(fmt, "{" + arg.name + "}", arg.value);
+    }
+    return fmt;
+}
+
 void LocalizationManager::replace_all(std::string& str, std::string_view from,
                                       std::string_view to) {
     std::size_t pos = 0;

@@ -7,6 +7,7 @@
 
 #include <fmt/format.h>
 #include <functional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -49,38 +50,11 @@ public:
 
     bool has(std::string_view key) const;
 
-    template <typename T>
-    static FormatArg arg(std::string_view name, T&& value) {
-        return {std::string(name), fmt::format("{}", std::forward<T>(value))};
-    }
+    std::string translate(std::string_view key,
+                          std::span<const FormatArg> args = {});
 
-    template <typename... Args>
-    std::string translate(std::string_view key, Args&&... args) {
-        auto s = lookup(key);
-        if (!s) {
-            return std::string(key);
-        }
-        if constexpr (sizeof...(Args) == 0) {
-            return std::string(*s);
-        }
-        std::string fmt{*s};
-        (replace_all(fmt, "{" + args.name + "}", args.value), ...);
-        return fmt;
-    }
-
-    template <typename... Args>
-    std::string translate(const ResourceLocation& key, Args&&... args) {
-        auto s = lookup(key);
-        if (!s) {
-            return key.to_string();
-        }
-        if constexpr (sizeof...(Args) == 0) {
-            return std::string(*s);
-        }
-        std::string fmt{*s};
-        (replace_all(fmt, "{" + args.name + "}", args.value), ...);
-        return fmt;
-    }
+    std::string translate(const ResourceLocation& key,
+                          std::span<const FormatArg> args = {});
 
 private:
     using TranslationTable = std::unordered_map<ResourceLocation, std::string>;
