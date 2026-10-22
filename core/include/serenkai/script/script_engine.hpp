@@ -15,10 +15,12 @@ namespace serenkai {
 
 class AssetManager;
 class InputManager;
+class LocalizationManager;
 
 struct ScriptEngineConfig {
     AssetManager* asset_manager = nullptr;
     InputManager* input_manager = nullptr;
+    LocalizationManager* localization_manager = nullptr;
 };
 
 /// @brief Lua scripting engine

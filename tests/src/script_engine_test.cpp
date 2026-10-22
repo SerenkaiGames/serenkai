@@ -1,3 +1,5 @@
+#include "serenkai/application/localization_manager.hpp"
+#include "serenkai/base/language.hpp"
 #include "serenkai/game/camera.hpp"
 #include "serenkai/game/entity_manager.hpp"
 #include "serenkai/game/map.hpp"
@@ -1395,5 +1397,213 @@ TEST_CASE("Script Entity movement and collision",
         REQUIRE(pos_res.has_value());
         CHECK(std::get<0>(*pos_res) == 0.0);
         CHECK(std::get<1>(*pos_res) == 0.0);
+    }
+}
+
+TEST_CASE("ScriptEngine localization bindings", "[script]") {
+    TestScriptEnv env;
+    LocalizationManager loc_mgr(&env.asset_manager());
+
+    std::string en_content = R"(msgid ""
+msgstr ""
+"Language: en_US\n"
+
+msgctxt "ui:start_game"
+msgid "Start"
+msgstr "Start Game"
+
+msgctxt "ui:greeting"
+msgid "Greeting"
+msgstr "Hello, {name}!"
+
+msgctxt "ui:stats"
+msgid "Stats"
+msgstr "Level: {level}, HP: {hp}"
+)";
+
+    std::string zh_content = R"(msgid ""
+msgstr ""
+"Language: zh_CN\n"
+
+msgctxt "ui:start_game"
+msgid "Start"
+msgstr "开始游戏"
+
+msgctxt "ui:greeting"
+msgid "Greeting"
+msgstr "你好，{name}！"
+)";
+
+    env.register_file("test:locales/en.po", en_content, ".po");
+    env.register_file("test:locales/zh.po", zh_content, ".po");
+
+    REQUIRE(loc_mgr.load_language(Language::en_US, "test:locales/en.po"));
+
+    ScriptEngine engine(ScriptEngineConfig{
+        .asset_manager = &env.asset_manager(),
+        .localization_manager = &loc_mgr,
+    });
+
+    SECTION("Tr translates keys without arguments and with table arguments") {
+        env.register_script("test:tr_test.luau", R"(
+            function translate_simple()
+                return Tr("ui:start_game")
+            end
+
+            function translate_missing()
+                return Tr("ui:unknown_key")
+            end
+
+            function translate_with_args()
+                return Tr("ui:greeting", { name = "Alice" })
+            end
+
+            function translate_with_multiple_args()
+                return Tr("ui:stats", { level = "10", hp = "100" })
+            end
+        )");
+
+        auto script = engine.create("test:tr_test.luau");
+        REQUIRE(script.has_value());
+
+        auto res_simple = script->call<std::string>("translate_simple");
+        REQUIRE(res_simple.has_value());
+        CHECK(std::get<0>(*res_simple) == "Start Game");
+
+        auto res_missing = script->call<std::string>("translate_missing");
+        REQUIRE(res_missing.has_value());
+        CHECK(std::get<0>(*res_missing) == "ui:unknown_key");
+
+        auto res_args = script->call<std::string>("translate_with_args");
+        REQUIRE(res_args.has_value());
+        CHECK(std::get<0>(*res_args) == "Hello, Alice!");
+
+        auto res_multi =
+            script->call<std::string>("translate_with_multiple_args");
+        REQUIRE(res_multi.has_value());
+        CHECK(std::get<0>(*res_multi) == "Level: 10, HP: 100");
+    }
+
+    SECTION("Loc controls language, fallback and dynamic loading") {
+        env.register_script("test:loc_test.luau", R"(
+            function get_current()
+                return Loc.current()
+            end
+
+            function get_fallback()
+                return Loc.fallback()
+            end
+
+            function switch_to_zh()
+                return Loc.set("zh_CN")
+            end
+
+            function switch_to_invalid()
+                return Loc.set("invalid_lang")
+            end
+
+            function set_fallback_en()
+                return Loc.set_fallback("en_US")
+            end
+
+            function set_fallback_invalid()
+                return Loc.set_fallback("not_a_language")
+            end
+
+            function load_zh()
+                return Loc.load("zh_CN", "test:locales/zh.po")
+            end
+
+            function load_invalid()
+                return Loc.load("not_valid", "test:locales/zh.po")
+            end
+
+            function check_has(key)
+                return Loc.has(key)
+            end
+        )");
+
+        auto script = engine.create("test:loc_test.luau");
+        REQUIRE(script.has_value());
+
+        auto cur = script->call<std::string>("get_current");
+        REQUIRE(cur.has_value());
+        CHECK(std::get<0>(*cur) == "en_US");
+
+        auto fb = script->call<std::string>("get_fallback");
+        REQUIRE(fb.has_value());
+        CHECK(std::get<0>(*fb) == "en_US");
+
+        auto has_key = script->call<bool>("check_has", "ui:start_game");
+        REQUIRE(has_key.has_value());
+        CHECK(std::get<0>(*has_key) == true);
+
+        auto has_none = script->call<bool>("check_has", "ui:nonexistent");
+        REQUIRE(has_none.has_value());
+        CHECK(std::get<0>(*has_none) == false);
+
+        // Load zh_CN from Lua
+        auto load_bad = script->call<bool>("load_invalid");
+        REQUIRE(load_bad.has_value());
+        CHECK(std::get<0>(*load_bad) == false);
+
+        auto load_ok = script->call<bool>("load_zh");
+        REQUIRE(load_ok.has_value());
+        CHECK(std::get<0>(*load_ok) == true);
+
+        // Switch language
+        auto set_bad = script->call<bool>("switch_to_invalid");
+        REQUIRE(set_bad.has_value());
+        CHECK(std::get<0>(*set_bad) == false);
+
+        auto set_ok = script->call<bool>("switch_to_zh");
+        REQUIRE(set_ok.has_value());
+        CHECK(std::get<0>(*set_ok) == true);
+
+        auto cur_after = script->call<std::string>("get_current");
+        REQUIRE(cur_after.has_value());
+        CHECK(std::get<0>(*cur_after) == "zh_CN");
+
+        // Verify translation updated
+        env.register_script("test:tr_zh.luau", R"(
+            function tr_zh()
+                return Tr("ui:start_game")
+            end
+        )");
+        auto script_zh = engine.create("test:tr_zh.luau");
+        REQUIRE(script_zh.has_value());
+        auto res_zh = script_zh->call<std::string>("tr_zh");
+        REQUIRE(res_zh.has_value());
+        CHECK(std::get<0>(*res_zh) == "开始游戏");
+
+        // Fallback setting
+        auto fb_bad = script->call<bool>("set_fallback_invalid");
+        REQUIRE(fb_bad.has_value());
+        CHECK(std::get<0>(*fb_bad) == false);
+
+        auto fb_ok = script->call<bool>("set_fallback_en");
+        REQUIRE(fb_ok.has_value());
+        CHECK(std::get<0>(*fb_ok) == true);
+
+        auto fb_after = script->call<std::string>("get_fallback");
+        REQUIRE(fb_after.has_value());
+        CHECK(std::get<0>(*fb_after) == "en_US");
+    }
+
+    SECTION("Engine behaves safely when LocalizationManager is nullptr") {
+        ScriptEngine null_loc_engine(ScriptEngineConfig{
+            .asset_manager = &env.asset_manager(),
+            .localization_manager = nullptr,
+        });
+        env.register_script("test:no_loc.luau", R"(
+            function check_globals()
+                return Tr == nil and Loc == nil
+            end
+        )");
+        auto script = null_loc_engine.create("test:no_loc.luau");
+        REQUIRE(script.has_value());
+        auto res = script->call<bool>("check_globals");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == true);
     }
 }

@@ -3,6 +3,7 @@
 #include "serenkai/application/app_context.hpp"
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input_manager.hpp"
+#include "serenkai/application/localization_manager.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/base/raii.hpp"
 #include "serenkai/gui/gui_context.hpp"
@@ -68,6 +69,7 @@ private:
     std::unique_ptr<AssetManager> m_asset_manager;
     std::unique_ptr<InputManager> m_input_manager;
     std::unique_ptr<FontManager> m_font_manager;
+    std::unique_ptr<LocalizationManager> m_localization_manager;
     std::unique_ptr<SdlGuard> m_sdl_wrapper;
     std::unique_ptr<WindowManager> m_window_manager;
     std::unique_ptr<Renderer> m_renderer;

@@ -4,6 +4,7 @@
 #include "serenkai/application/event.hpp"
 #include "serenkai/application/input.hpp"
 #include "serenkai/application/input_manager.hpp"
+#include "serenkai/application/localization_manager.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/gui/gui_context.hpp"
 #include "serenkai/gui/widget_parser.hpp"
@@ -74,6 +75,9 @@ Application::Application(int argc, char** argv) {
 
     m_font_manager = std::make_unique<FontManager>(m_asset_manager.get());
 
+    m_localization_manager =
+        std::make_unique<LocalizationManager>(m_asset_manager.get());
+
     int linked = SDL_GetVersion();
     spdlog::info("Linked SDL version: {}.{}.{}", SDL_VERSIONNUM_MAJOR(linked),
                  SDL_VERSIONNUM_MINOR(linked), SDL_VERSIONNUM_MICRO(linked));
@@ -94,7 +98,8 @@ Application::Application(int argc, char** argv) {
                   m_widget_parser.get(), m_font_manager.get()});
 
     m_script_engine = std::make_unique<ScriptEngine>(
-        ScriptEngineConfig{m_asset_manager.get(), m_input_manager.get()});
+        ScriptEngineConfig{m_asset_manager.get(), m_input_manager.get(),
+                           m_localization_manager.get()});
 
     auto main = m_script_engine->create(MAIN_SCRIPT_LOC);
     if (main) {

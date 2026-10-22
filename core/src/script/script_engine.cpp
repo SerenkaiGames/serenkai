@@ -6,6 +6,7 @@
 #include "serenkai/script/bindings/bind_camera.hpp"
 #include "serenkai/script/bindings/bind_entity.hpp"
 #include "serenkai/script/bindings/bind_input.hpp"
+#include "serenkai/script/bindings/bind_localization.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
 #include "serenkai/script/bindings/bind_map.hpp"
 #include "serenkai/script/lua_compile_options.hpp"
@@ -47,9 +48,9 @@ ScriptEngine::ScriptEngine(ScriptEngineConfig config)
 
     bind_log_to_lua(m_root.get());
 
-    if (config.input_manager) {
-        bind_input_to_lua(m_root.get(), config.input_manager);
-    }
+    bind_input_to_lua(m_root.get(), config.input_manager);
+
+    bind_localization_to_lua(m_root.get(), config.localization_manager);
 
     bind_aabb_to_lua(m_root.get());
 
