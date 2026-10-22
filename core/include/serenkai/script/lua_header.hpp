@@ -5,4 +5,5 @@
 #include <lualib.h>
 #include <luabridge3/LuaBridge/LuaBridge.h>
 #include <luabridge3/LuaBridge/Vector.h>
+#include <luabridge3/LuaBridge/UnorderedMap.h>
 // clang-format on
