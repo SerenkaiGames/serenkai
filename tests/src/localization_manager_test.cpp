@@ -219,17 +219,20 @@ msgstr "你好，{name}！"
 
     SECTION("Translate with formatted named arguments") {
         loc_mgr.set_language(Language::en_US);
-        CHECK(loc_mgr.translate("ui:greeting",
-                                LocalizationManager::arg("name", "Alice")) ==
+        const LocalizationManager::FormatArg greeting_args[] = {
+            {"name", "Alice"}};
+        CHECK(loc_mgr.translate("ui:greeting", greeting_args) ==
               "Hello, Alice!");
+        CHECK(loc_mgr.translate(*ResourceLocation::parse("ui:greeting"),
+                                greeting_args) == "Hello, Alice!");
 
-        CHECK(loc_mgr.translate(
-                  "ui:stats", LocalizationManager::arg("level", 42),
-                  LocalizationManager::arg("hp", 100)) == "Level: 42, HP: 100");
+        const LocalizationManager::FormatArg stats_args[] = {{"level", "42"},
+                                                             {"hp", "100"}};
+        CHECK(loc_mgr.translate("ui:stats", stats_args) ==
+              "Level: 42, HP: 100");
 
         loc_mgr.set_language(Language::zh_CN);
-        CHECK(loc_mgr.translate("ui:greeting",
-                                LocalizationManager::arg("name", "小明")) ==
-              "你好，小明！");
+        const LocalizationManager::FormatArg greeting_zh[] = {{"name", "小明"}};
+        CHECK(loc_mgr.translate("ui:greeting", greeting_zh) == "你好，小明！");
     }
 }
