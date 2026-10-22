@@ -26,3 +26,10 @@ dev = [
 
 [tool.ruff]
 extend-exclude = ["vcpkg"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests/tools"]
+addopts = "-p no:cacheprovider"
+
+
