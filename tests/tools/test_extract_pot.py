@@ -7,6 +7,7 @@ import pytest
 from tools.extract_pot import (
     PLACEHOLDER_PATTERN,
     TRANSLATION_COMMENT_PATTERN,
+    build_en_po,
     build_pot,
     existing_dir,
     extract_from_file,
@@ -144,6 +145,32 @@ def test_build_pot(tmp_path: Path):
     assert po[1].occurrences == [("z.luau", "10")]
 
 
+def test_build_en_po(tmp_path: Path):
+    out_file = tmp_path / "nested" / "en_US.po"
+    entries = {
+        "ui.start": polib.POEntry(
+            msgctxt="ui.start",
+            msgid="Start Game",
+            msgstr="",
+            occurrences=[("view.luau", "1")],
+        ),
+    }
+
+    build_en_po(entries, str(out_file))
+    assert out_file.exists()
+
+    po = polib.pofile(str(out_file))
+    assert len(po) == 1
+    assert po.metadata["Project-Id-Version"] == "Serenkai"
+    assert po.metadata["Language"] == "en_US"
+    assert po.metadata["PO-Revision-Date"] != "YEAR-MO-DA HO:MI+ZONE"
+    assert po[0].msgctxt == "ui.start"
+    assert po[0].msgid == "Start Game"
+    assert po[0].msgstr == "Start Game"
+    # Ensure original entry was not mutated
+    assert entries["ui.start"].msgstr == ""
+
+
 def test_main_cli_multi_file_and_flags(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
@@ -220,3 +247,50 @@ def test_main_cli_conflict(
     po = polib.pofile(str(out_pot))
     assert len(po) == 1
     assert len(po[0].occurrences) == 2
+
+
+def test_main_cli_with_en_out(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+
+    (src_dir / "view.luau").write_text('--@ Exit Game\nTr("ui.exit")\n')
+
+    out_pot = tmp_path / "out" / "template.pot"
+    out_en_po = tmp_path / "out" / "en_US.po"
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "extract_pot.py",
+            "--src",
+            str(src_dir),
+            "--out",
+            str(out_pot),
+            "--en-out",
+            str(out_en_po),
+        ],
+    )
+
+    main()
+
+    captured = capsys.readouterr()
+    assert "Done! Successfully extracted 1 entries" in captured.out
+    assert "Done! Successfully generated en_US PO file" in captured.out
+    assert captured.err == ""
+
+    # Verify template.pot keeps msgstr empty
+    pot = polib.pofile(str(out_pot))
+    assert len(pot) == 1
+    assert pot[0].msgctxt == "ui.exit"
+    assert pot[0].msgstr == ""
+    assert "Language" not in pot.metadata
+
+    # Verify en_US.po has msgstr populated with msgid and Language metadata
+    po = polib.pofile(str(out_en_po))
+    assert len(po) == 1
+    assert po.metadata["Language"] == "en_US"
+    assert po[0].msgctxt == "ui.exit"
+    assert po[0].msgid == "Exit Game"
+    assert po[0].msgstr == "Exit Game"
