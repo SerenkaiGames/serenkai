@@ -14,7 +14,7 @@ namespace serenkai {
 void bind_localization_to_lua(lua_State* L, LocalizationManager* mgr) {
     if (!mgr) {
         spdlog::debug(
-            "Failed to bind localization,LocalizationManager is nullptr");
+            "Failed to bind localization, localization manager is nullptr");
         return;
     }
 
@@ -36,12 +36,12 @@ void bind_localization_to_lua(lua_State* L, LocalizationManager* mgr) {
             })
         .beginNamespace("Loc")
         .addFunction(
-            "current_language",
+            "current",
             [mgr]() { return magic_enum::enum_name(mgr->current_language()); })
         .addFunction(
-            "fallback_language",
+            "fallback",
             [mgr]() { return magic_enum::enum_name(mgr->fallback_language()); })
-        .addFunction("set_language",
+        .addFunction("set",
                      [mgr](std::string_view lang_str) -> bool {
                          auto lang = magic_enum::enum_cast<Language>(lang_str);
                          if (!lang) {
@@ -51,7 +51,7 @@ void bind_localization_to_lua(lua_State* L, LocalizationManager* mgr) {
                          mgr->set_language(*lang);
                          return true;
                      })
-        .addFunction("set_fallback_language",
+        .addFunction("set_fallback",
                      [mgr](std::string_view lang_str) -> bool {
                          auto lang = magic_enum::enum_cast<Language>(lang_str);
                          if (!lang) {
@@ -61,7 +61,7 @@ void bind_localization_to_lua(lua_State* L, LocalizationManager* mgr) {
                          mgr->set_fallback_language(*lang);
                          return true;
                      })
-        .addFunction("load_language",
+        .addFunction("load",
                      [mgr](std::string_view lang_str, std::string_view loc) {
                          auto lang = magic_enum::enum_cast<Language>(lang_str);
                          if (!lang) {
