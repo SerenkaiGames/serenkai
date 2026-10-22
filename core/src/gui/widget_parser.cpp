@@ -122,7 +122,8 @@ std::optional<T> get(const glz::generic& json, std::string_view key) {
 WidgetParser::WidgetParser(const WidgetParserConfig& config)
     : m_asset_manager(config.asset_manager),
       m_font_manager(config.font_manager),
-      m_texture_manager(config.texture_manager) {
+      m_texture_manager(config.texture_manager),
+      m_localization_manager(config.localization_manager) {
 
     register_factory("label",
                      [this](std::string_view name, const glz::generic& json) {

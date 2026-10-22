@@ -17,7 +17,7 @@ namespace serenkai {
 
 class AssetManager;
 class TextureManager;
-class localizationManager;
+class LocalizationManager;
 
 struct WidgetParserConfig {
     AssetManager* asset_manager = nullptr;
