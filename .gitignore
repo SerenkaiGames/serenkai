@@ -118,3 +118,5 @@ vcpkg/.cache/
 # vcpkg logs / generated metadata
 vcpkg/*.log
 vcpkg/*.log.*
+
+.venv/
