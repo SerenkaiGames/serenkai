@@ -1,5 +1,6 @@
 #pragma once
 
+#include "serenkai/application/localization_manager.hpp"
 #include "serenkai/base/enum_meta.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/font_manager.hpp"
@@ -16,11 +17,13 @@ namespace serenkai {
 
 class AssetManager;
 class TextureManager;
+class localizationManager;
 
 struct WidgetParserConfig {
     AssetManager* asset_manager = nullptr;
     FontManager* font_manager = nullptr;
     TextureManager* texture_manager = nullptr;
+    LocalizationManager* localization_manager = nullptr;
 };
 
 /// @brief Constructs UI widgets from JSON.
@@ -53,6 +56,7 @@ private:
     AssetManager* m_asset_manager = nullptr;
     FontManager* m_font_manager = nullptr;
     TextureManager* m_texture_manager = nullptr;
+    LocalizationManager* m_localization_manager = nullptr;
 
     /// @brief Recursively traverse the JSON tree to construct the widget tree.
     ///

@@ -259,7 +259,10 @@ WidgetParser::parse_label(std::string_view name,
                      : nullptr;
     label->set_font(font);
     label->set_color(data.color);
-    label->set_text(data.text);
+    auto text = m_localization_manager
+                    ? m_localization_manager->translate(data.text)
+                    : data.text;
+    label->set_text(text);
     label->set_anchor(data.anchor);
     label->set_offset(data.offset);
 
