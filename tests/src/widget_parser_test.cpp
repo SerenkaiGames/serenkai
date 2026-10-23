@@ -9,11 +9,13 @@
 #include "serenkai/gui/image_widget.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
+#include "serenkai/gui/ui_view.hpp"
 #include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/directory_source.hpp"
 #include "serenkai/resource/font_manager.hpp"
 #include "serenkai/resource/texture_manager.hpp"
+#include "serenkai/script/script_engine.hpp"
 
 #include <SDL3/SDL.h>
 #include <catch2/catch_test_macros.hpp>
@@ -40,14 +42,17 @@ struct TestParserContext {
     AssetManager asset_manager;
     FontManager font_manager;
     TextureManager texture_manager;
+    ScriptEngine script_engine;
     WidgetParser parser;
 
     explicit TestParserContext(const fs::path& dir,
                                SDL_Renderer* renderer = nullptr)
         : font_manager(&asset_manager),
           texture_manager(&asset_manager, renderer),
+          script_engine(ScriptEngineConfig{&asset_manager}),
           parser(WidgetParserConfig{&asset_manager, &font_manager,
-                                    &texture_manager}) {
+                                    &texture_manager, nullptr,
+                                    &script_engine}) {
         asset_manager.merge_source(std::make_shared<DirectorySource>(dir));
     }
 };
@@ -92,13 +97,18 @@ TEST_CASE("WidgetParser label construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/label_custom.json");
+        auto view = ctx.parser.parse("test:ui/label_custom.json");
+        REQUIRE(view != nullptr);
+        CHECK(view->loc() ==
+              *ResourceLocation::parse("test:ui/label_custom.json"));
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "title_label");
         CHECK(widget->anchor() == Anchor::Center);
         CHECK(widget->offset() == glm::ivec2{20, -10});
 
-        auto* label = dynamic_cast<Label*>(widget.get());
+        auto* label = dynamic_cast<Label*>(widget);
         REQUIRE(label != nullptr);
         CHECK(label->text() == "Serenkai Title");
         CHECK(label->color() == Color::Yellow);
@@ -112,13 +122,16 @@ TEST_CASE("WidgetParser label construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/label_default.json");
+        auto view = ctx.parser.parse("test:ui/label_default.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "default_label");
         CHECK(widget->anchor() == Anchor::TopLeft);
         CHECK(widget->offset() == glm::ivec2{0, 0});
 
-        auto* label = dynamic_cast<Label*>(widget.get());
+        auto* label = dynamic_cast<Label*>(widget);
         REQUIRE(label != nullptr);
         CHECK(label->text().empty());
         CHECK(label->color() == Color::White);
@@ -147,13 +160,16 @@ TEST_CASE("WidgetParser rect construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/rect_custom.json");
+        auto view = ctx.parser.parse("test:ui/rect_custom.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "panel_rect");
         CHECK(widget->anchor() == Anchor::Center);
         CHECK(widget->offset() == glm::ivec2{10, -5});
 
-        auto* rect = dynamic_cast<Rect*>(widget.get());
+        auto* rect = dynamic_cast<Rect*>(widget);
         REQUIRE(rect != nullptr);
         CHECK(rect->size() == glm::ivec2{320, 240});
         CHECK(rect->color() == Color::Blue);
@@ -171,11 +187,14 @@ TEST_CASE("WidgetParser rect construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/rect_fill.json");
+        auto view = ctx.parser.parse("test:ui/rect_fill.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "background_rect");
 
-        auto* rect = dynamic_cast<Rect*>(widget.get());
+        auto* rect = dynamic_cast<Rect*>(widget);
         REQUIRE(rect != nullptr);
         CHECK(rect->fill_parent());
         CHECK(rect->color() == Color::Black);
@@ -197,7 +216,10 @@ TEST_CASE("WidgetParser rect construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto root = ctx.parser.parse("test:ui/rect_tree.json");
+        auto view = ctx.parser.parse("test:ui/rect_tree.json");
+        REQUIRE(view != nullptr);
+
+        auto* root = view->widget();
         REQUIRE(root != nullptr);
         CHECK(root->name() == "parent_rect");
         CHECK(root->children().size() == 1);
@@ -205,7 +227,7 @@ TEST_CASE("WidgetParser rect construction and property parsing",
         auto* child = root->fetch_child<Rect>("child_rect");
         REQUIRE(child != nullptr);
         CHECK(child->fill_parent());
-        CHECK(child->parent() == root.get());
+        CHECK(child->parent() == root);
     }
 }
 
@@ -237,7 +259,10 @@ TEST_CASE("WidgetParser hierarchical widget tree construction",
     })");
 
     TestParserContext ctx(temp_dir);
-    auto root = ctx.parser.parse("test:ui/tree.json");
+    auto view = ctx.parser.parse("test:ui/tree.json");
+    REQUIRE(view != nullptr);
+
+    auto* root = view->widget();
     REQUIRE(root != nullptr);
     CHECK(root->name() == "parent_label");
     CHECK(root->parent() == nullptr);
@@ -247,13 +272,13 @@ TEST_CASE("WidgetParser hierarchical widget tree construction",
     REQUIRE(child_a != nullptr);
     CHECK(child_a->text() == "Child A");
     CHECK(child_a->anchor() == Anchor::BottomRight);
-    CHECK(child_a->parent() == root.get());
+    CHECK(child_a->parent() == root);
 
     auto* child_b = root->fetch_child<Label>("child_b");
     REQUIRE(child_b != nullptr);
     CHECK(child_b->text() == "Child B");
     CHECK(child_b->color() == Color::Green);
-    CHECK(child_b->parent() == root.get());
+    CHECK(child_b->parent() == root);
 }
 
 TEST_CASE("WidgetParser error handling and boundary conditions",
@@ -267,15 +292,15 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
 
     SECTION("Non-existent resource location returns nullptr") {
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/missing.json");
-        CHECK(widget == nullptr);
+        auto view = ctx.parser.parse("test:ui/missing.json");
+        CHECK(view == nullptr);
     }
 
     SECTION("Invalid JSON syntax returns nullptr") {
         write_file(temp_dir / "ui" / "syntax_err.json", "{ invalid json }");
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/syntax_err.json");
-        CHECK(widget == nullptr);
+        auto view = ctx.parser.parse("test:ui/syntax_err.json");
+        CHECK(view == nullptr);
     }
 
     SECTION("Non-object JSON root returns nullptr") {
@@ -283,8 +308,8 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
             { "title": { "type": "label" } }
         ])");
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/array_root.json");
-        CHECK(widget == nullptr);
+        auto view = ctx.parser.parse("test:ui/array_root.json");
+        CHECK(view == nullptr);
     }
 
     SECTION("Multiple root widgets return nullptr") {
@@ -293,8 +318,8 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
             "widget2": { "type": "label" }
         })");
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/multi_root.json");
-        CHECK(widget == nullptr);
+        auto view = ctx.parser.parse("test:ui/multi_root.json");
+        CHECK(view == nullptr);
     }
 
     SECTION("Missing widget type field returns nullptr") {
@@ -304,8 +329,8 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
             }
         })");
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/no_type.json");
-        CHECK(widget == nullptr);
+        auto view = ctx.parser.parse("test:ui/no_type.json");
+        CHECK(view == nullptr);
     }
 
     SECTION("Unknown widget type returns nullptr") {
@@ -315,8 +340,8 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
             }
         })");
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/unknown_type.json");
-        CHECK(widget == nullptr);
+        auto view = ctx.parser.parse("test:ui/unknown_type.json");
+        CHECK(view == nullptr);
     }
 
     SECTION("Children field is not an object gracefully retains parent") {
@@ -328,7 +353,10 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
             }
         })");
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/invalid_children.json");
+        auto view = ctx.parser.parse("test:ui/invalid_children.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->children().empty());
     }
@@ -341,8 +369,8 @@ TEST_CASE("WidgetParser error handling and boundary conditions",
             }
         })");
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/rect_no_size.json");
-        CHECK(widget == nullptr);
+        auto view = ctx.parser.parse("test:ui/rect_no_size.json");
+        CHECK(view == nullptr);
     }
 }
 
@@ -375,13 +403,16 @@ TEST_CASE("WidgetParser button construction, property parsing, and callbacks",
         TestParserContext ctx(temp_dir);
         ctx.parser.register_callback("on_submit", [&]() { ++callback_calls; });
 
-        auto widget = ctx.parser.parse("test:ui/button.json");
+        auto view = ctx.parser.parse("test:ui/button.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "submit_button");
         CHECK(widget->anchor() == Anchor::Center);
         CHECK(widget->offset() == glm::ivec2{10, -5});
 
-        auto* button = dynamic_cast<Button*>(widget.get());
+        auto* button = dynamic_cast<Button*>(widget);
         REQUIRE(button != nullptr);
         CHECK(button->is_enabled());
         CHECK_FALSE(button->is_hovered());
@@ -413,9 +444,12 @@ TEST_CASE("WidgetParser button construction, property parsing, and callbacks",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/btn_no_cb.json");
+        auto view = ctx.parser.parse("test:ui/btn_no_cb.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
-        auto* button = dynamic_cast<Button*>(widget.get());
+        auto* button = dynamic_cast<Button*>(widget);
         REQUIRE(button != nullptr);
         CHECK(button->name() == "plain_btn");
     }
@@ -442,13 +476,16 @@ TEST_CASE("WidgetParser image construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/image_explicit.json");
+        auto view = ctx.parser.parse("test:ui/image_explicit.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "avatar");
         CHECK(widget->anchor() == Anchor::Center);
         CHECK(widget->offset() == glm::ivec2{15, -10});
 
-        auto* img = dynamic_cast<ImageWidget*>(widget.get());
+        auto* img = dynamic_cast<ImageWidget*>(widget);
         REQUIRE(img != nullptr);
         CHECK(img->get_image() == "test:textures/avatar.png");
         CHECK(img->size() == glm::ivec2{64, 48});
@@ -470,7 +507,10 @@ TEST_CASE("WidgetParser image construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/image_tree.json");
+        auto view = ctx.parser.parse("test:ui/image_tree.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->children().size() == 1);
         auto* child = widget->fetch_child<Label>("title");
@@ -487,8 +527,8 @@ TEST_CASE("WidgetParser image construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/image_no_src.json");
-        CHECK(widget == nullptr);
+        auto view = ctx.parser.parse("test:ui/image_no_src.json");
+        CHECK(view == nullptr);
     }
 
     SECTION("Parse image with auto size measurement") {
@@ -526,11 +566,14 @@ TEST_CASE("WidgetParser image construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir, renderer);
-        auto widget = ctx.parser.parse("test:ui/image_auto_size.json");
+        auto view = ctx.parser.parse("test:ui/image_auto_size.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "measured_image");
 
-        auto* img = dynamic_cast<ImageWidget*>(widget.get());
+        auto* img = dynamic_cast<ImageWidget*>(widget);
         REQUIRE(img != nullptr);
         CHECK(img->get_image() == "test:icon12x8.png");
         CHECK(img->size() == glm::ivec2{12, 8});
@@ -554,13 +597,16 @@ TEST_CASE("WidgetParser column construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/col_default.json");
+        auto view = ctx.parser.parse("test:ui/col_default.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "menu_col");
         CHECK(widget->anchor() == Anchor::TopLeft);
         CHECK(widget->offset() == glm::ivec2{0, 0});
 
-        auto* col = dynamic_cast<ColumnLayout*>(widget.get());
+        auto* col = dynamic_cast<ColumnLayout*>(widget);
         REQUIRE(col != nullptr);
         CHECK(col->spacing() == 0);
         CHECK(col->child_anchor() == ChildAnchor::Left);
@@ -579,13 +625,16 @@ TEST_CASE("WidgetParser column construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/col_custom.json");
+        auto view = ctx.parser.parse("test:ui/col_custom.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
         CHECK(widget->name() == "nav_col");
         CHECK(widget->anchor() == Anchor::Center);
         CHECK(widget->offset() == glm::ivec2{10, -20});
 
-        auto* col = dynamic_cast<ColumnLayout*>(widget.get());
+        auto* col = dynamic_cast<ColumnLayout*>(widget);
         REQUIRE(col != nullptr);
         CHECK(col->spacing() == 15);
         CHECK(col->child_anchor() == ChildAnchor::Center);
@@ -611,10 +660,13 @@ TEST_CASE("WidgetParser column construction and property parsing",
         })");
 
         TestParserContext ctx(temp_dir);
-        auto widget = ctx.parser.parse("test:ui/col_tree.json");
+        auto view = ctx.parser.parse("test:ui/col_tree.json");
+        REQUIRE(view != nullptr);
+
+        auto* widget = view->widget();
         REQUIRE(widget != nullptr);
 
-        auto* col = dynamic_cast<ColumnLayout*>(widget.get());
+        auto* col = dynamic_cast<ColumnLayout*>(widget);
         REQUIRE(col != nullptr);
         CHECK(col->children().size() == 2);
         CHECK(col->size() == glm::ivec2{100, 80});
@@ -628,5 +680,144 @@ TEST_CASE("WidgetParser column construction and property parsing",
         REQUIRE(item2 != nullptr);
         CHECK(item2->anchor() == Anchor::TopRight);
         CHECK(item2->offset() == glm::ivec2{0, 50});
+    }
+}
+
+TEST_CASE("WidgetParser script parsing and UiView bundling", "[gui][parser]") {
+    fs::path temp_dir =
+        fs::temp_directory_path() / "serenkai_test_parser_script";
+    fs::remove_all(temp_dir);
+    fs::create_directories(temp_dir / "ui");
+    fs::create_directories(temp_dir / "scripts");
+    RaiiGuard cleanup([]() {}, [&temp_dir]() { fs::remove_all(temp_dir); });
+
+    write_file(temp_dir / "assets.json", R"({"ns": "test"})");
+    write_file(temp_dir / "scripts" / "view_test.luau", R"(
+        function get_value()
+            return 42
+        end
+    )");
+
+    SECTION("Parse UI with valid script attached") {
+        write_file(temp_dir / "ui" / "view_with_script.json", R"({
+            "script": "test:scripts/view_test.luau",
+            "root_panel": {
+                "type": "rect",
+                "fill_parent": true
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto view = ctx.parser.parse("test:ui/view_with_script.json");
+        REQUIRE(view != nullptr);
+        CHECK(view->loc() ==
+              *ResourceLocation::parse("test:ui/view_with_script.json"));
+        REQUIRE(view->widget() != nullptr);
+        CHECK(view->widget()->name() == "root_panel");
+        REQUIRE(view->script() != nullptr);
+
+        auto res = view->script()->call<int>("get_value");
+        REQUIRE(res.has_value());
+        CHECK(std::get<0>(*res) == 42);
+    }
+
+    SECTION("Parse UI with non-existent script returns nullptr") {
+        write_file(temp_dir / "ui" / "view_missing_script.json", R"({
+            "script": "test:scripts/does_not_exist.luau",
+            "root_panel": {
+                "type": "rect",
+                "fill_parent": true
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto view = ctx.parser.parse("test:ui/view_missing_script.json");
+        CHECK(view == nullptr);
+    }
+
+    SECTION("Parse UI with non-string script field returns nullptr") {
+        write_file(temp_dir / "ui" / "view_invalid_script_type.json", R"({
+            "script": 12345,
+            "root_panel": {
+                "type": "rect",
+                "fill_parent": true
+            }
+        })");
+
+        TestParserContext ctx(temp_dir);
+        auto view = ctx.parser.parse("test:ui/view_invalid_script_type.json");
+        CHECK(view == nullptr);
+    }
+
+    SECTION("Parse UI with script when ScriptEngine is nullptr skips script "
+            "gracefully") {
+        write_file(temp_dir / "ui" / "view_no_engine.json", R"({
+            "script": "test:scripts/view_test.luau",
+            "root_panel": {
+                "type": "rect",
+                "fill_parent": true
+            }
+        })");
+
+        AssetManager asset_manager;
+        FontManager font_manager(&asset_manager);
+        TextureManager texture_manager(&asset_manager, nullptr);
+        asset_manager.merge_source(std::make_shared<DirectorySource>(temp_dir));
+
+        WidgetParser parser(WidgetParserConfig{
+            &asset_manager, &font_manager, &texture_manager, nullptr, nullptr});
+
+        auto view = parser.parse("test:ui/view_no_engine.json");
+        REQUIRE(view != nullptr);
+        CHECK(view->script() == nullptr);
+        CHECK(view->widget() != nullptr);
+    }
+}
+
+TEST_CASE("UiView event and update delegation", "[gui][view]") {
+    auto loc = *ResourceLocation::parse("test:ui/delegation_view.json");
+
+    SECTION("UiView forwards update and events to root widget") {
+        auto button = std::make_unique<Button>("test_btn", nullptr);
+        auto bg = std::make_unique<Rect>("btn_bg", button.get());
+        bg->set_size(glm::ivec2{80, 30});
+        button->add_child(std::move(bg));
+
+        int click_count = 0;
+        button->set_clicked([&click_count]() { ++click_count; });
+
+        UiView view(loc, std::move(button), nullptr);
+        CHECK(view.loc() == loc);
+        REQUIRE(view.widget() != nullptr);
+        CHECK(view.script() == nullptr);
+
+        // Update call forwards and measures button size
+        view.update(0.016f);
+        CHECK(view.widget()->size() == glm::ivec2{80, 30});
+
+        // Hover test via handle_event
+        MouseMoveEvent move_in{10.0f, 10.0f, 0.0f, 0.0f};
+        view.handle_event(move_in);
+        auto* btn = dynamic_cast<Button*>(view.widget());
+        REQUIRE(btn != nullptr);
+        CHECK(btn->is_hovered());
+
+        // Click event forwards
+        KeyEvent left_click{Key::MouseLeft, KeyAction::Press};
+        CHECK(view.handle_event(left_click));
+        CHECK(click_count == 1);
+
+        // Other events return false
+        WindowResizeEvent resize_event{800, 600};
+        CHECK_FALSE(view.handle_event(resize_event));
+    }
+
+    SECTION("UiView handles null widget safely") {
+        UiView view(loc, nullptr, nullptr);
+        view.update(0.016f);
+        view.render(nullptr);
+
+        KeyEvent key_event{Key::MouseLeft, KeyAction::Press};
+        CHECK_FALSE(view.handle_event(key_event));
     }
 }

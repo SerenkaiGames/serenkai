@@ -192,7 +192,7 @@ std::unique_ptr<UiView> WidgetParser::parse(std::string_view loc) {
     std::unique_ptr<Script> script = nullptr;
 
     if (r.contains("script")) {
-        auto script_loc = glz::get<std::string>(r, "script");
+        auto* script_loc = r["script"].get_if<std::string>();
         if (!script_loc) {
             spdlog::error("Failed to get ui {} script field", loc);
             print_debug_json(r);
@@ -200,9 +200,9 @@ std::unique_ptr<UiView> WidgetParser::parse(std::string_view loc) {
         }
 
         if (m_script_engine) {
-            auto s = m_script_engine->create(script_loc->get());
+            auto s = m_script_engine->create(*script_loc);
             if (!s) {
-                spdlog::error("Failed to load script {}", script_loc->get());
+                spdlog::error("Failed to load script {}", *script_loc);
                 return nullptr;
             }
             script = std::make_unique<Script>(std::move(*s));
