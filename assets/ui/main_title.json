@@ -22,7 +22,7 @@
                             "fg": {
                                 "type": "label",
                                 "color": "White",
-                                "text": "Start Game",
+                                "text": "ui.start_game",
                                 "pixel_size": 24
                             }
                         }
@@ -39,7 +39,7 @@
                             "fg": {
                                 "type": "label",
                                 "color": "White",
-                                "text": "Exit Game",
+                                "text": "ui.exit_game",
                                 "pixel_size": 24
                             }
                         }

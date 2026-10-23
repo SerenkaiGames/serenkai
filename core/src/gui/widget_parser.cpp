@@ -1,5 +1,6 @@
 #include "serenkai/gui/widget_parser.hpp"
 
+#include "serenkai/application/localization_manager.hpp"
 #include "serenkai/base/assert.hpp"
 #include "serenkai/base/concepts.hpp"
 #include "serenkai/base/glm_parse.hpp"
@@ -122,7 +123,8 @@ std::optional<T> get(const glz::generic& json, std::string_view key) {
 WidgetParser::WidgetParser(const WidgetParserConfig& config)
     : m_asset_manager(config.asset_manager),
       m_font_manager(config.font_manager),
-      m_texture_manager(config.texture_manager) {
+      m_texture_manager(config.texture_manager),
+      m_localization_manager(config.localization_manager) {
 
     register_factory("label",
                      [this](std::string_view name, const glz::generic& json) {
@@ -259,7 +261,10 @@ WidgetParser::parse_label(std::string_view name,
                      : nullptr;
     label->set_font(font);
     label->set_color(data.color);
-    label->set_text(data.text);
+    auto text = m_localization_manager
+                    ? m_localization_manager->translate(data.text)
+                    : data.text;
+    label->set_text(text);
     label->set_anchor(data.anchor);
     label->set_offset(data.offset);
 

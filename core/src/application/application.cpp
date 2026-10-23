@@ -91,7 +91,8 @@ Application::Application(int argc, char** argv) {
         m_asset_manager.get(), m_renderer->get_sdl_renderer());
 
     m_widget_parser = std::make_unique<WidgetParser>(WidgetParserConfig{
-        m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get()});
+        m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get(),
+        m_localization_manager.get()});
 
     m_gui_context = std::make_unique<GuiContext>(
         GuiConfig{m_renderer.get(), m_texture_manager.get(),

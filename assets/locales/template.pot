@@ -1,0 +1,22 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Serenkai\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-22 20:55\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: assets/scripts/ui_localization.luau:4
+msgctxt "ui.exit_game"
+msgid "Exit Game"
+msgstr ""
+
+#: assets/scripts/ui_localization.luau:2
+msgctxt "ui.start_game"
+msgid "Start Game"
+msgstr ""
