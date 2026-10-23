@@ -7,7 +7,6 @@
 #include "serenkai/game/map_manager.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/asset_source.hpp"
-#include "serenkai/resource/directory_source.hpp"
 #include "serenkai/resource/resource_location.hpp"
 #include "serenkai/script/script.hpp"
 #include "serenkai/script/script_engine.hpp"
@@ -82,27 +81,6 @@ public:
     }
 
     AssetManager& asset_manager() { return m_asset_manager; }
-
-    /// @brief Merges the project assets directory into the asset manager.
-    void merge_project_assets() {
-        fs::path asset_dir;
-#ifdef SERENKAI_TEST_ASSET_DIR
-        if (fs::exists(SERENKAI_TEST_ASSET_DIR)) {
-            asset_dir = SERENKAI_TEST_ASSET_DIR;
-        }
-#endif
-        if (asset_dir.empty()) {
-            if (fs::exists("assets")) {
-                asset_dir = "assets";
-            } else if (fs::exists("../../assets")) {
-                asset_dir = "../../assets";
-            }
-        }
-        if (!asset_dir.empty()) {
-            m_asset_manager.merge_source(
-                std::make_shared<DirectorySource>(asset_dir));
-        }
-    }
 
 private:
     fs::path m_temp_dir;
@@ -423,7 +401,46 @@ TEST_CASE("Script module require and caching", "[script]") {
 
 TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
     TestScriptEnv env;
-    env.merge_project_assets();
+    env.register_script("serenkai:scripts/event.luau", R"(
+        local listeners: { [string]: { (any) -> () } } = {}
+        local Event = {}
+
+        function Event.on(event: string, callback: (any) -> ())
+            local list = listeners[event]
+            if not list then
+                list = {}
+                listeners[event] = list
+            end
+
+            table.insert(list, callback)
+
+            return function()
+                local idx = table.find(list, callback)
+                if idx then
+                    table.remove(list, idx)
+                end
+            end
+        end
+
+        function Event.emit(event: string, ...: any)
+            local list = listeners[event]
+            if not list then
+                return
+            end
+            local l = table.clone(list)
+            for _, callback in l do
+                local success, err = pcall(callback, ...)
+                if not success then
+                    local idx = table.find(list, callback)
+                    if idx then
+                        table.remove(list, idx)
+                    end
+                end
+            end
+        end
+
+        return Event
+    )");
 
     ScriptEngine engine(
         ScriptEngineConfig{.asset_manager = &env.asset_manager()});
@@ -591,7 +608,15 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
         CHECK(std::get<0>(*res) == true);
     }
 
-    SECTION("main.luau on_update dispatches serenkai:events/update") {
+    SECTION("Script on_update dispatches serenkai:events/update") {
+        env.register_script("test:main.luau", R"(
+            local Event = require("serenkai:scripts/event.luau")
+
+            function on_update(dt: number)
+                Event.emit("serenkai:events/update", dt)
+            end
+        )");
+
         env.register_script("test:update_listener.luau", R"(
             local Event = require("serenkai:scripts/event.luau")
 
@@ -607,11 +632,11 @@ TEST_CASE("Script event system module lifecycle and dispatch", "[script]") {
         )");
 
         auto listener = engine.create("test:update_listener.luau");
-        auto main = engine.create("serenkai:scripts/main.luau");
+        auto main = engine.create("test:main.luau");
         REQUIRE(listener.has_value());
         REQUIRE(main.has_value());
 
-        // Trigger on_update through main.luau
+        // Trigger on_update through main script
         auto call_res = main->call<>("on_update", 0.016f);
         REQUIRE(call_res.has_value());
 
