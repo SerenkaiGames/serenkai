@@ -13,17 +13,16 @@
 namespace serenkai {
 GuiContext::GuiContext(GuiConfig config)
     : m_renderer(config.renderer), m_texture_manager(config.texture_manager),
-      m_widget_parser(config.widget_parser),
-      m_font_manager(config.font_manager) {}
+      m_ui_manager(config.ui_manager), m_font_manager(config.font_manager) {}
 
 Renderer* GuiContext::get_renderer() const {
     SE_ASSERT(m_renderer);
     return m_renderer;
 }
 
-WidgetParser* GuiContext::get_widget_parser() const {
-    SE_ASSERT(m_widget_parser);
-    return m_widget_parser;
+UiManager* GuiContext::get_ui_manager() const {
+    SE_ASSERT(m_ui_manager);
+    return m_ui_manager;
 }
 
 size_t GuiContext::ui_scale() const { return m_ui_scale; }

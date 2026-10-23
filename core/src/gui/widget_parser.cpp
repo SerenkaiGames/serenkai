@@ -387,13 +387,7 @@ WidgetParser::parse_button(std::string_view name,
     button->set_anchor(data.anchor);
     button->set_offset(data.offset);
     if (data.callback) {
-        auto it = m_callbacks.find(*data.callback);
-        if (it != m_callbacks.end()) {
-            button->set_clicked(it->second);
-        } else {
-            spdlog::error("Can't find button {} callback {}", name,
-                          *data.callback);
-        }
+        button->set_callback_name(*data.callback);
     }
 
     parse_children(button.get(), json);

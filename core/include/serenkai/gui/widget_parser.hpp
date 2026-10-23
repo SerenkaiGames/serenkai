@@ -41,19 +41,11 @@ public:
         m_factories.try_emplace(std::string(name), std::move(f));
     }
 
-    template <std::invocable Fn>
-    void register_callback(std::string_view name, Fn f) {
-        m_callbacks.try_emplace(std::string(name), std::move(f));
-    }
-
 private:
     using CreateFunc = std::function<std::unique_ptr<Widget>(
         std::string_view key, const glz::generic& json)>;
 
-    using Callback = std::function<void()>;
-
     std::unordered_map<std::string, CreateFunc> m_factories;
-    std::unordered_map<std::string, Callback> m_callbacks;
 
     AssetManager* m_asset_manager = nullptr;
     FontManager* m_font_manager = nullptr;

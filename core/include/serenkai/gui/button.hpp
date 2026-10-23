@@ -21,7 +21,11 @@ public:
     bool is_enabled() const;
 
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
+
     bool handle_key_event(const KeyEvent& e) override;
+
+    void set_callback_name(std::string_view name);
+    std::string_view callback_name() const;
 
     template <typename F> void set_clicked(F&& f) {
         m_clicked = std::forward<F>(f);
@@ -31,6 +35,7 @@ public:
 private:
     bool m_hovered = false;
     bool m_enable = true;
+    std::string m_callback_name;
     std::function<void()> m_clicked;
 
     void on_update(float dt) override;
