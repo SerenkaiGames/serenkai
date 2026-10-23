@@ -74,9 +74,9 @@ private:
     std::unique_ptr<WindowManager> m_window_manager;
     std::unique_ptr<Renderer> m_renderer;
     std::unique_ptr<TextureManager> m_texture_manager;
-    std::unique_ptr<GuiContext> m_gui_context;
     std::unique_ptr<ScriptEngine> m_script_engine;
     std::unique_ptr<WidgetParser> m_widget_parser;
+    std::unique_ptr<GuiContext> m_gui_context;
 
     std::unique_ptr<Script> m_main_script;
     AppContext m_app_ctx;

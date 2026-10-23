@@ -8,6 +8,10 @@
 
 #include <memory>
 namespace serenkai {
+
+/// @brief View management class for UI
+///
+/// Includes UI components and script lifecycle.
 class UiView {
 public:
     UiView(const ResourceLocation& loc, std::unique_ptr<Widget> widget,

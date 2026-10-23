@@ -63,9 +63,8 @@ private:
 
     /// @brief Recursively traverse the JSON tree to construct the widget tree.
     ///
-    /// @param json The input JSON data. It must be a JSON object containing
-    ///             exactly one field, whose name is the widget name and whose
-    ///             value is a JSON object.
+    /// @param json The input JSON data. Must contain a field for the name of a
+    /// UI component, and an optional script field.
     std::unique_ptr<Widget> walk(const glz::generic& json) const;
 
     std::unique_ptr<Widget> parse_widget(std::string_view name,
