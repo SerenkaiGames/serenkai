@@ -90,22 +90,22 @@ Application::Application(int argc, char** argv) {
     m_texture_manager = std::make_unique<TextureManager>(
         m_asset_manager.get(), m_renderer->get_sdl_renderer());
 
-    m_widget_parser = std::make_unique<WidgetParser>(WidgetParserConfig{
-        m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get(),
-        m_localization_manager.get()});
-
-    m_gui_context = std::make_unique<GuiContext>(
-        GuiConfig{m_renderer.get(), m_texture_manager.get(),
-                  m_widget_parser.get(), m_font_manager.get()});
-
     m_script_engine = std::make_unique<ScriptEngine>(
         ScriptEngineConfig{m_asset_manager.get(), m_input_manager.get(),
                            m_localization_manager.get()});
+
+    m_widget_parser = std::make_unique<WidgetParser>(WidgetParserConfig{
+        m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get(),
+        m_localization_manager.get(), m_script_engine.get()});
 
     auto main = m_script_engine->create(MAIN_SCRIPT_LOC);
     if (main) {
         m_main_script = std::make_unique<Script>(std::move(*main));
     }
+
+    m_gui_context = std::make_unique<GuiContext>(
+        GuiConfig{m_renderer.get(), m_texture_manager.get(),
+                  m_widget_parser.get(), m_font_manager.get()});
 
     m_app_ctx = AppContext{m_asset_manager.get(),  m_texture_manager.get(),
                            m_font_manager.get(),   m_renderer.get(),

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "serenkai/base/enum_meta.hpp"
+#include "serenkai/gui/ui_view.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/font_manager.hpp"
 
@@ -17,12 +18,14 @@ namespace serenkai {
 class AssetManager;
 class TextureManager;
 class LocalizationManager;
+class ScriptEngine;
 
 struct WidgetParserConfig {
     AssetManager* asset_manager = nullptr;
     FontManager* font_manager = nullptr;
     TextureManager* texture_manager = nullptr;
     LocalizationManager* localization_manager = nullptr;
+    ScriptEngine* script_engine = nullptr;
 };
 
 /// @brief Constructs UI widgets from JSON.
@@ -30,7 +33,7 @@ class WidgetParser {
 
 public:
     explicit WidgetParser(const WidgetParserConfig& config);
-    std::unique_ptr<Widget> parse(std::string_view path);
+    std::unique_ptr<UiView> parse(std::string_view path);
 
     template <typename Fn>
         requires std::invocable<Fn, std::string_view, const glz::generic&>
@@ -56,6 +59,7 @@ private:
     FontManager* m_font_manager = nullptr;
     TextureManager* m_texture_manager = nullptr;
     LocalizationManager* m_localization_manager = nullptr;
+    ScriptEngine* m_script_engine = nullptr;
 
     /// @brief Recursively traverse the JSON tree to construct the widget tree.
     ///

@@ -12,10 +12,12 @@
 #include "serenkai/gui/image_widget.hpp"
 #include "serenkai/gui/label.hpp"
 #include "serenkai/gui/rect.hpp"
+#include "serenkai/gui/ui_view.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/font_manager.hpp"
 #include "serenkai/resource/texture_manager.hpp"
+#include "serenkai/script/script_engine.hpp"
 
 #include <cstddef>
 #include <glaze/core/reflect.hpp>
@@ -124,7 +126,8 @@ WidgetParser::WidgetParser(const WidgetParserConfig& config)
     : m_asset_manager(config.asset_manager),
       m_font_manager(config.font_manager),
       m_texture_manager(config.texture_manager),
-      m_localization_manager(config.localization_manager) {
+      m_localization_manager(config.localization_manager),
+      m_script_engine(config.script_engine) {
 
     register_factory("label",
                      [this](std::string_view name, const glz::generic& json) {
@@ -148,11 +151,17 @@ WidgetParser::WidgetParser(const WidgetParserConfig& config)
                      });
 }
 
-std::unique_ptr<Widget> WidgetParser::parse(std::string_view loc) {
+std::unique_ptr<UiView> WidgetParser::parse(std::string_view loc) {
     spdlog::info("Parsing widget {} ...", loc);
     if (!m_asset_manager) {
         spdlog::error("AssetManager is nullptr");
         SE_ASSERT(false);
+        return nullptr;
+    }
+
+    auto res_loc = ResourceLocation::parse(loc);
+    if (!res_loc) {
+        spdlog::error("Invalid resource location {}", loc);
         return nullptr;
     }
 
@@ -174,7 +183,37 @@ std::unique_ptr<Widget> WidgetParser::parse(std::string_view loc) {
         return nullptr;
     }
 
-    return walk(r);
+    if (!r.is_object()) {
+        spdlog::error("Json is not an object");
+        print_debug_json(r);
+        return nullptr;
+    }
+
+    std::unique_ptr<Script> script = nullptr;
+
+    if (r.contains("script")) {
+        auto script_loc = glz::get<std::string>(r, "script");
+        if (!script_loc) {
+            return nullptr;
+        }
+
+        if (m_script_engine) {
+            auto s = m_script_engine->create(script_loc->get());
+            if (!s) {
+                spdlog::error("Failed to load script {}", script_loc->get());
+                return nullptr;
+            }
+            script = std::make_unique<Script>(std::move(*s));
+        }
+    }
+
+    auto widget = walk(r);
+    if (!widget) {
+        return nullptr;
+    }
+
+    return std::make_unique<UiView>(*res_loc, std::move(widget),
+                                    std::move(script));
 }
 
 std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {
@@ -185,15 +224,30 @@ std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {
         return nullptr;
     }
     const auto& obj = json.get_object();
-    if (obj.size() != 1) {
-        spdlog::error("Json size is {} instead of 1", obj.size());
+    const std::string* root_name = nullptr;
+    const glz::generic* root_value = nullptr;
+
+    for (auto& [name, value] : obj) {
+        if (name == "script") {
+            continue;
+        }
+
+        if (root_name != nullptr) {
+            spdlog::error("Multiple root widgets found in json");
+            print_debug_json(json);
+            return nullptr;
+        }
+        root_name = &name;
+        root_value = &value;
+    }
+
+    if (!root_name || !root_value) {
+        spdlog::error("No root widget found in json");
         print_debug_json(json);
         return nullptr;
     }
 
-    auto& [name, value] = *obj.begin();
-
-    return parse_widget(name, value);
+    return parse_widget(*root_name, *root_value);
 }
 
 std::unique_ptr<Widget>
