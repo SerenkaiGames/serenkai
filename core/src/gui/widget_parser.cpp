@@ -1,5 +1,6 @@
 #include "serenkai/gui/widget_parser.hpp"
 
+#include "serenkai/application/localization_manager.hpp"
 #include "serenkai/base/assert.hpp"
 #include "serenkai/base/concepts.hpp"
 #include "serenkai/base/glm_parse.hpp"

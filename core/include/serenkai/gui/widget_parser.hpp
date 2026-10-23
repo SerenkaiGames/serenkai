@@ -1,6 +1,5 @@
 #pragma once
 
-#include "serenkai/application/localization_manager.hpp"
 #include "serenkai/base/enum_meta.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/font_manager.hpp"
