@@ -1,6 +1,6 @@
 #pragma once
 #include "serenkai/application/app_context.hpp"
-#include "serenkai/gui/widget.hpp"
+#include "serenkai/gui/ui_view.hpp"
 #include "serenkai/scenes/scene.hpp"
 
 #include <memory>
@@ -13,11 +13,9 @@ public:
 
     void on_enter(AppContext* ctx) override;
 
-protected:
-    bool handle_mouse_move_event(const MouseMoveEvent& e) override;
-    bool handle_key_event(const KeyEvent& e) override;
+    bool handle_event(const Event& e) override;
 
 private:
-    std::unique_ptr<Widget> m_root_widget;
+    std::unique_ptr<UiView> m_ui_view;
 };
 } // namespace serenkai

@@ -9,8 +9,8 @@
 namespace serenkai {
 
 void TitleScene::update(float dt) {
-    if (m_root_widget) {
-        m_root_widget->update(dt);
+    if (m_ui_view) {
+        m_ui_view->update(dt);
     }
 }
 
@@ -18,8 +18,8 @@ void TitleScene::render(RenderContext* ctx) {
     if (!ctx) {
         return;
     }
-    if (m_root_widget) {
-        m_root_widget->render(ctx->gui);
+    if (m_ui_view) {
+        m_ui_view->render(ctx->gui);
     }
 }
 
@@ -29,22 +29,16 @@ void TitleScene::on_enter(AppContext* ctx) {
             "Failed to enter title scene: Application context is null");
     }
     if (ctx->gui) {
-        m_root_widget =
+        m_ui_view =
             ctx->gui->get_widget_parser()->parse("serenkai:ui/main_title.json");
     }
 }
 
-bool TitleScene::handle_mouse_move_event(const MouseMoveEvent& e) {
-    if (m_root_widget) {
-        return m_root_widget->handle_mouse_move_event(e);
+bool TitleScene::handle_event(const Event& e) {
+    if (m_ui_view) {
+        return m_ui_view->handle_event(e);
     }
     return false;
 }
 
-bool TitleScene::handle_key_event(const KeyEvent& e) {
-    if (m_root_widget) {
-        return m_root_widget->handle_key_event(e);
-    }
-    return false;
-}
 } // namespace serenkai
