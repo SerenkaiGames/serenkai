@@ -219,6 +219,7 @@ void Application::step(float dt) {
 }
 
 void Application::update(float dt) {
+    m_ui_manager->update(dt);
     m_scene_manager->update(dt);
 
     if (m_main_script) {
@@ -228,6 +229,7 @@ void Application::update(float dt) {
 void Application::render() {
     m_renderer->clear();
     m_scene_manager->render(&m_render_ctx);
+    m_ui_manager->render(m_gui_context.get());
     m_renderer->present();
 }
 
@@ -254,6 +256,11 @@ void Application::dispatch_event(Event& e) {
     }
 
     // Let the scene's UI handle the event first.
+
+    if (m_ui_manager->handle_event(e)) {
+        return;
+    }
+
     if (m_scene_manager->handle_event(e)) {
         return;
     }

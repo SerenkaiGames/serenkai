@@ -4,6 +4,7 @@
 #include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/resource/resource_location.hpp"
 
+#include <algorithm>
 #include <spdlog/spdlog.h>
 #include <utility>
 #include <variant>
@@ -86,10 +87,20 @@ void UiManager::handle_operation() {
             reload_all();
             break;
         }
+
+        m_operations.pop_front();
     }
 }
 
 void UiManager::open(const ResourceLocation& loc) {
+
+    if (std::ranges::any_of(m_views,
+                            [&loc](const std::unique_ptr<UiView>& view) {
+                                return view && view->loc() == loc;
+                            })) {
+        return;
+    }
+
     auto view = m_parser.parse(loc);
     if (!view) {
         return;
@@ -116,7 +127,11 @@ void UiManager::reload_all() {
         if (!view) {
             continue;
         }
-        view = m_parser.parse(view->loc());
+        auto new_view = m_parser.parse(view->loc());
+        if (new_view) {
+            bind_callbacks(new_view.get(), new_view->widget());
+            view = std::move(new_view);
+        }
     }
 }
 
