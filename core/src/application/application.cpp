@@ -99,6 +99,8 @@ Application::Application(int argc, char** argv) {
         m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get(),
         m_localization_manager.get(), m_script_engine.get()});
 
+    m_script_engine->set_active_ui(UiMgrContext{m_ui_manager.get()});
+
     auto main = m_script_engine->create(MAIN_SCRIPT_LOC);
     if (main) {
         m_main_script = std::make_unique<Script>(std::move(*main));
@@ -128,8 +130,6 @@ Application::Application(int argc, char** argv) {
     m_ui_manager->register_callback("on_change_game_scene", [this]() {
         m_scene_manager->request_change(SceneType::Game);
     });
-
-    m_script_engine->set_active_ui(UiMgrContext{m_ui_manager.get()});
 
     auto window_size = m_window_manager->get_window_size();
     m_gui_context->handle_window_resize_event(

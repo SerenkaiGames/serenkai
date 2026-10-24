@@ -226,8 +226,8 @@ luabridge::LuaRef ScriptEngine::require(const std::string& module_name) {
     return result;
 }
 
-void ScriptEngine::set_active_world(const WorldContext& contex) {
-    m_world_ctx = contex;
+void ScriptEngine::set_active_world(const WorldContext& ctx) {
+    m_world_ctx = ctx;
 }
 void ScriptEngine::set_active_ui(const UiMgrContext& ctx) {
     m_ui_mgr_ctx = ctx;

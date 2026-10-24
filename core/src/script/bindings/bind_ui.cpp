@@ -5,9 +5,6 @@
 #include "serenkai/script/lua_header.hpp"
 #include "serenkai/script/script_engine.hpp"
 
-#include <spdlog/spdlog.h>
-#include <string_view>
-
 #define BIND(name, ...)                                                        \
     addFunction(name, wrap_facade(get_subsystem, __VA_ARGS__))
 
@@ -23,12 +20,10 @@ void bind_ui_to_lua(lua_State* L, ScriptEngine* engine) {
 
     luabridge::getGlobalNamespace(L)
         .beginNamespace("Ui")
-        .BIND("open", [](UiManager* mgr,
-                         std::string_view loc) { mgr->request_open(loc); })
-        .BIND("close", [](UiManager* mgr,
-                          std::string_view loc) { mgr->request_close(loc); })
-        .BIND("clear", [](UiManager* mgr) { mgr->request_clear(); })
-        .BIND("reload", [](UiManager* mgr) { mgr->request_reload_all(); })
+        .BIND("open", &UiManager::request_open)
+        .BIND("close", &UiManager::request_close)
+        .BIND("clear", &UiManager::request_clear)
+        .BIND("reload", &UiManager::request_reload_all)
         .endNamespace();
 }
 } // namespace serenkai
