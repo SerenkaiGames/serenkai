@@ -151,24 +151,18 @@ WidgetParser::WidgetParser(const WidgetParserConfig& config)
                      });
 }
 
-std::unique_ptr<UiView> WidgetParser::parse(std::string_view loc) {
-    spdlog::info("Parsing widget {} ...", loc);
+std::unique_ptr<UiView> WidgetParser::parse(const ResourceLocation& loc) {
+    spdlog::info("Parsing widget {} ...", loc.str());
     if (!m_asset_manager) {
         spdlog::error("AssetManager is nullptr");
         SE_ASSERT(false);
         return nullptr;
     }
 
-    auto res_loc = ResourceLocation::parse(loc);
-    if (!res_loc) {
-        spdlog::error("Invalid resource location {}", loc);
-        return nullptr;
-    }
-
     auto path = m_asset_manager->get(loc);
 
     if (!path) {
-        spdlog::error("Unknown resource location {}", loc);
+        spdlog::error("Unknown resource location {}", loc.str());
         return nullptr;
     }
 
@@ -178,7 +172,7 @@ std::unique_ptr<UiView> WidgetParser::parse(std::string_view loc) {
     auto ec = glz::read_file_json(r, *path, buffer);
 
     if (ec) {
-        spdlog::error("Failed to read or parse {}, {}", loc,
+        spdlog::error("Failed to read or parse {}, {}", loc.str(),
                       glz::format_error(ec));
         return nullptr;
     }
@@ -194,7 +188,7 @@ std::unique_ptr<UiView> WidgetParser::parse(std::string_view loc) {
     if (r.contains("script")) {
         auto* script_loc = r["script"].get_if<std::string>();
         if (!script_loc) {
-            spdlog::error("Failed to get ui {} script field", loc);
+            spdlog::error("Failed to get ui {} script field", loc.str());
             print_debug_json(r);
             return nullptr;
         }
@@ -216,8 +210,18 @@ std::unique_ptr<UiView> WidgetParser::parse(std::string_view loc) {
         return nullptr;
     }
 
-    return std::make_unique<UiView>(*res_loc, std::move(widget),
-                                    std::move(script));
+    return std::make_unique<UiView>(loc, std::move(widget), std::move(script));
+}
+
+std::unique_ptr<UiView> WidgetParser::parse(std::string_view loc) {
+
+    auto res_loc = ResourceLocation::parse(loc);
+    if (!res_loc) {
+        spdlog::error("Invalid resource location {}", loc);
+        return nullptr;
+    }
+
+    return parse(*res_loc);
 }
 
 std::unique_ptr<Widget> WidgetParser::walk(const glz::generic& json) const {

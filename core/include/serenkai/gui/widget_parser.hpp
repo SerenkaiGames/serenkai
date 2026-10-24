@@ -4,6 +4,7 @@
 #include "serenkai/gui/ui_view.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/font_manager.hpp"
+#include "serenkai/resource/resource_location.hpp"
 
 #include <concepts>
 #include <functional>
@@ -34,6 +35,7 @@ class WidgetParser {
 public:
     explicit WidgetParser(const WidgetParserConfig& config);
     std::unique_ptr<UiView> parse(std::string_view path);
+    std::unique_ptr<UiView> parse(const ResourceLocation& loc);
 
     template <typename Fn>
         requires std::invocable<Fn, std::string_view, const glz::generic&>
