@@ -1,0 +1,29 @@
+#include "serenkai/script/bindings/bind_ui.hpp"
+
+#include "serenkai/gui/ui_manager.hpp"
+#include "serenkai/script/bindings/facade_wrapper.hpp"
+#include "serenkai/script/lua_header.hpp"
+#include "serenkai/script/script_engine.hpp"
+
+#define BIND(name, ...)                                                        \
+    addFunction(name, wrap_facade(get_subsystem, __VA_ARGS__))
+
+namespace serenkai {
+void bind_ui_to_lua(lua_State* L, ScriptEngine* engine) {
+
+    auto get_subsystem = [engine]() -> UiManager* {
+        if (!engine) {
+            return nullptr;
+        }
+        return engine->ui_mgr_context().ui_mgr;
+    };
+
+    luabridge::getGlobalNamespace(L)
+        .beginNamespace("Ui")
+        .BIND("open", &UiManager::request_open)
+        .BIND("close", &UiManager::request_close)
+        .BIND("clear", &UiManager::request_clear)
+        .BIND("reload", &UiManager::request_reload_all)
+        .endNamespace();
+}
+} // namespace serenkai

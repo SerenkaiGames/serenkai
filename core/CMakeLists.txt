@@ -148,6 +148,8 @@ add_library(
     src/gui/ui_view.cpp
     src/gui/ui_manager.cpp
     include/serenkai/gui/ui_manager.hpp
+    include/serenkai/script/bindings/bind_ui.hpp
+    src/script/bindings/bind_ui.cpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

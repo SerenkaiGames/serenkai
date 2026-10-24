@@ -1,3 +1,4 @@
+#include "serenkai/application/event.hpp"
 #include "serenkai/application/localization_manager.hpp"
 #include "serenkai/base/language.hpp"
 #include "serenkai/game/camera.hpp"
@@ -5,6 +6,7 @@
 #include "serenkai/game/map.hpp"
 #include "serenkai/game/map_data.hpp"
 #include "serenkai/game/map_manager.hpp"
+#include "serenkai/gui/ui_manager.hpp"
 #include "serenkai/resource/asset_manager.hpp"
 #include "serenkai/resource/asset_source.hpp"
 #include "serenkai/resource/resource_location.hpp"
@@ -1630,5 +1632,119 @@ msgstr "你好，{name}！"
         auto res = script->call<bool>("check_globals");
         REQUIRE(res.has_value());
         CHECK(std::get<0>(*res) == true);
+    }
+}
+
+TEST_CASE("Script UiManager bindings", "[script][ui]") {
+    TestScriptEnv env;
+
+    env.register_file("test:ui/btn_view.json", R"({
+        "click_btn": {
+            "type": "button",
+            "callback": "on_btn_clicked",
+            "children": {
+                "btn_box": {
+                    "type": "rect",
+                    "size": [100, 50]
+                }
+            }
+        }
+    })",
+                      ".json");
+
+    env.register_script("test:ui_test.luau", R"(
+        function open_view(loc: string)
+            Ui.open(loc)
+        end
+
+        function close_view(loc: string)
+            Ui.close(loc)
+        end
+
+        function clear_views()
+            Ui.clear()
+        end
+
+        function reload_views()
+            Ui.reload()
+        end
+    )");
+
+    ScriptEngine engine(ScriptEngineConfig{
+        .asset_manager = &env.asset_manager(),
+    });
+
+    auto script = engine.create("test:ui_test.luau");
+    REQUIRE(script.has_value());
+
+    SECTION("Ui bindings interact with active UiManager") {
+        UiManager ui_mgr(WidgetParserConfig{
+            .asset_manager = &env.asset_manager(),
+            .script_engine = &engine,
+        });
+
+        int click_count = 0;
+        ui_mgr.register_callback("on_btn_clicked", [&]() { ++click_count; });
+
+        engine.set_active_ui(UiMgrContext{.ui_mgr = &ui_mgr});
+
+        MouseMoveEvent move_in{10.0f, 10.0f, 0.0f, 0.0f};
+        KeyEvent click_ev{Key::MouseLeft, KeyAction::Press};
+
+        // Initially no views loaded
+        ui_mgr.handle_event(Event{move_in});
+        CHECK_FALSE(ui_mgr.handle_event(Event{click_ev}));
+        CHECK(click_count == 0);
+
+        // 1. Test Ui.open
+        auto open_res = script->call<>("open_view", "test:ui/btn_view.json");
+        REQUIRE(open_res.has_value());
+        ui_mgr.handle_event(Event{move_in});
+        CHECK_FALSE(ui_mgr.handle_event(Event{click_ev}));
+
+        ui_mgr.update(0.016f);
+        ui_mgr.handle_event(Event{move_in});
+        CHECK(ui_mgr.handle_event(Event{click_ev}));
+        CHECK(click_count == 1);
+
+        // 2. Test Ui.reload
+        auto reload_res = script->call<>("reload_views");
+        REQUIRE(reload_res.has_value());
+        ui_mgr.update(0.016f);
+        ui_mgr.handle_event(Event{move_in});
+        CHECK(ui_mgr.handle_event(Event{click_ev}));
+        CHECK(click_count == 2);
+
+        // 3. Test Ui.close
+        auto close_res = script->call<>("close_view", "test:ui/btn_view.json");
+        REQUIRE(close_res.has_value());
+        ui_mgr.update(0.016f);
+        ui_mgr.handle_event(Event{move_in});
+        CHECK_FALSE(ui_mgr.handle_event(Event{click_ev}));
+        CHECK(click_count == 2);
+
+        // 4. Test Ui.clear
+        script->call<>("open_view", "test:ui/btn_view.json");
+        ui_mgr.update(0.016f);
+        ui_mgr.handle_event(Event{move_in});
+        CHECK(ui_mgr.handle_event(Event{click_ev}));
+        CHECK(click_count == 3);
+
+        auto clear_res = script->call<>("clear_views");
+        REQUIRE(clear_res.has_value());
+        ui_mgr.update(0.016f);
+        ui_mgr.handle_event(Event{move_in});
+        CHECK_FALSE(ui_mgr.handle_event(Event{click_ev}));
+        CHECK(click_count == 3);
+    }
+
+    SECTION("Ui bindings behave safely when UiManager is nullptr") {
+        engine.set_active_ui(UiMgrContext{.ui_mgr = nullptr});
+
+        CHECK(script->call<>("open_view", "test:ui/btn_view.json").has_value());
+        CHECK(
+            script->call<>("close_view", "test:ui/btn_view.json").has_value());
+        CHECK(script->call<>("clear_views").has_value());
+        CHECK(script->call<>("reload_views").has_value());
     }
 }

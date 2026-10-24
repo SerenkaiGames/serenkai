@@ -9,6 +9,7 @@
 #include "serenkai/script/bindings/bind_localization.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
 #include "serenkai/script/bindings/bind_map.hpp"
+#include "serenkai/script/bindings/bind_ui.hpp"
 #include "serenkai/script/lua_compile_options.hpp"
 #include "serenkai/script/script.hpp"
 
@@ -53,6 +54,8 @@ ScriptEngine::ScriptEngine(ScriptEngineConfig config)
     bind_localization_to_lua(m_root.get(), config.localization_manager);
 
     bind_aabb_to_lua(m_root.get());
+
+    bind_ui_to_lua(m_root.get(), this);
 
     bind_map_to_lua(m_root.get(), this);
 
@@ -223,12 +226,15 @@ luabridge::LuaRef ScriptEngine::require(const std::string& module_name) {
     return result;
 }
 
-void ScriptEngine::set_active_world(const WorldContext& contex) {
-    m_world_context = contex;
+void ScriptEngine::set_active_world(const WorldContext& ctx) {
+    m_world_ctx = ctx;
+}
+void ScriptEngine::set_active_ui(const UiMgrContext& ctx) {
+    m_ui_mgr_ctx = ctx;
 }
 
-const WorldContext& ScriptEngine::world_context() const {
-    return m_world_context;
+const WorldContext& ScriptEngine::world_context() const { return m_world_ctx; }
+const UiMgrContext& ScriptEngine::ui_mgr_context() const {
+    return m_ui_mgr_ctx;
 }
-
 } // namespace serenkai
