@@ -13,6 +13,8 @@ public:
 
     void on_enter(AppContext* ctx) override;
 
+    void on_leave(AppContext* ctx) override;
+
     bool handle_event(const Event& e) override;
 
 private:

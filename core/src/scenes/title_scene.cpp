@@ -2,7 +2,7 @@
 
 #include "serenkai/application/app_context.hpp"
 #include "serenkai/gui/gui_context.hpp"
-#include "serenkai/gui/widget_parser.hpp"
+#include "serenkai/gui/ui_manager.hpp"
 #include "serenkai/render/render_context.hpp"
 
 #include <stdexcept>
@@ -28,9 +28,16 @@ void TitleScene::on_enter(AppContext* ctx) {
         throw std::runtime_error(
             "Failed to enter title scene: Application context is null");
     }
-    if (ctx->gui) {
-        m_ui_view =
-            ctx->gui->get_widget_parser()->parse("serenkai:ui/main_title.json");
+    if (ctx->gui && ctx->gui->get_ui_manager()) {
+
+        ctx->gui->get_ui_manager()->request_open("serenkai:ui/main_title.json");
+    }
+}
+
+void TitleScene::on_leave(AppContext* ctx) {
+    if (ctx && ctx->gui && ctx->gui->get_ui_manager()) {
+        ctx->gui->get_ui_manager()->request_close(
+            "serenkai:ui/main_title.json");
     }
 }
 

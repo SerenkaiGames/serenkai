@@ -146,6 +146,8 @@ add_library(
     include/serenkai/script/bindings/bind_localization.hpp
     include/serenkai/gui/ui_view.hpp
     src/gui/ui_view.cpp
+    src/gui/ui_manager.cpp
+    include/serenkai/gui/ui_manager.hpp
 )
 
 add_library(serenkai::core ALIAS ${TARGET_NAME})

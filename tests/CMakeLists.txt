@@ -19,6 +19,7 @@ add_executable(serenkai_tests
     src/rect_test.cpp
     src/button_test.cpp
     src/widget_parser_test.cpp
+    src/ui_manager_test.cpp
     src/image_loader_test.cpp
     src/texture_manager_test.cpp
     src/image_widget_test.cpp

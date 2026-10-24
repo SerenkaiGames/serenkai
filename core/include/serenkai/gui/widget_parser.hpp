@@ -4,6 +4,7 @@
 #include "serenkai/gui/ui_view.hpp"
 #include "serenkai/gui/widget.hpp"
 #include "serenkai/resource/font_manager.hpp"
+#include "serenkai/resource/resource_location.hpp"
 
 #include <concepts>
 #include <functional>
@@ -34,6 +35,7 @@ class WidgetParser {
 public:
     explicit WidgetParser(const WidgetParserConfig& config);
     std::unique_ptr<UiView> parse(std::string_view path);
+    std::unique_ptr<UiView> parse(const ResourceLocation& loc);
 
     template <typename Fn>
         requires std::invocable<Fn, std::string_view, const glz::generic&>
@@ -41,19 +43,11 @@ public:
         m_factories.try_emplace(std::string(name), std::move(f));
     }
 
-    template <std::invocable Fn>
-    void register_callback(std::string_view name, Fn f) {
-        m_callbacks.try_emplace(std::string(name), std::move(f));
-    }
-
 private:
     using CreateFunc = std::function<std::unique_ptr<Widget>(
         std::string_view key, const glz::generic& json)>;
 
-    using Callback = std::function<void()>;
-
     std::unordered_map<std::string, CreateFunc> m_factories;
-    std::unordered_map<std::string, Callback> m_callbacks;
 
     AssetManager* m_asset_manager = nullptr;
     FontManager* m_font_manager = nullptr;

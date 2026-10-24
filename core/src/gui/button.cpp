@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <glm/ext/vector_int2.hpp>
 #include <spdlog/spdlog.h>
+#include <string_view>
 
 namespace serenkai {
 Button::Button(std::string_view name, Widget* parent) : Widget(name, parent) {}
@@ -62,6 +63,10 @@ bool Button::handle_key_event(const KeyEvent& e) {
 
     return false;
 }
+void Button::set_callback_name(std::string_view name) {
+    m_callback_name = name;
+}
+std::string_view Button::callback_name() const { return m_callback_name; }
 
 void Button::on_update(float) { measure_from_children(); }
 

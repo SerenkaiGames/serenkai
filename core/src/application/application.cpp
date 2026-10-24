@@ -7,6 +7,7 @@
 #include "serenkai/application/localization_manager.hpp"
 #include "serenkai/application/window_manager.hpp"
 #include "serenkai/gui/gui_context.hpp"
+#include "serenkai/gui/ui_manager.hpp"
 #include "serenkai/gui/widget_parser.hpp"
 #include "serenkai/render/render_context.hpp"
 #include "serenkai/render/renderer.hpp"
@@ -94,7 +95,7 @@ Application::Application(int argc, char** argv) {
         ScriptEngineConfig{m_asset_manager.get(), m_input_manager.get(),
                            m_localization_manager.get()});
 
-    m_widget_parser = std::make_unique<WidgetParser>(WidgetParserConfig{
+    m_ui_manager = std::make_unique<UiManager>(WidgetParserConfig{
         m_asset_manager.get(), m_font_manager.get(), m_texture_manager.get(),
         m_localization_manager.get(), m_script_engine.get()});
 
@@ -104,8 +105,8 @@ Application::Application(int argc, char** argv) {
     }
 
     m_gui_context = std::make_unique<GuiContext>(
-        GuiConfig{m_renderer.get(), m_texture_manager.get(),
-                  m_widget_parser.get(), m_font_manager.get()});
+        GuiConfig{m_renderer.get(), m_texture_manager.get(), m_ui_manager.get(),
+                  m_font_manager.get()});
 
     m_app_ctx = AppContext{m_asset_manager.get(),  m_texture_manager.get(),
                            m_font_manager.get(),   m_renderer.get(),
@@ -117,14 +118,14 @@ Application::Application(int argc, char** argv) {
 
     m_scene_manager = std::make_unique<SceneManager>(&m_app_ctx);
 
-    m_widget_parser->register_callback("on_exit_game",
-                                       [this]() { m_running = false; });
-    m_widget_parser->register_callback(
+    m_ui_manager->register_callback("on_exit_game",
+                                    [this]() { m_running = false; });
+    m_ui_manager->register_callback(
         "on_pop_scene", [this]() { m_scene_manager->request_pop(); });
-    m_widget_parser->register_callback("on_change_title_scene", [this]() {
+    m_ui_manager->register_callback("on_change_title_scene", [this]() {
         m_scene_manager->request_change(SceneType::Title);
     });
-    m_widget_parser->register_callback("on_change_game_scene", [this]() {
+    m_ui_manager->register_callback("on_change_game_scene", [this]() {
         m_scene_manager->request_change(SceneType::Game);
     });
 
@@ -218,6 +219,7 @@ void Application::step(float dt) {
 }
 
 void Application::update(float dt) {
+    m_ui_manager->update(dt);
     m_scene_manager->update(dt);
 
     if (m_main_script) {
@@ -227,6 +229,7 @@ void Application::update(float dt) {
 void Application::render() {
     m_renderer->clear();
     m_scene_manager->render(&m_render_ctx);
+    m_ui_manager->render(m_gui_context.get());
     m_renderer->present();
 }
 
@@ -253,6 +256,11 @@ void Application::dispatch_event(Event& e) {
     }
 
     // Let the scene's UI handle the event first.
+
+    if (m_ui_manager->handle_event(e)) {
+        return;
+    }
+
     if (m_scene_manager->handle_event(e)) {
         return;
     }
