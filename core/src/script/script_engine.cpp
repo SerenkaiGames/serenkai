@@ -9,6 +9,7 @@
 #include "serenkai/script/bindings/bind_localization.hpp"
 #include "serenkai/script/bindings/bind_log.hpp"
 #include "serenkai/script/bindings/bind_map.hpp"
+#include "serenkai/script/bindings/bind_ui.hpp"
 #include "serenkai/script/lua_compile_options.hpp"
 #include "serenkai/script/script.hpp"
 
@@ -53,6 +54,8 @@ ScriptEngine::ScriptEngine(ScriptEngineConfig config)
     bind_localization_to_lua(m_root.get(), config.localization_manager);
 
     bind_aabb_to_lua(m_root.get());
+
+    bind_ui_to_lua(m_root.get(), this);
 
     bind_map_to_lua(m_root.get(), this);
 
