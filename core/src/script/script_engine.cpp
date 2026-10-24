@@ -224,11 +224,14 @@ luabridge::LuaRef ScriptEngine::require(const std::string& module_name) {
 }
 
 void ScriptEngine::set_active_world(const WorldContext& contex) {
-    m_world_context = contex;
+    m_world_ctx = contex;
+}
+void ScriptEngine::set_active_ui(const UiMgrContext& ctx) {
+    m_ui_mgr_ctx = ctx;
 }
 
-const WorldContext& ScriptEngine::world_context() const {
-    return m_world_context;
+const WorldContext& ScriptEngine::world_context() const { return m_world_ctx; }
+const UiMgrContext& ScriptEngine::ui_mgr_context() const {
+    return m_ui_mgr_ctx;
 }
-
 } // namespace serenkai

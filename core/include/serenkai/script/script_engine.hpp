@@ -16,11 +16,16 @@ namespace serenkai {
 class AssetManager;
 class InputManager;
 class LocalizationManager;
+class UiManager;
 
 struct ScriptEngineConfig {
     AssetManager* asset_manager = nullptr;
     InputManager* input_manager = nullptr;
     LocalizationManager* localization_manager = nullptr;
+};
+
+struct UiMgrContext {
+    UiManager* ui_mgr = nullptr;
 };
 
 /// @brief Lua scripting engine
@@ -37,13 +42,16 @@ public:
     std::optional<Script> create(std::string_view loc);
     std::optional<Script> create(const ResourceLocation& loc);
 
-    void set_active_world(const WorldContext& contex);
+    void set_active_world(const WorldContext& ctx);
+    void set_active_ui(const UiMgrContext& ctx);
 
     const WorldContext& world_context() const;
+    const UiMgrContext& ui_mgr_context() const;
 
 private:
     AssetManager* m_asset_manager = nullptr;
-    WorldContext m_world_context;
+    WorldContext m_world_ctx;
+    UiMgrContext m_ui_mgr_ctx;
     LuaState m_root;
 
     std::unordered_map<ResourceLocation, luabridge::LuaRef> m_module_cache;

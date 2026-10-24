@@ -129,6 +129,8 @@ Application::Application(int argc, char** argv) {
         m_scene_manager->request_change(SceneType::Game);
     });
 
+    m_script_engine->set_active_ui(UiMgrContext{m_ui_manager.get()});
+
     auto window_size = m_window_manager->get_window_size();
     m_gui_context->handle_window_resize_event(
         WindowResizeEvent{window_size.x, window_size.y});
@@ -136,7 +138,7 @@ Application::Application(int argc, char** argv) {
     m_scene_manager->request_push(SceneType::Title);
 }
 
-Application::~Application() {}
+Application::~Application() { m_script_engine->set_active_ui(UiMgrContext{}); }
 
 Application::Argument Application::handle_argument(int argc, char** argv) {
     CLI::App app{"Serenkai"};
